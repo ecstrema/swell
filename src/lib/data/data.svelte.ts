@@ -23,7 +23,22 @@ export type ValueChange = [number, number];
 export class SignalTreeItem extends TreeItem {
 	type = "signal" as const;
 
-	color = $state("red");
+	static baseColors = [
+		"red",
+		"green",
+		"blue",
+		"yellow",
+		"purple",
+		"orange",
+		"cyan",
+		"magenta",
+	];
+
+	color = $state(
+		SignalTreeItem.baseColors[
+			Math.floor(Math.random() * SignalTreeItem.baseColors.length)
+		],
+	);
 
 	*clock(
 		start: number,

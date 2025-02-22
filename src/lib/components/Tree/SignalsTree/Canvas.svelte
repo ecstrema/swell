@@ -1,21 +1,6 @@
-<script module lang="ts">
-  export class PaintState {
-    dirty = $state(false);
-    width = $state(100);
-    pixelWidth = $derived.by(
-      () => this.width * (devicePixelRatio.current || 1)
-    );
-    pixelHeight = $derived.by(
-      () => config.itemHeight * (devicePixelRatio.current || 1)
-    );
-    pixelsPerSecond = $derived.by(() => this.pixelWidth / config.viewWidth);
-  }
-
-  export const paintState = new PaintState();
-</script>
-
 <script lang="ts">
   import { causesCanvasRepaint, config } from "$lib/data/config.svelte";
+  import { paintState } from "$lib/data/paintstate.svelte";
   import { mode } from "mode-watcher";
   import { onMount } from "svelte";
   import { devicePixelRatio } from "svelte/reactivity/window";

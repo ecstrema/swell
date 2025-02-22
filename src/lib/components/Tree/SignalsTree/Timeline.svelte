@@ -1,6 +1,7 @@
 <script lang="ts">
   import { config } from "$lib/data/config.svelte";
-  import Canvas, { paintState } from "./Canvas.svelte";
+  import { paintState } from "$lib/data/paintstate.svelte";
+  import Canvas from "./Canvas.svelte";
 
   function* tickGenerator(start: number, end: number) : Generator<{type: "primary" | "secondary", value: number, label: string}> {
     const primaryStep = 10 ** Math.floor(Math.log10(end - start));

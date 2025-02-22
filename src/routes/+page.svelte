@@ -4,11 +4,11 @@
   import SignalsTree from "$lib/components/Tree/SignalsTree/Group.svelte";
   import { root } from "$lib/data/data.svelte";
   import { config } from "$lib/data/config.svelte";
-  import { paintState } from "$lib/components/Tree/SignalsTree/Canvas.svelte";
+  import { paintState } from "$lib/data/paintstate.svelte";
 
   function updateView(e: WheelEvent) {
     config.viewStart = Math.max(
-      0,
+      -1,
       config.viewStart + e.deltaX / paintState.pixelsPerSecond
     );
     config.viewWidth = Math.max(2, config.viewWidth * 1.1 ** (e.deltaY / 100));

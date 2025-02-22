@@ -17,6 +17,7 @@
 <script lang="ts">
   import { causesCanvasRepaint, config } from "$lib/data/config.svelte";
   import { mode } from "mode-watcher";
+  import { onMount } from "svelte";
   import { devicePixelRatio } from "svelte/reactivity/window";
 
   const { paint }: { paint: (ctx: CanvasRenderingContext2D) => void } =
@@ -45,13 +46,12 @@
 
       paint(ctx);
     }
-    if (Object.prototype.hasOwnProperty.call(window, "requestAnimationFrame")) {
-      requestAnimationFrame(doPaint);
-    }
+    requestAnimationFrame(doPaint);
   }
-
-  mode.subscribe(() => {
-    requestPaint();
+  onMount(() => {
+    mode.subscribe(() => {
+      requestPaint();
+    });
   });
 
   $effect(() => {

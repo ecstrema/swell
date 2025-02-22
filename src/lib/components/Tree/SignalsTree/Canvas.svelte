@@ -45,7 +45,9 @@
 
       paint(ctx);
     }
-    requestAnimationFrame(doPaint);
+    if (Object.prototype.hasOwnProperty.call(window, "requestAnimationFrame")) {
+      requestAnimationFrame(doPaint);
+    }
   }
 
   mode.subscribe(() => {

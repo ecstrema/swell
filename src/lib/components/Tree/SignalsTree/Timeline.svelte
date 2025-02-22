@@ -4,7 +4,7 @@
 
   function* tickGenerator(start: number, end: number) : Generator<{type: "primary" | "secondary", value: number, label: string}> {
     const primaryStep = 10 ** Math.floor(Math.log10(end - start));
-    const secondaryStep = primaryStep / 10;
+    const secondaryStep = primaryStep / 8; // 8 ticks avoids the rounding errors... Else when the primaryStep is 1 and the secondary is 0.1, we have rounding errors creating double bars...
 
     let primary = Math.floor(start / primaryStep) * primaryStep;
     let secondary = Math.floor(start / secondaryStep) * secondaryStep;
@@ -33,7 +33,6 @@
 
       if (type === "primary") {
         const height = config.itemHeight - config.itemPadding - config.treeFontSize;
-        console.log(height)
         ctx.fillRect(x, config.itemPadding, 1, height);
         ctx.fillText(label, x, config.itemHeight - config.itemPadding);
       } else {

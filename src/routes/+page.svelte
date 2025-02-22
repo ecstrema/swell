@@ -4,6 +4,15 @@
   import SignalsTree from "$lib/components/Tree/SignalsTree/Group.svelte";
   import { root } from "$lib/data/data.svelte";
   import { config } from "$lib/data/config.svelte";
+  import { paintState } from "$lib/components/Tree/SignalsTree/Canvas.svelte";
+
+  function updateView(e: WheelEvent) {
+    config.viewStart = Math.max(
+      0,
+      config.viewStart + e.deltaX / paintState.pixelsPerSecond
+    );
+    config.viewWidth = Math.max(2, config.viewWidth * 1.1 ** (e.deltaY / 100));
+  }
 </script>
 
 <Resizable.PaneGroup autoSaveId="swell" direction="horizontal" class="h-full">
@@ -13,18 +22,19 @@
       style:--stripes-item-count={config.stripesItemCount}
       class="stripes"
     >
-      <ItemsTree item={root} root={true}/>
+      <ItemsTree item={root} root={true} />
     </div>
   </Resizable.Pane>
 
-  <Resizable.Handle withHandle={true}/>
+  <Resizable.Handle withHandle={true} />
 
   <Resizable.Pane>
     <div
       style:--stripes-height={config.itemHeight + "px"}
       class="stripes"
+      onwheel={(e) => updateView(e)}
     >
-      <SignalsTree item={root} root={true}/>
+      <SignalsTree item={root} root={true} />
     </div>
   </Resizable.Pane>
 </Resizable.PaneGroup>
@@ -38,6 +48,7 @@
       color-mix(in srgb, hsl(var(--background)), white 5%) 50%,
       color-mix(in srgb, hsl(var(--background)), white 5%)
     );
-    background-size: 100% calc(var(--stripes-item-count, 1) * 2 * var(--stripes-height));
+    background-size: 100%
+      calc(var(--stripes-item-count, 1) * 2 * var(--stripes-height));
   }
 </style>

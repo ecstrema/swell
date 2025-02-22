@@ -15,21 +15,21 @@
 </script>
 
 <script lang="ts">
-  import { config } from "$lib/data/config.svelte";
+  import { causesCanvasRepaint, config } from "$lib/data/config.svelte";
+  import { mode } from "mode-watcher";
   import { devicePixelRatio } from "svelte/reactivity/window";
 
   const { paint }: { paint: (ctx: CanvasRenderingContext2D) => void } =
     $props();
 
-  let canvas: HTMLCanvasElement;
-
-  function updateView(e: WheelEvent) {
-    config.viewStart = Math.max(0, config.viewStart + e.deltaX / paintState.pixelsPerSecond);
-    config.viewWidth = Math.max(2, config.viewWidth * 1.1 ** (e.deltaY / 100));
-  }
+  let canvas: HTMLCanvasElement | null = null;
 
   function requestPaint() {
     function doPaint() {
+      if (!canvas) {
+        requestAnimationFrame(doPaint);
+        return;
+      }
       const ctx = canvas.getContext("2d");
       if (!ctx) {
         requestAnimationFrame(doPaint);
@@ -48,6 +48,17 @@
     requestAnimationFrame(doPaint);
   }
 
+  mode.subscribe(() => {
+    requestPaint();
+  });
+
+  $effect(() => {
+    for (const key of causesCanvasRepaint) {
+      const _ = config[key];
+    }
+    requestPaint();
+  });
+
   $effect(() => {
     if (paintState.dirty) {
       requestPaint();
@@ -64,8 +75,4 @@
   }}
   class="w-full"
   style:height={`${config.itemHeight}px`}
-  onwheel={(e) => {
-    updateView(e);
-    paintState.dirty = true;
-  }}
 ></canvas>

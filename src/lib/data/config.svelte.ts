@@ -15,4 +15,15 @@ export class Config {
 	}
 }
 
+export const causesCanvasRepaint: (keyof Config)[] = [
+	"itemHeight",
+	"itemPadding",
+	"treeFontSize",
+	"treeIndent",
+	"lineWidth",
+	"timeUnit",
+	"viewStart",
+	"viewWidth",
+];
+
 export const config = new Config();

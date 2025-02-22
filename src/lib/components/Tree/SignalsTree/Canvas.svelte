@@ -1,9 +1,6 @@
 <script lang="ts">
-  import { causesCanvasRepaint, config } from "$lib/data/config.svelte";
-  import { paintState } from "$lib/data/paintstate.svelte";
-  import { mode } from "mode-watcher";
-  import { onMount } from "svelte";
-  import { devicePixelRatio } from "svelte/reactivity/window";
+  import { config } from "$lib/data/config.svelte";
+  import { signalCanvas } from "$lib/data/signalCanvas.svelte";
 
   const { paint }: { paint: (ctx: CanvasRenderingContext2D) => void } =
     $props();
@@ -22,32 +19,21 @@
         return;
       }
 
-      paintState.dirty = false;
+      // Reset as soon as possible, so that if other things change will it's being painted, we know we need to repaint
+      signalCanvas.dirty = false;
 
       // This has to be here because changing the canvas size clears it, so if we put it directly in the canvas declaration, we don't know when svelte will update it, and thus clear the canvas.
-      canvas.height = paintState.pixelHeight;
-      canvas.width = paintState.pixelWidth;
+      canvas.height = signalCanvas.pixelHeight;
+      canvas.width = signalCanvas.pixelWidth;
       // ctx.clearRect(0, 0, pixelWidth, pixelHeight);
 
       paint(ctx);
     }
     requestAnimationFrame(doPaint);
   }
-  onMount(() => {
-    mode.subscribe(() => {
-      requestPaint();
-    });
-  });
 
   $effect(() => {
-    for (const key of causesCanvasRepaint) {
-      const _ = config[key];
-    }
-    requestPaint();
-  });
-
-  $effect(() => {
-    if (paintState.dirty) {
+    if (signalCanvas.dirty) {
       requestPaint();
     }
   });
@@ -55,10 +41,10 @@
 
 <canvas
   bind:this={canvas}
-  bind:clientWidth={() => paintState.width,
+  bind:clientWidth={() => signalCanvas.width,
   (v) => {
-    paintState.width = v;
-    paintState.dirty = true;
+    signalCanvas.width = v;
+    signalCanvas.dirty = true;
   }}
   class="w-full"
   style:height={`${config.itemHeight}px`}

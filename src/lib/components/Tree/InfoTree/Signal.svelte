@@ -1,5 +1,6 @@
 <script lang="ts">
-  import type { SignalTreeItem } from "$lib/data/data.svelte";
+
+  import type { SignalTreeItem } from "$lib/signals/SignalTreeItem.svelte";
   import Label from "../Label.svelte";
 
   const { item }: { item: SignalTreeItem } = $props();

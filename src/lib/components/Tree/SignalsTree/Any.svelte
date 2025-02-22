@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { TreeItems } from "$lib/data/data.svelte";
+  import type { TreeItems } from "$lib/data/signals.svelte";
   import Group from "./Group.svelte";
   import Signal from "./Signal.svelte";
 

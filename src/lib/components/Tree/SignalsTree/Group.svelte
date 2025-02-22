@@ -1,5 +1,6 @@
 <script lang="ts">
-  import type { GroupTreeItem } from "$lib/data/data.svelte";
+
+  import type { GroupTreeItem } from "$lib/signals/GroupTreeItem.svelte";
   import Any from "./Any.svelte";
   import Label from "../Label.svelte";
   import Timeline from "./Timeline.svelte";

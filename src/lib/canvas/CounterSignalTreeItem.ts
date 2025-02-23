@@ -1,6 +1,6 @@
 import type { Paintable, Signal, ValueChange } from "./interfaces";
 import { paintBitArray } from "./paintValueArray";
-import { StyledTreeItem } from "./StyledTreeItem.svelte";
+import { StyledTreeItem } from "./StyledTreeItem";
 
 type A = Paintable & Signal;
 

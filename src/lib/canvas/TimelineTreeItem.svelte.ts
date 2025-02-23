@@ -6,6 +6,8 @@ import { TreeItem } from "./TreeItem.svelte";
 type A = Paintable & LocalValued;
 
 export class TimelineTreeItem extends TreeItem implements A {
+  // TODO: move these out of svelte's reactivity system by recalculating
+  // TODO: these should be static, as they are the same for all timelines.
   secondaryStep = $derived.by(() =>
     Math.max(1, this.primaryStep / config.timelineSecondaryTicksBetweenPrimary)
   );

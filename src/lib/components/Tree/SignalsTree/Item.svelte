@@ -1,6 +1,7 @@
 <script lang="ts">
   import { isPaintable } from "$lib/canvas/interfaces";
   import type { TreeItem } from "$lib/canvas/TreeItem.svelte";
+  import { config } from "$lib/data/config.svelte";
   import Canvas from "./Canvas.svelte";
   import Item from "./Item.svelte";
 
@@ -10,6 +11,11 @@
 
 {#if isPaintable(item)}
  <Canvas paint={item.paint} />
+{:else}
+  <div
+    style:height={`${config.itemHeight}px`}
+    class="w-full"
+    ></div>
 {/if}
 
 {#if item.expanded}

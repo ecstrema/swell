@@ -5,7 +5,7 @@ import {
 } from "$lib/math";
 import { config } from "$lib/data/config.svelte";
 import { signalCanvas } from "$lib/data/signalCanvas.svelte";
-import { StyledTreeItem } from "./StyledTreeItem.svelte";
+import { StyledTreeItem } from "./StyledTreeItem";
 import type { Paintable, Signal, ValueChange } from "./interfaces";
 
 type A = Paintable & Signal;

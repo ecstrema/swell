@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { StyledTreeItem } from "$lib/canvas/StyledTreeItem.svelte";
+  import type { StyledTreeItem } from "$lib/canvas/StyledTreeItem";
   import Label from "../Label.svelte";
 
   const { item }: { item: StyledTreeItem } = $props();

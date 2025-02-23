@@ -3,7 +3,7 @@
   import { mode } from "mode-watcher";
 
   import { root } from "$lib/data/signals.svelte";
-  import { causesCanvasRepaint, config } from "$lib/data/config.svelte";
+  import { Config, config } from "$lib/data/config.svelte";
   import { signalCanvas } from "$lib/data/signalCanvas.svelte";
   import { bound } from "$lib/math";
   import Item from "./Item.svelte";
@@ -28,8 +28,8 @@
   });
 
   $effect(() => {
-    for (const key of causesCanvasRepaint) {
-      const _ = config[key];
+    for (const key of Object.getOwnPropertyNames(Config.prototype)) {
+      const _ = config[key as keyof Config];
     }
     signalCanvas.dirty = true;
   });

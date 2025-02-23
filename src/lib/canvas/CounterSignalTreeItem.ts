@@ -27,7 +27,7 @@ export class CounterSignalTreeItem extends StyledTreeItem implements A {
 
   paint = (ctx: CanvasRenderingContext2D) => {
     this.setStyle(ctx);
-    paintBitArray(ctx, this.getChanges.bind(this));
+    paintBitArray(ctx, this.getChanges.bind(this), this.color, this.color);
   };
 
   getPreviousPeriodStartTime = (time: number) => {

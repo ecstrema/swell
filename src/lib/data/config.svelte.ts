@@ -2,9 +2,11 @@ export class Config {
   itemHeight = $state(26);
   itemPadding = $state(4);
   stripesItemCount = $state(1);
-  treeFontSize = $state(16);
+  fontSize = $state(12);
   treeIndent = $state(12);
   lineWidth = $state(1);
+  timelinePixelBetweenTicks = $state(20);
+  timelineSecondaryTicksBetweenPrimary = $state(5);
 
   timeUnit = $state<"min" | "s" | "ms" | "us" | "ns" | "fs">("ns");
 
@@ -18,7 +20,7 @@ export class Config {
   }
 
   simulationStart = $state(0);
-  simulationLength = $state(100);
+  simulationLength = $state(10_000);
   get simulationEnd() {
     return this.simulationStart + this.simulationLength;
   }
@@ -35,8 +37,7 @@ export class Config {
 export const causesCanvasRepaint: (keyof Config)[] = [
   "itemHeight",
   "itemPadding",
-  "treeFontSize",
-  "treeIndent",
+  "fontSize",
   "lineWidth",
   "timeUnit",
   "viewStart",

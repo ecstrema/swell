@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as Resizable from "$lib/components/ui/resizable/index.js";
   import SignalsTree from "$lib/components/Tree/SignalsTree/SignalsTree.svelte";
-  import ItemsTree from "$lib/components/Tree/InfoTree/ItemsTree.svelte";
+  import ItemsTree from "$lib/components/Tree/InfoTree/InfoTree.svelte";
 
 </script>
 

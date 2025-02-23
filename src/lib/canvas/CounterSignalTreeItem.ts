@@ -1,8 +1,8 @@
-import type { CanvasTreeItem, SignalTreeItem, ValueChange } from "./interfaces";
+import type { Paintable, Signal, ValueChange } from "./interfaces";
 import { paintBitArray } from "./paintValueArray";
 import { StyledTreeItem } from "./StyledTreeItem.svelte";
 
-type A = CanvasTreeItem & SignalTreeItem;
+type A = Paintable & Signal;
 
 export class CounterSignalTreeItem extends StyledTreeItem implements A {
   constructor(

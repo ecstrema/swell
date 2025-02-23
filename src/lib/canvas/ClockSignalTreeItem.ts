@@ -6,9 +6,9 @@ import {
 import { config } from "$lib/data/config.svelte";
 import { signalCanvas } from "$lib/data/signalCanvas.svelte";
 import { StyledTreeItem } from "./StyledTreeItem.svelte";
-import type { CanvasTreeItem, SignalTreeItem, ValueChange } from "./interfaces";
+import type { Paintable, Signal, ValueChange } from "./interfaces";
 
-type A = CanvasTreeItem & SignalTreeItem;
+type A = Paintable & Signal;
 
 export class ClockSignalTreeItem extends StyledTreeItem implements A {
   // The clock starts low at time offset, and is high for dutyCycle * period

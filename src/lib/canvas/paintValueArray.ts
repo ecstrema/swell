@@ -26,7 +26,6 @@ export const paintBitArray = (
   let valueChange = changesGenerator.next();
   while (!valueChange.done) {
     const t = valueChange.value[0];
-    console.log(t);
     if (t > drawEnd) {
       break;
     }

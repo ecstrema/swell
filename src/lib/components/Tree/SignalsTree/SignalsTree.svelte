@@ -1,11 +1,12 @@
 <script lang="ts">
-  import Group from "$lib/components/Tree/SignalsTree/Group.svelte";
+  import { onMount } from "svelte";
+  import { mode } from "mode-watcher";
+
   import { root } from "$lib/data/signals.svelte";
   import { causesCanvasRepaint, config } from "$lib/data/config.svelte";
   import { signalCanvas } from "$lib/data/signalCanvas.svelte";
-  import { onMount } from "svelte";
-  import { mode } from "mode-watcher";
   import { bound } from "$lib/math";
+  import Item from "./Item.svelte";
 
   function updateView(e: WheelEvent) {
     config.viewLength = bound(
@@ -39,5 +40,5 @@
   class="stripes"
   onwheel={(e) => updateView(e)}
 >
-  <Group item={root} root={true} />
+  <Item item={root} />
 </div>

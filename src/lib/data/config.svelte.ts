@@ -5,6 +5,7 @@ export class Config {
   fontSize = $state(12);
   treeIndent = $state(12);
   lineWidth = $state(1);
+  representationPadding = $state(6);
   timelinePixelBetweenTicks = $state(20);
   timelineSecondaryTicksBetweenPrimary = $state(5);
 

@@ -46,7 +46,7 @@ export const paintBitArray = (
       const s = v.toString();
       const width = ctx.measureText(s).width;
       const normalCenterTextEnd = hCenter + width / 2;
-      ctx.fillText(v.toString(), Math.min(normalCenterTextEnd, drawEndX), vCenter)
+      ctx.fillText(v.toString(), Math.max(x0 + width + config.representationPadding, Math.min(normalCenterTextEnd, drawEndX - config.representationPadding)), vCenter)
       break;
     }
     ctx.fillText(v.toString(), hCenter, vCenter);

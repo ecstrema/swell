@@ -5,13 +5,19 @@
   import { signalCanvas } from "$lib/data/signalCanvas.svelte";
   import { onMount } from "svelte";
   import { mode } from "mode-watcher";
+  import { bound } from "$lib/math";
 
   function updateView(e: WheelEvent) {
-    config.viewStart = Math.max(
-      -1,
-      config.viewStart + e.deltaX / signalCanvas.pixelsPerTimeUnit
+    config.viewLength = bound(
+      config.viewLength * 1.1 ** (e.deltaY / 100),
+      config.minimumViewLength,
+      config.simulationLength + config.viewMargin * 2
     );
-    config.viewWidth = Math.max(2, config.viewWidth * 1.1 ** (e.deltaY / 100));
+    config.viewStart = bound(
+      config.viewStart + e.deltaX / signalCanvas.pixelsPerTimeUnit,
+      -config.viewMargin,
+      config.simulationEnd - config.viewLength + config.viewMargin
+    );
   }
 
   onMount(() => {

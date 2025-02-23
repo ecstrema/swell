@@ -1,7 +1,7 @@
 <script lang="ts">
   import * as Collapsible from "$lib/components/ui/collapsible";
 
-  import type { GroupTreeItem } from "$lib/signals/GroupTreeItem.svelte";
+  import type { GroupTreeItem } from "$lib/canvas/GroupTreeItem.svelte";
   import Any from "./Any.svelte";
   import Label from "../Label.svelte";
 

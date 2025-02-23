@@ -1,9 +1,8 @@
 <script lang="ts">
-
-  import type { SignalTreeItem } from "$lib/signals/SignalTreeItem.svelte";
+  import type { StyledTreeItem } from "$lib/canvas/StyledTreeItem.svelte";
   import Label from "../Label.svelte";
 
-  const { item }: { item: SignalTreeItem } = $props();
+  const { item }: { item: StyledTreeItem } = $props();
 </script>
 
 <Label>

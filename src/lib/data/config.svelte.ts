@@ -8,10 +8,13 @@ export class Config {
 
   timeUnit = $state<"min" | "s" | "ms" | "us" | "ns" | "fs">("ns");
 
+  viewMargin = $state(1);
+
   viewStart = $state(0);
-  viewWidth = $state(100);
+  viewLength = $state(100);
+  minimumViewLength = $state(2);
   get viewEnd() {
-    return this.viewStart + this.viewWidth;
+    return this.viewStart + this.viewLength;
   }
 
   simulationStart = $state(0);
@@ -19,6 +22,14 @@ export class Config {
   get simulationEnd() {
     return this.simulationStart + this.simulationLength;
   }
+
+  getDrawStart = () => {
+    return Math.max(config.simulationStart, config.viewStart);
+  };
+
+  getDrawEnd = () => {
+    return Math.min(config.simulationEnd, config.viewEnd);
+  };
 }
 
 export const causesCanvasRepaint: (keyof Config)[] = [
@@ -29,7 +40,9 @@ export const causesCanvasRepaint: (keyof Config)[] = [
   "lineWidth",
   "timeUnit",
   "viewStart",
-  "viewWidth",
+  "viewLength",
+  "simulationStart",
+  "simulationLength",
 ];
 
 export const config = new Config();

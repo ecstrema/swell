@@ -15,7 +15,7 @@ export class SignalCanvas {
     () => config.itemHeight * (devicePixelRatio.current || 1)
   );
   /** Based on config.viewWidth, this is the ratio from a pixel to a unit of time. */
-  pixelsPerTimeUnit = $derived.by(() => this.pixelWidth / config.viewWidth);
+  pixelsPerTimeUnit = $derived.by(() => this.pixelWidth / config.viewLength);
 
   /** Convert from time to position in the canvas. */
   timeToX = (t: number) => {
@@ -23,12 +23,12 @@ export class SignalCanvas {
   };
 
   /** A signal's representation should not draw above this line. */
-  signalTop = () => {
+  getSignalTop = () => {
     return (config.itemPadding / config.itemHeight) * this.pixelHeight;
   };
 
   /** A signal's representation should not draw below this line. */
-  signalBottom = () => {
+  getSignalBottom = () => {
     return (
       ((config.itemHeight - config.itemPadding) / config.itemHeight) *
       this.pixelHeight

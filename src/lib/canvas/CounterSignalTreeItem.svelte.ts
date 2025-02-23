@@ -1,0 +1,59 @@
+import type { CanvasTreeItem, SignalTreeItem, ValueChange } from "./interfaces";
+import { paintBitArray } from "./paintValueArray";
+import { StyledTreeItem } from "./StyledTreeItem.svelte";
+
+type A = CanvasTreeItem & SignalTreeItem;
+
+export class CounterSignalTreeItem extends StyledTreeItem implements A {
+  constructor(
+    name: string,
+    public startValue: number,
+    public increment: number,
+    public incrementCount: number,
+    public incrementPeriod = 1,
+    public offset = 0
+  ) {
+    super(name);
+
+    if (incrementPeriod <= 0) {
+      console.error("Increment period should be greater than 0.");
+      this.incrementPeriod = 1;
+    }
+  }
+
+  getFullPeriod = () => {
+    return this.incrementCount * this.incrementPeriod;
+  };
+
+  paint = (ctx: CanvasRenderingContext2D) => {
+    paintBitArray(ctx, this.getChanges.bind(this));
+  };
+
+  getPreviousPeriodStartTime = (time: number) => {
+    const fullPeriod = this.getFullPeriod();
+    return ((time - this.offset) % fullPeriod) - fullPeriod;
+  };
+
+  getValue = (time: number) => {
+    const previousPeriodStartTime = this.getPreviousPeriodStartTime(time);
+    const incrementPeriodsSincePreviousPeriodStart = Math.floor(
+      (time - previousPeriodStartTime) / this.incrementPeriod
+    );
+    return (
+      incrementPeriodsSincePreviousPeriodStart * this.increment +
+      this.startValue
+    );
+  };
+
+  *getChanges(start: number): Generator<ValueChange> {
+    // TODO: proper counter
+    let i = 0;
+    while (true) {
+      yield [
+        i * this.incrementPeriod + start,
+        (i % this.incrementCount) + this.startValue,
+      ];
+      i++;
+    }
+  }
+}

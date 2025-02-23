@@ -1,11 +1,6 @@
-import { ClockSignalTreeItem } from "$lib/signals/ClockSignalTreeItem.svelte";
-import { CounterSignalTreeItem } from "$lib/signals/CounterSignalTreeItem.svelte";
-import { GroupTreeItem } from "$lib/signals/GroupTreeItem.svelte";
-import type { SignalTreeItem } from "$lib/signals/SignalTreeItem.svelte";
-
-export type ValueChange = [number, number];
-
-export type TreeItems = GroupTreeItem | SignalTreeItem;
+import { ClockSignalTreeItem } from "$lib/canvas/ClockSignalTreeItem.svelte";
+import { CounterSignalTreeItem } from "$lib/canvas/CounterSignalTreeItem.svelte";
+import { GroupTreeItem } from "$lib/canvas/GroupTreeItem.svelte";
 
 export const root = $state(
   new GroupTreeItem("root", [

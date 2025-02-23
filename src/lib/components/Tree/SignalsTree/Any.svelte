@@ -1,25 +1,32 @@
 <script lang="ts">
-  import type { TreeItems } from "$lib/data/signals.svelte";
+  import { GroupTreeItem } from "$lib/canvas/GroupTreeItem.svelte";
+  import { StyledTreeItem } from "$lib/canvas/StyledTreeItem.svelte";
+  import type { TreeItem } from "$lib/canvas/TreeItem.svelte";
+  import type { Component } from "svelte";
   import Group from "./Group.svelte";
   import Signal from "./Signal.svelte";
 
-  const { item }: { item: TreeItems } = $props();
+  const { item }: { item: TreeItem } = $props();
 
-  function getComponent(item: TreeItems) {
-    switch (item.type) {
-      case "group":
-        return Group;
-      case "signal":
-        return Signal;
-      default:
-        return null;
+  function getComponent<T extends TreeItem>(
+    item: T
+  ): Component<{ item: T }> | null {
+    if (item instanceof GroupTreeItem) {
+      const c: Component<{ item: GroupTreeItem }> = Group;
+      // @ts-ignore
+      return c;
+    } else if (item instanceof StyledTreeItem) {
+      const c: Component<{ item: StyledTreeItem }> = Signal;
+      // @ts-ignore
+      return c;
+    } else {
+      return null;
     }
   }
 
-  // biome-ignore lint : Seems like svelte doesn't like dynamic components
-  const Component: any = getComponent(item);
+  const C = getComponent(item);
 </script>
 
-{#if Component}
-  <Component {item} />
+{#if C}
+  <C {item} />
 {/if}

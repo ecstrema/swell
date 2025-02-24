@@ -22,6 +22,14 @@ export class SignalCanvas {
     return (t - config.viewStart) * this.pixelsPerTimeUnit;
   };
 
+  dxToTime = (dx: number) => {
+    return dx / this.pixelsPerTimeUnit;
+  }
+
+  xToTime = (x: number) => {
+    return this.dxToTime(x) + config.viewStart;
+  }
+
   /** A signal's representation should not draw above this line. */
   getSignalTop = () => {
     return (config.itemPadding / config.itemHeight) * this.pixelHeight;

@@ -9,19 +9,26 @@
 </script>
 
 {#snippet label()}
-  <Label>{item.name}</Label>
+  <div class="flex items-center w-full" style:height={`${config.itemHeight}px`}>
+    <Label>{item.name}</Label>
+  </div>
 {/snippet}
 
 <div style:padding-left={`${config.treeIndent}px`}>
   {#if item.hasChildren()}
     <Collapsible.Root bind:open={item.expanded}>
-      <Collapsible.Trigger class="flex items-center w-full">
-        <span
-          class={item.expanded
-            ? "icon-[material-symbols--keyboard-arrow-down-rounded]"
-            : "icon-[material-symbols--keyboard-arrow-up-rounded]"}
-        ></span>
-        {@render label()}
+      <Collapsible.Trigger>
+        <div
+          class="flex items-center w-full"
+          style:height={`${config.itemHeight}px`}
+        >
+          <span
+            class={item.expanded
+              ? "icon-[material-symbols--keyboard-arrow-down-rounded]"
+              : "icon-[material-symbols--keyboard-arrow-up-rounded]"}
+          ></span>
+          {@render label()}
+        </div>
       </Collapsible.Trigger>
       <Collapsible.Content>
         {#each item.children as child}

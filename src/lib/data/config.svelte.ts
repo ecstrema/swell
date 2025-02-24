@@ -1,3 +1,5 @@
+import { cubicIn } from "svelte/easing";
+
 export class Config {
   itemHeight = $state(26);
   itemPadding = $state(4);
@@ -13,7 +15,36 @@ export class Config {
 
   viewMargin = $state(1);
 
-  viewStart = $state(0);
+  #viewStart = $state(0);
+  animateViewStart = $state(false);
+
+  get viewStart() {
+    return this.#viewStart;
+  }
+
+  set viewStart(value: number) {
+    if (!this.animateViewStart) {
+      this.#viewStart = value;
+    } else {
+      const transitionStart = this.#viewStart;
+      const transitionEnd = value;
+      const duration = 200;
+      const startTime = Date.now();
+      const endTime = startTime + duration;
+      const animate = () => {
+        const now = Date.now();
+        if (now > endTime) {
+          this.#viewStart = transitionEnd;
+          return;
+        }
+        const progress = cubicIn((now - startTime) / duration);
+        this.#viewStart = transitionStart + (transitionEnd - transitionStart) * progress;
+        requestAnimationFrame(animate);
+      };
+      animate();
+    }
+  }
+
   viewLength = $state(100);
   minimumViewLength = $state(2);
   get viewEnd() {

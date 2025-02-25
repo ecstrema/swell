@@ -2,7 +2,8 @@ import { StyledTreeItem } from './StyledTreeItem';
 import type { Paintable, Signal, ValueChange } from './interfaces';
 import { paintBitArray } from './paintValueArray';
 
-type A = Paintable & Signal;
+type CounterValue = number | null
+type A = Paintable & Signal<CounterValue>;
 
 export class CounterSignalTreeItem extends StyledTreeItem implements A {
   constructor(
@@ -33,7 +34,7 @@ export class CounterSignalTreeItem extends StyledTreeItem implements A {
     }
 
     this.setStyle(this.ctx);
-    paintBitArray(this.ctx, this.getChanges.bind(this), this.color, this.color);
+    paintBitArray(this.ctx, this.getChanges.bind(this));
   };
 
   getPreviousPeriodStartTime = (time: number) => {
@@ -47,7 +48,7 @@ export class CounterSignalTreeItem extends StyledTreeItem implements A {
     return incrementPeriodsSincePreviousPeriodStart * this.increment + this.startValue;
   };
 
-  *getChanges(start: number): Generator<ValueChange> {
+  *getChanges(start: number): Generator<ValueChange<CounterValue>> {
     // TODO: proper counter
     let i = 0;
     while (true) {

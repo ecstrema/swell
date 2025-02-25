@@ -1,5 +1,7 @@
-export type ValueChange = [number, number];
-export type ChangesGenerator = (start: number) => Generator<ValueChange>;
+
+export type SignalValue = number | bigint | boolean | null;
+export type ValueChange<T extends SignalValue = SignalValue> = [number, T];
+export type ChangesGenerator<T extends SignalValue = SignalValue> = (start: number) => Generator<ValueChange<T>>;
 
 export interface Paintable {
   ctx: CanvasRenderingContext2D | undefined;
@@ -11,9 +13,9 @@ export function isPaintable(t: unknown): t is Paintable {
 }
 
 export interface LocalValued {
-  getValue: (time: number) => number;
+  getValue: (time: number) => SignalValue;
 }
 
-export interface Signal extends LocalValued {
-  getChanges: (start: number) => Generator<ValueChange>;
+export interface Signal<T extends SignalValue> extends LocalValued {
+  getChanges: ChangesGenerator<T>;
 }

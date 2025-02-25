@@ -4,7 +4,9 @@ import { normalizedLinearInterpolation, positiveModulo } from '$lib/math';
 import { StyledTreeItem } from './StyledTreeItem';
 import type { Paintable, Signal, ValueChange } from './interfaces';
 
-type A = Paintable & Signal;
+type ClockValue = boolean | null
+type A = Paintable & Signal<ClockValue>;
+
 
 export class ClockSignalTreeItem extends StyledTreeItem implements A {
   // The clock starts low at time offset, and is high for dutyCycle * period
@@ -29,8 +31,8 @@ export class ClockSignalTreeItem extends StyledTreeItem implements A {
     const zero = signalCanvas.getSignalTop();
     const one = signalCanvas.getSignalBottom();
 
-    const toXY = (valueChange: ValueChange) => {
-      return [signalCanvas.timeToX(valueChange[0]), normalizedLinearInterpolation(valueChange[1], zero, one)];
+    const toXY = (valueChange: ValueChange<boolean>) => {
+      return [signalCanvas.timeToX(valueChange[0]), normalizedLinearInterpolation(Number(valueChange[1]), zero, one)];
     };
 
     const drawStart = swellState.config.getDrawStart();
@@ -67,11 +69,11 @@ export class ClockSignalTreeItem extends StyledTreeItem implements A {
     return t - positiveModulo(t - this.offset, this.period);
   };
 
-  *generatePeriods(time: number): Generator<ValueChange> {
+  *generatePeriods(time: number): Generator<ValueChange<ClockValue>> {
     let t = time;
     while (true) {
-      yield [t, 0];
-      yield [t + this.lowPeriod, 1];
+      yield [t, false];
+      yield [t + this.lowPeriod, true];
       t += this.period;
     }
   }
@@ -80,17 +82,17 @@ export class ClockSignalTreeItem extends StyledTreeItem implements A {
     return +!(time < this.getPreviousPeriodStartTime(time) + this.lowPeriod);
   };
 
-  *getChanges(start: number): Generator<ValueChange> {
+  *getChanges(start: number): Generator<ValueChange<ClockValue>> {
     // yield all from before the startTime to after the endTime
     const previousPeriodStartTime = this.getPreviousPeriodStartTime(start);
 
     const isLowAtStart = start < previousPeriodStartTime + this.lowPeriod;
 
     if (isLowAtStart) {
-      yield [start, 0];
-      yield [previousPeriodStartTime + this.lowPeriod, 1];
+      yield [start, false];
+      yield [previousPeriodStartTime + this.lowPeriod, true];
     } else {
-      yield [start, 1];
+      yield [start, true];
     }
 
     yield* this.generatePeriods(previousPeriodStartTime + this.period);

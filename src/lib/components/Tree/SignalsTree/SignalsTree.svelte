@@ -9,7 +9,7 @@
   import Item from "./Item.svelte";
 
   function keyDown(e: KeyboardEvent) {
-    let absScrollAmount = signalCanvas.dxToTime(signalCanvas.pixelWidth / 10);
+    const absScrollAmount = signalCanvas.dxToTime(signalCanvas.pixelWidth / 10);
 
     if (e.key === "ArrowLeft") {
       config.scrollBy(-absScrollAmount);
@@ -51,7 +51,7 @@
       const zoomFactor = viewLength / previousViewLength;
       const centerTime = signalCanvas.xToTime(e.offsetX);
 
-      const zoomedViewStart = centerTime - (centerTime - config.viewStart.animationTarget) * zoomFactor;
+      const zoomedViewStart = centerTime - (centerTime - config.viewStart.valueTarget) * zoomFactor;
       const pannedViewStart = zoomedViewStart + e.deltaX / signalCanvas.pixelsPerTimeUnit
 
       config.viewStart.value = bound(
@@ -74,8 +74,11 @@
   });
 
   $effect(() => {
+    let _;
+    _ = config.viewStart.value;
+    _ = config.viewEnd.value;
     for (const key of Object.getOwnPropertyNames(Config.prototype)) {
-      const _ = config[key as keyof Config];
+      _ = config[key as keyof Config];
     }
     signalCanvas.dirty = true;
   });
@@ -89,7 +92,7 @@
   onkeydown={(e) => keyDown(e)}
   role="scrollbar"
   aria-controls="signals"
-  aria-valuenow={config.viewStart.animationTarget}
+  aria-valuenow={config.viewStart.valueTarget}
   aria-valuemin={config.simulationStart - config.viewMargin}
   aria-valuemax={config.simulationEnd - config.getViewLength() + config.viewMargin}
   tabindex="0"

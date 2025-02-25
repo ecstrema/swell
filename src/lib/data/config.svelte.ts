@@ -36,16 +36,18 @@ export class Config {
   }
 
   scrollBy = (delta: number) => {
-    if (delta > 0 && this.viewEnd.value + delta > this.getViewMax()) {
+    console.log(delta);
+    if (delta > 0 && this.viewEnd.valueTarget + delta > this.getViewMax()) {
       this.viewEnd.value = this.getViewMax();
       return;
-    } else if (delta < 0 && this.viewStart.value + delta < this.getViewMin()) {
+    }
+     if (delta < 0 && this.viewStart.valueTarget + delta < this.getViewMin()) {
       this.viewStart.value = this.getViewMin();
       return;
     }
 
-    this.viewStart.value += delta;
-    this.viewEnd.value += delta;
+    this.viewStart.value = this.viewStart.valueTarget + delta;
+    this.viewEnd.value = this.viewEnd.valueTarget + delta;
   };
 
   getViewLength = () => {

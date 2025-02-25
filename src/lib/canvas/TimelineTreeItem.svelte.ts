@@ -6,20 +6,21 @@ import { TreeItem } from "./TreeItem.svelte";
 type A = Paintable & LocalValued;
 
 export class TimelineTreeItem extends TreeItem implements A {
-  // TODO: move these out of svelte's reactivity system by recalculating
-  // TODO: these should be static, as they are the same for all timelines.
-  secondaryStep = $derived.by(() =>
-    Math.max(1, this.primaryStep / config.timelineSecondaryTicksBetweenPrimary)
-  );
-
-  primaryStep = $derived.by(() => {
+  static getStepsSize(): { primaryStep: number; secondaryStep: number } {
     const tickCount =
       signalCanvas.pixelWidth / config.timelinePixelBetweenTicks;
     const tickInterval = config.getViewLength() / tickCount;
     const idealSecondaryStep = 10 ** Math.ceil(Math.log10(tickInterval));
-    return idealSecondaryStep * config.timelineSecondaryTicksBetweenPrimary;
-  });
+    const primaryStep =
+      idealSecondaryStep * config.timelineSecondaryTicksBetweenPrimary;
+    const secondaryStep = Math.max(
+      1,
+      primaryStep / config.timelineSecondaryTicksBetweenPrimary
+    );
+    return { primaryStep, secondaryStep };
+  }
 
+  /** Identity, as the value at point t for a timeline is the time itself */
   getValue = (t: number) => {
     return t;
   };
@@ -29,11 +30,11 @@ export class TimelineTreeItem extends TreeItem implements A {
   };
 
   getNextPrimaryTick = (t: number) => {
-    return this.getNextTick(t, this.primaryStep);
+    return this.getNextTick(t, TimelineTreeItem.getStepsSize().primaryStep);
   };
 
   getNextSecondaryTick = (t: number) => {
-    return this.getNextTick(t, this.secondaryStep);
+    return this.getNextTick(t, TimelineTreeItem.getStepsSize().secondaryStep);
   };
 
   *generateTicks(): Generator<{
@@ -42,12 +43,13 @@ export class TimelineTreeItem extends TreeItem implements A {
   }> {
     let t = this.getNextSecondaryTick(config.viewStart.value);
 
+    const { primaryStep, secondaryStep } = TimelineTreeItem.getStepsSize();
     while (true) {
       yield {
-        type: t % this.primaryStep === 0 ? "primary" : "secondary",
+        type: t % primaryStep === 0 ? "primary" : "secondary",
         value: t,
       };
-      t += this.secondaryStep;
+      t += secondaryStep;
     }
   }
 

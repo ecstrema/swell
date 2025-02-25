@@ -1,7 +1,7 @@
 <script lang="ts">
 import { TreeItem } from '$lib/canvas/TreeItem.svelte';
 import { isPaintable } from '$lib/canvas/interfaces';
-import { config } from '$lib/data/config.svelte';
+import { swellState } from '$lib/data/SwellState.svelte';
 import Canvas from './Canvas.svelte';
 import Item from './Item.svelte';
 
@@ -9,10 +9,10 @@ const { item }: { item: TreeItem } = $props();
 </script>
 
 {#if isPaintable(item)}
- <Canvas paint={item.paint} />
+ <Canvas {item} />
 {:else}
   <div
-    style:height={`${config.itemHeight}px`}
+    style:height={`${swellState.config.itemHeight}px`}
     class="w-full"
     ></div>
 {/if}

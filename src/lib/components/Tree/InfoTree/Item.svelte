@@ -1,11 +1,12 @@
 <script lang="ts">
 import { TreeItem } from '$lib/canvas/TreeItem.svelte';
 import * as Collapsible from '$lib/components/ui/collapsible';
-import { config } from '$lib/data/config.svelte';
+  import { swellState } from '$lib/data/SwellState.svelte';
 import Label from '../Label.svelte';
 import Item from './Item.svelte';
 
 const { item }: { item: TreeItem } = $props();
+const config = $derived.by(() => swellState.config);
 </script>
 
 {#snippet label()}

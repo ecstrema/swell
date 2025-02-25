@@ -1,7 +1,11 @@
 <script lang="ts">
-import { config } from '$lib/data/config.svelte';
-import { root } from '$lib/data/signals.svelte';
+  import type { TreeItem } from '$lib/canvas/TreeItem.svelte';
+import { swellState } from '$lib/data/SwellState.svelte';
 import Item from './Item.svelte';
+
+const { root } : { root: TreeItem } = $props();
+
+const config = $derived.by(() => swellState.config);
 </script>
 
 <div

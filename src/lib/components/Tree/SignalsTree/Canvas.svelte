@@ -1,51 +1,31 @@
 <script lang="ts">
-import { config } from '$lib/data/config.svelte';
-import { signalCanvas } from '$lib/data/signalCanvas.svelte';
+import type { Paintable } from '$lib/canvas/interfaces';
+import { swellState } from '$lib/data/SwellState.svelte';
+import { signalCanvas } from '$lib/data/Canvas.svelte';
+import { onMount } from 'svelte';
 
-const { paint }: { paint: (ctx: CanvasRenderingContext2D) => void } = $props();
+const { item }: { item: Paintable } = $props();
 
-// biome-ignore lint: this is reassigned by svelte
 let canvas: HTMLCanvasElement | null = null;
 
-function requestPaint() {
-  function doPaint() {
-    if (!canvas) {
-      requestAnimationFrame(doPaint);
-      return;
+onMount(() => {
+  const setCtx = () => {
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        item.ctx = ctx;
+        return;
+      }
     }
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      requestAnimationFrame(doPaint);
-      return;
-    }
-
-    // Reset as soon as possible, so that if other things change will it's being painted, we know we need to repaint
-    signalCanvas.dirty = false;
-
-    // This has to be here because changing the canvas size clears it, so if we put it directly in the canvas declaration, we don't know when svelte will update it, and thus clear the canvas.
-    canvas.height = signalCanvas.pixelHeight;
-    canvas.width = signalCanvas.pixelWidth;
-    // ctx.clearRect(0, 0, pixelWidth, pixelHeight);
-
-    paint(ctx);
-  }
-  requestAnimationFrame(doPaint);
-}
-
-$effect(() => {
-  if (signalCanvas.dirty) {
-    requestPaint();
-  }
+    requestAnimationFrame(setCtx);
+  };
+  setCtx();
 });
 </script>
 
 <canvas
   bind:this={canvas}
-  bind:clientWidth={() => signalCanvas.width,
-  (v) => {
-    signalCanvas.width = v;
-    signalCanvas.dirty = true;
-  }}
+  bind:clientWidth={signalCanvas.width}
   class="w-full"
-  style:height={`${config.itemHeight}px`}
+  style:height={`${swellState.config.itemHeight}px`}
 ></canvas>

@@ -1,6 +1,6 @@
-import { config } from '$lib/data/config.svelte';
-import { signalCanvas } from '$lib/data/signalCanvas.svelte';
-import { bound, normalizedLinearInterpolation, positiveModulo } from '$lib/math';
+import { signalCanvas } from '$lib/data/Canvas.svelte';
+import { swellState } from "$lib/data/SwellState.svelte";
+import { normalizedLinearInterpolation, positiveModulo } from '$lib/math';
 import { StyledTreeItem } from './StyledTreeItem';
 import type { Paintable, Signal, ValueChange } from './interfaces';
 
@@ -17,8 +17,14 @@ export class ClockSignalTreeItem extends StyledTreeItem implements A {
     super(name);
   }
 
-  paint = (ctx: CanvasRenderingContext2D) => {
-    this.setStyle(ctx);
+  ctx: CanvasRenderingContext2D | undefined;
+
+  paint = () => {
+    if (!this.ctx) {
+      return;
+    }
+
+    this.setStyle(this.ctx);
 
     const zero = signalCanvas.getSignalTop();
     const one = signalCanvas.getSignalBottom();
@@ -27,30 +33,30 @@ export class ClockSignalTreeItem extends StyledTreeItem implements A {
       return [signalCanvas.timeToX(valueChange[0]), normalizedLinearInterpolation(valueChange[1], zero, one)];
     };
 
-    const drawStart = config.getDrawStart();
-    const drawEnd = config.getDrawEnd();
+    const drawStart = swellState.config.getDrawStart();
+    const drawEnd = swellState.config.getDrawEnd();
 
     const changesGenerator = this.getChanges(drawStart);
     let valueChange = changesGenerator.next();
 
     let [x1, y1] = toXY(valueChange.value);
-    ctx.moveTo(x1, y1);
+    this.ctx.moveTo(x1, y1);
 
     let y0 = y1;
     while (!valueChange.done) {
       valueChange = changesGenerator.next();
       [x1, y1] = toXY(valueChange.value);
 
-      ctx.lineTo(x1, y0);
+      this.ctx.lineTo(x1, y0);
       if (valueChange.value[0] >= drawEnd) {
         break;
       }
-      ctx.lineTo(x1, y1);
+      this.ctx.lineTo(x1, y1);
 
       y0 = y1;
     }
 
-    ctx.stroke();
+    this.ctx.stroke();
   };
 
   getHighPeriod = () => {

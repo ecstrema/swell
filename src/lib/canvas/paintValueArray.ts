@@ -1,9 +1,9 @@
-import { config } from '$lib/data/config.svelte';
-import { signalCanvas } from '$lib/data/signalCanvas.svelte';
+import { swellState } from '$lib/data/SwellState.svelte';
+import { signalCanvas } from '$lib/data/Canvas.svelte';
 import type { ChangesGenerator } from './interfaces';
 
 export const paintBitArray = (ctx: CanvasRenderingContext2D, getChanges: ChangesGenerator, textColor: string, lineColor: string) => {
-  ctx.font = `${config.fontSize}px monospace`;
+  ctx.font = `${swellState.config.fontSize}px monospace`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
@@ -14,8 +14,8 @@ export const paintBitArray = (ctx: CanvasRenderingContext2D, getChanges: Changes
   const top = signalCanvas.getSignalTop();
   const bottom = signalCanvas.getSignalBottom();
 
-  const drawStart = config.getDrawStart();
-  const drawEnd = config.getDrawEnd();
+  const drawStart = swellState.config.getDrawStart();
+  const drawEnd = swellState.config.getDrawEnd();
 
   const drawStartX = signalCanvas.timeToX(drawStart);
   const drawEndX = signalCanvas.timeToX(drawEnd);
@@ -39,7 +39,7 @@ export const paintBitArray = (ctx: CanvasRenderingContext2D, getChanges: Changes
       const s = v.toString();
       const width = ctx.measureText(s).width;
       const normalCenterTextEnd = hCenter + width / 2;
-      ctx.fillText(v.toString(), Math.max(x0 + width + config.representationPadding, Math.min(normalCenterTextEnd, drawEndX - config.representationPadding)), vCenter);
+      ctx.fillText(v.toString(), Math.max(x0 + width + swellState.config.representationPadding, Math.min(normalCenterTextEnd, drawEndX - swellState.config.representationPadding)), vCenter);
       break;
     }
     ctx.fillText(v.toString(), hCenter, vCenter);

@@ -25,9 +25,15 @@ export class CounterSignalTreeItem extends StyledTreeItem implements A {
     return this.incrementCount * this.incrementPeriod;
   };
 
-  paint = (ctx: CanvasRenderingContext2D) => {
-    this.setStyle(ctx);
-    paintBitArray(ctx, this.getChanges.bind(this), this.color, this.color);
+  ctx: CanvasRenderingContext2D | undefined;
+
+  paint = () => {
+    if (!this.ctx) {
+      return;
+    }
+
+    this.setStyle(this.ctx);
+    paintBitArray(this.ctx, this.getChanges.bind(this), this.color, this.color);
   };
 
   getPreviousPeriodStartTime = (time: number) => {

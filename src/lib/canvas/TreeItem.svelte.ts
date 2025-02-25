@@ -8,6 +8,13 @@ export class TreeItem {
     return this.children.length > 0;
   };
 
+  *iterate(): Generator<TreeItem> {
+    yield this;
+    for (const child of this.children) {
+      yield* child.iterate();
+    }
+  }
+
   constructor(
     public name: string,
     children: TreeItem[] = [],

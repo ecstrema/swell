@@ -1,5 +1,5 @@
-import { config } from '$lib/data/config.svelte';
-import { signalCanvas } from '$lib/data/signalCanvas.svelte';
+import { swellState } from '$lib/data/SwellState.svelte';
+import { signalCanvas } from '$lib/data/Canvas.svelte';
 import { TreeItem } from './TreeItem.svelte';
 import type { LocalValued, Paintable } from './interfaces';
 
@@ -7,6 +7,7 @@ type A = Paintable & LocalValued;
 
 export class TimelineTreeItem extends TreeItem implements A {
   static getStepsSize(): { primaryStep: number; secondaryStep: number } {
+    const config = swellState.config;
     const tickCount = signalCanvas.pixelWidth / config.timelinePixelBetweenTicks;
     const tickInterval = config.getViewLength() / tickCount;
     const idealSecondaryStep = 10 ** Math.ceil(Math.log10(tickInterval));
@@ -36,7 +37,7 @@ export class TimelineTreeItem extends TreeItem implements A {
     type: 'primary' | 'secondary';
     value: number;
   }> {
-    let t = this.getNextSecondaryTick(config.viewStart.value);
+    let t = this.getNextSecondaryTick(swellState.config.viewStart);
 
     const { primaryStep, secondaryStep } = TimelineTreeItem.getStepsSize();
     while (true) {
@@ -48,32 +49,40 @@ export class TimelineTreeItem extends TreeItem implements A {
     }
   }
 
-  paint = (ctx: CanvasRenderingContext2D) => {
-    const foregroundHSL = window.getComputedStyle(ctx.canvas).getPropertyValue('--foreground');
+  ctx: CanvasRenderingContext2D | undefined;
+
+  paint = () => {
+    if (!this.ctx) {
+      return;
+    }
+
+    const foregroundHSL = window.getComputedStyle(this.ctx.canvas).getPropertyValue('--foreground');
     const foreground = `hsl(${foregroundHSL})`;
 
-    ctx.fillStyle = foreground;
-    ctx.strokeStyle = foreground;
-    ctx.lineWidth = config.lineWidth;
-    ctx.font = `${config.fontSize}px monospace`;
-    ctx.textAlign = 'center';
+    const config = swellState.config;
+
+    this.ctx.fillStyle = foreground;
+    this.ctx.strokeStyle = foreground;
+    this.ctx.lineWidth = config.lineWidth;
+    this.ctx.font = `${config.fontSize}px monospace`;
+    this.ctx.textAlign = 'center';
 
     const primaryTickEnd = config.itemHeight - config.itemPadding - config.fontSize;
     const secondaryTickEnd = config.itemHeight - config.itemPadding;
 
     for (const { type, value } of this.generateTicks()) {
-      if (value > config.viewEnd.value) break;
+      if (value > config.viewEnd) break;
       const x = signalCanvas.timeToX(value);
 
-      ctx.moveTo(x, config.itemPadding);
+      this.ctx.moveTo(x, config.itemPadding);
       if (type === 'primary') {
-        ctx.lineTo(x, primaryTickEnd);
-        ctx.fillText(value.toFixed(0), x, config.itemHeight - config.itemPadding);
+        this.ctx.lineTo(x, primaryTickEnd);
+        this.ctx.fillText(value.toFixed(0), x, config.itemHeight - config.itemPadding);
       } else {
-        ctx.lineTo(x, secondaryTickEnd);
+        this.ctx.lineTo(x, secondaryTickEnd);
       }
     }
 
-    ctx.stroke();
+    this.ctx.stroke();
   };
 }

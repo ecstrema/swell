@@ -1,17 +1,36 @@
 <script lang="ts">
+import { ClockSignalTreeItem } from '$lib/canvas/ClockSignalTreeItem';
+import { CounterSignalTreeItem } from '$lib/canvas/CounterSignalTreeItem';
+import { TimelineTreeItem } from '$lib/canvas/TimelineTreeItem';
+import { TreeItem } from '$lib/canvas/TreeItem.svelte';
 import ItemsTree from '$lib/components/Tree/InfoTree/InfoTree.svelte';
 import SignalsTree from '$lib/components/Tree/SignalsTree/SignalsTree.svelte';
 import * as Resizable from '$lib/components/ui/resizable/index.js';
+
+// biome-ignore format:
+export const root = $state(
+  new TimelineTreeItem("filename", [
+    new TreeItem("clocks", [
+      new ClockSignalTreeItem("01"),
+      new ClockSignalTreeItem("0001", 4, 3),
+      new ClockSignalTreeItem("1000", 4, 3, 1),
+      new ClockSignalTreeItem("1100", 4, 2, 2),
+    ]),
+    new TreeItem("counters", [
+      new CounterSignalTreeItem("01234", 0, 1, 5),
+    ]),
+  ])
+);
 </script>
 
 <Resizable.PaneGroup autoSaveId="swell" direction="horizontal" class="h-full">
   <Resizable.Pane defaultSize={30} class="min-w-32">
-    <ItemsTree />
+    <ItemsTree {root}/>
   </Resizable.Pane>
 
   <Resizable.Handle withHandle={true} />
 
   <Resizable.Pane>
-    <SignalsTree />
+    <SignalsTree {root}/>
   </Resizable.Pane>
 </Resizable.PaneGroup>

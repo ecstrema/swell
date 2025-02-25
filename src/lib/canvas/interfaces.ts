@@ -2,7 +2,8 @@ export type ValueChange = [number, number];
 export type ChangesGenerator = (start: number) => Generator<ValueChange>;
 
 export interface Paintable {
-  paint: (ctx: CanvasRenderingContext2D) => void;
+  ctx: CanvasRenderingContext2D | undefined;
+  paint: () => void;
 }
 
 export function isPaintable(t: unknown): t is Paintable {

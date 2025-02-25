@@ -4,7 +4,8 @@ import { signalCanvas } from '$lib/data/signalCanvas.svelte';
 
 const { paint }: { paint: (ctx: CanvasRenderingContext2D) => void } = $props();
 
-const canvas: HTMLCanvasElement | null = null;
+// biome-ignore lint: this is reassigned by svelte
+let canvas: HTMLCanvasElement | null = null;
 
 function requestPaint() {
   function doPaint() {

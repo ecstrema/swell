@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { TreeItem } from '$lib/canvas/TreeItem.svelte';
+import { TreeItem } from '$lib/canvas/TreeItem.svelte';
 import { isPaintable } from '$lib/canvas/interfaces';
 import { config } from '$lib/data/config.svelte';
 import Canvas from './Canvas.svelte';

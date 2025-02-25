@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { TreeItem } from '$lib/canvas/TreeItem.svelte';
+import { TreeItem } from '$lib/canvas/TreeItem.svelte';
 import * as Collapsible from '$lib/components/ui/collapsible';
 import { config } from '$lib/data/config.svelte';
 import Label from '../Label.svelte';

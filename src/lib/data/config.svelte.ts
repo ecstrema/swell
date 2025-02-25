@@ -1,21 +1,21 @@
-import { AnimatedState, getAnimate } from "$lib/animate.svelte";
-import { bound } from "$lib/math";
-import { cubicIn } from "svelte/easing";
+import { AnimatedState, getAnimate } from '$lib/animate.svelte';
+import { bound } from '$lib/math';
+import { cubicIn } from 'svelte/easing';
 
 export class Config {
-  itemHeight = $state(26);
-  itemPadding = $state(4);
-  stripesItemCount = $state(1);
-  fontSize = $state(12);
-  treeIndent = $state(12);
-  lineWidth = $state(1);
-  representationPadding = $state(6);
-  timelinePixelBetweenTicks = $state(20);
-  timelineSecondaryTicksBetweenPrimary = $state(5);
+  itemHeight = 26;
+  itemPadding = 4;
+  stripesItemCount = 1;
+  fontSize = 12;
+  treeIndent = 12;
+  lineWidth = 1;
+  representationPadding = 6;
+  timelinePixelBetweenTicks = 20;
+  timelineSecondaryTicksBetweenPrimary = 5;
 
-  timeUnit = $state<"min" | "s" | "ms" | "us" | "ns" | "fs">("ns");
+  timeUnit : 'min' | 's' | 'ms' | 'us' | 'ns' | 'fs' = 'ns';
 
-  viewMargin = $state(1);
+  viewMargin = 1;
 
   viewStart = new AnimatedState(0, cubicIn, 100);
   viewEnd = new AnimatedState(100, cubicIn, 100);
@@ -41,7 +41,7 @@ export class Config {
       this.viewEnd.value = this.getViewMax();
       return;
     }
-     if (delta < 0 && this.viewStart.valueTarget + delta < this.getViewMin()) {
+    if (delta < 0 && this.viewStart.valueTarget + delta < this.getViewMin()) {
       this.viewStart.value = this.getViewMin();
       return;
     }
@@ -54,10 +54,10 @@ export class Config {
     return this.viewEnd.value - this.viewStart.value;
   };
 
-  minimumViewLength = $state(2);
+  minimumViewLength = 2;
 
-  simulationStart = $state(0);
-  simulationLength = $state(10_000);
+  simulationStart = 0;
+  simulationLength = 10_000;
   get simulationEnd() {
     return this.simulationStart + this.simulationLength;
   }
@@ -71,4 +71,4 @@ export class Config {
   };
 }
 
-export const config = new Config();
+export const config = $state(new Config());

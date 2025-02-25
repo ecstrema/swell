@@ -64,8 +64,8 @@ export class ClockSignalTreeItem extends StyledTreeItem implements A {
   *generatePeriods(time: number): Generator<ValueChange> {
     let t = time;
     while (true) {
-      yield [time, 0];
-      yield [time + this.lowPeriod, 1];
+      yield [t, 0];
+      yield [t + this.lowPeriod, 1];
       t += this.period;
     }
   }

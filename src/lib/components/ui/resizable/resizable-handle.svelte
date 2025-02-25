@@ -2,9 +2,9 @@
 import { cn } from '$lib/utils.js';
 import type { WithoutChildrenOrChild } from 'bits-ui';
 import GripVertical from 'lucide-svelte/icons/grip-vertical';
-import type * as ResizablePrimitive from 'paneforge';
+import  * as ResizablePrimitive from 'paneforge';
 
-const {
+let {
   ref = $bindable(null),
   class: className,
   withHandle = false,

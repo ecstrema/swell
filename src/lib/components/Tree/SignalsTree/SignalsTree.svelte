@@ -46,8 +46,15 @@ function updateView(e: WheelEvent) {
     const previousViewLength = config.getViewLength();
     const viewLength = bound(previousViewLength * 1.1 ** (e.deltaY / 100), config.minimumViewLength, config.getSimulationLength() + config.viewMargin * 2);
 
+    // if we are close to an edge, assume we zoom from this edge.
     const zoomFactor = viewLength / previousViewLength;
-    const centerTime = signalCanvas.xToTime(e.offsetX);
+    let offsetX = e.offsetX;
+    if (offsetX < config.scrollFromEdgeMargin) {
+      offsetX = 0;
+    } else if (offsetX > signalCanvas.pixelWidth - config.scrollFromEdgeMargin) {
+      offsetX = signalCanvas.pixelWidth;
+    }
+    const centerTime = signalCanvas.xToTime(offsetX);
 
     const zoomedViewStart = centerTime - (centerTime - config.viewStart) * zoomFactor;
     const pannedViewStart = zoomedViewStart + e.deltaX / signalCanvas.pixelsPerTimeUnit;

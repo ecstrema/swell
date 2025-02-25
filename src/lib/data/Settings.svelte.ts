@@ -14,6 +14,7 @@ export class Settings extends WaveSettings {
   timelineSecondaryTicksBetweenPrimary = $state(5);
   viewMargin = $state(1);
   minimumViewLength = $state(1);
+  scrollFromEdgeMargin = $state(20);
 
   getViewMax = () => {
     return this.simulationEnd + this.viewMargin;

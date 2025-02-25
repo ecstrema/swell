@@ -13,34 +13,21 @@
   function keyDown(e: KeyboardEvent) {
     let absScrollAmount = signalCanvas.dxToTime(signalCanvas.pixelWidth / 10);
 
-    let scrollAmount;
     if (e.key === "ArrowLeft") {
-      scrollAmount = -absScrollAmount;
+      config.scrollBy(-absScrollAmount);
     } else if (e.key === "ArrowRight") {
-      scrollAmount = absScrollAmount;
-    } else {
-      return;
+      config.scrollBy(absScrollAmount);
     }
-
-    config.viewStart = bound(
-      config.viewStart + scrollAmount,
-      -config.viewMargin,
-      config.simulationEnd - config.viewLength + config.viewMargin
-    );
   }
 
   function dragStart(e: MouseEvent) {
     dragging = true;
 
     const startX = e.clientX;
-    const startViewStart = config.viewStart;
+    const startViewStart = config.viewStart.value;
 
     function dragMove(e: MouseEvent) {
-      config.viewStart = bound(
-        startViewStart - (e.clientX - startX) / signalCanvas.pixelsPerTimeUnit,
-        -config.viewMargin,
-        config.simulationEnd - config.viewLength + config.viewMargin
-      );
+      config.scrollViewStartTo(startViewStart - signalCanvas.dxToTime(e.clientX - startX));
     }
 
     function dragEnd() {
@@ -56,30 +43,28 @@
 
   function updateView(e: WheelEvent) {
     if (e.shiftKey) {
-      config.viewStart = bound(
-        config.viewStart + e.deltaY / signalCanvas.pixelsPerTimeUnit,
-        -config.viewMargin,
-        config.simulationEnd - config.viewLength + config.viewMargin
-      );
+      config.scrollBy(signalCanvas.dxToTime(e.deltaY));
     } else {
-      const previousViewLength = config.viewLength;
-      config.viewLength = bound(
-        config.viewLength * 1.1 ** (e.deltaY / 100),
+      const previousViewLength = config.getViewLength();
+      const viewLength = bound(
+        previousViewLength * 1.1 ** (e.deltaY / 100),
         config.minimumViewLength,
         config.simulationLength + config.viewMargin * 2
       );
 
-      const zoomFactor = config.viewLength / previousViewLength;
+      const zoomFactor = viewLength / previousViewLength;
       const centerTime = signalCanvas.xToTime(e.offsetX);
 
-      const zoomedViewStart = centerTime - (centerTime - config.viewStart) * zoomFactor;
+      const zoomedViewStart = centerTime - (centerTime - config.viewStart.animationTarget) * zoomFactor;
       const pannedViewStart = zoomedViewStart + e.deltaX / signalCanvas.pixelsPerTimeUnit
 
-      config.viewStart = bound(
+      config.viewStart.value = bound(
         pannedViewStart,
         -config.viewMargin,
-        config.simulationEnd - config.viewLength + config.viewMargin
+        config.simulationEnd - viewLength + config.viewMargin
       );
+
+      config.viewEnd.value = config.viewStart.value + viewLength;
     }
 
     e.preventDefault();
@@ -108,9 +93,9 @@
   onkeydown={(e) => keyDown(e)}
   role="scrollbar"
   aria-controls="signals"
-  aria-valuenow={config.viewStart}
+  aria-valuenow={config.viewStart.animationTarget}
   aria-valuemin={config.simulationStart - config.viewMargin}
-  aria-valuemax={config.simulationEnd - config.viewLength + config.viewMargin}
+  aria-valuemax={config.simulationEnd - config.getViewLength() + config.viewMargin}
   tabindex="0"
 >
   <Item item={root} />

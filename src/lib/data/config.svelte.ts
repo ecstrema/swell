@@ -1,3 +1,5 @@
+import { AnimatedState, getAnimate } from "$lib/animate.svelte";
+import { bound } from "$lib/math";
 import { cubicIn } from "svelte/easing";
 
 export class Config {
@@ -15,41 +17,42 @@ export class Config {
 
   viewMargin = $state(1);
 
-  #viewStart = $state(0);
-  animateViewStart = $state(false);
+  viewStart = new AnimatedState(0, cubicIn, 100);
+  viewEnd = new AnimatedState(100, cubicIn, 100);
 
-  get viewStart() {
-    return this.#viewStart;
+  getViewMax = () => {
+    return this.simulationEnd + this.viewMargin;
+  };
+
+  getViewMin = () => {
+    return this.simulationStart - this.viewMargin;
+  };
+
+  scrollViewStartTo(time: number) {
+    const newViewStart = bound(time, this.getViewMin(), this.viewStart.value + this.viewMargin);
+    const delta = newViewStart - this.viewStart.value;
+    this.viewStart.value += delta;
+    this.viewEnd.value += delta;
   }
 
-  set viewStart(value: number) {
-    if (!this.animateViewStart) {
-      this.#viewStart = value;
-    } else {
-      const transitionStart = this.#viewStart;
-      const transitionEnd = value;
-      const duration = 200;
-      const startTime = Date.now();
-      const endTime = startTime + duration;
-      const animate = () => {
-        const now = Date.now();
-        if (now > endTime) {
-          this.#viewStart = transitionEnd;
-          return;
-        }
-        const progress = cubicIn((now - startTime) / duration);
-        this.#viewStart = transitionStart + (transitionEnd - transitionStart) * progress;
-        requestAnimationFrame(animate);
-      };
-      animate();
+  scrollBy = (delta: number) => {
+    if (delta > 0 && this.viewEnd.value + delta > this.getViewMax()) {
+      this.viewEnd.value = this.getViewMax();
+      return;
+    } else if (delta < 0 && this.viewStart.value + delta < this.getViewMin()) {
+      this.viewStart.value = this.getViewMin();
+      return;
     }
-  }
 
-  viewLength = $state(100);
+    this.viewStart.value += delta;
+    this.viewEnd.value += delta;
+  };
+
+  getViewLength = () => {
+    return this.viewEnd.value - this.viewStart.value;
+  };
+
   minimumViewLength = $state(2);
-  get viewEnd() {
-    return this.viewStart + this.viewLength;
-  }
 
   simulationStart = $state(0);
   simulationLength = $state(10_000);
@@ -58,11 +61,11 @@ export class Config {
   }
 
   getDrawStart = () => {
-    return Math.max(config.simulationStart, config.viewStart);
+    return Math.max(config.simulationStart, config.viewStart.value);
   };
 
   getDrawEnd = () => {
-    return Math.min(config.simulationEnd, config.viewEnd);
+    return Math.min(config.simulationEnd, config.viewEnd.value);
   };
 }
 

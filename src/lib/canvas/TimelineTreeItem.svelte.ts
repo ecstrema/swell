@@ -15,7 +15,7 @@ export class TimelineTreeItem extends TreeItem implements A {
   primaryStep = $derived.by(() => {
     const tickCount =
       signalCanvas.pixelWidth / config.timelinePixelBetweenTicks;
-    const tickInterval = config.viewLength / tickCount;
+    const tickInterval = config.getViewLength() / tickCount;
     const idealSecondaryStep = 10 ** Math.ceil(Math.log10(tickInterval));
     return idealSecondaryStep * config.timelineSecondaryTicksBetweenPrimary;
   });
@@ -40,7 +40,7 @@ export class TimelineTreeItem extends TreeItem implements A {
     type: "primary" | "secondary";
     value: number;
   }> {
-    let t = this.getNextSecondaryTick(config.viewStart);
+    let t = this.getNextSecondaryTick(config.viewStart.value);
 
     while (true) {
       yield {
@@ -68,7 +68,7 @@ export class TimelineTreeItem extends TreeItem implements A {
     const secondaryTickEnd = config.itemHeight - config.itemPadding;
 
     for (const { type, value } of this.generateTicks()) {
-      if (value > config.viewEnd) break;
+      if (value > config.viewEnd.value) break;
       const x = signalCanvas.timeToX(value);
 
       ctx.moveTo(x, config.itemPadding);

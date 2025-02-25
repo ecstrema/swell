@@ -8,8 +8,6 @@
   import { bound } from "$lib/math";
   import Item from "./Item.svelte";
 
-  let dragging = $state(false);
-
   function keyDown(e: KeyboardEvent) {
     let absScrollAmount = signalCanvas.dxToTime(signalCanvas.pixelWidth / 10);
 
@@ -21,7 +19,6 @@
   }
 
   function dragStart(e: MouseEvent) {
-    dragging = true;
 
     const startX = e.clientX;
     const startViewStart = config.viewStart.value;
@@ -31,7 +28,6 @@
     }
 
     function dragEnd() {
-      dragging = false;
       window.removeEventListener("mousemove", dragMove);
       window.removeEventListener("mouseup", dragEnd);
     }

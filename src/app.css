@@ -75,13 +75,6 @@
 }
 
 .stripes {
-  background: linear-gradient(
-    to bottom,
-    hsl(var(--background)),
-    hsl(var(--background)) 50%,
-    color-mix(in srgb, hsl(var(--background)), white 5%) 50%,
-    color-mix(in srgb, hsl(var(--background)), white 5%)
-  );
-  background-size: 100%
-    calc(var(--stripes-item-count, 1) * 2 * var(--stripes-height, 26px));
+  background: linear-gradient(to bottom, hsl(var(--background)), hsl(var(--background)) 50%, color-mix(in srgb, hsl(var(--background)), white 5%) 50%, color-mix(in srgb, hsl(var(--background)), white 5%));
+  background-size: 100% calc(var(--stripes-item-count, 1) * 2 * var(--stripes-height, 26px));
 }

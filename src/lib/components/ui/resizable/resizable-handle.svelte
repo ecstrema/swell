@@ -1,17 +1,17 @@
 <script lang="ts">
-	import GripVertical from "lucide-svelte/icons/grip-vertical";
-	import * as ResizablePrimitive from "paneforge";
-	import type { WithoutChildrenOrChild } from "bits-ui";
-	import { cn } from "$lib/utils.js";
+import { cn } from '$lib/utils.js';
+import type { WithoutChildrenOrChild } from 'bits-ui';
+import GripVertical from 'lucide-svelte/icons/grip-vertical';
+import type * as ResizablePrimitive from 'paneforge';
 
-	let {
-		ref = $bindable(null),
-		class: className,
-		withHandle = false,
-		...restProps
-	}: WithoutChildrenOrChild<ResizablePrimitive.PaneResizerProps> & {
-		withHandle?: boolean;
-	} = $props();
+const {
+  ref = $bindable(null),
+  class: className,
+  withHandle = false,
+  ...restProps
+}: WithoutChildrenOrChild<ResizablePrimitive.PaneResizerProps> & {
+  withHandle?: boolean;
+} = $props();
 </script>
 
 <ResizablePrimitive.PaneResizer

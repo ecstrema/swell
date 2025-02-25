@@ -1,11 +1,11 @@
 <script lang="ts">
-  import * as Collapsible from "$lib/components/ui/collapsible";
-  import type { TreeItem } from "$lib/canvas/TreeItem.svelte";
-  import Item from "./Item.svelte";
-  import Label from "../Label.svelte";
-  import { config } from "$lib/data/config.svelte";
+import type { TreeItem } from '$lib/canvas/TreeItem.svelte';
+import * as Collapsible from '$lib/components/ui/collapsible';
+import { config } from '$lib/data/config.svelte';
+import Label from '../Label.svelte';
+import Item from './Item.svelte';
 
-  const { item }: { item: TreeItem } = $props();
+const { item }: { item: TreeItem } = $props();
 </script>
 
 {#snippet label()}

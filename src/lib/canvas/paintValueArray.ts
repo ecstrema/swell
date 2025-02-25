@@ -1,20 +1,13 @@
-import { config } from "$lib/data/config.svelte";
-import { signalCanvas } from "$lib/data/signalCanvas.svelte";
-import type { ChangesGenerator } from "./interfaces";
+import { config } from '$lib/data/config.svelte';
+import { signalCanvas } from '$lib/data/signalCanvas.svelte';
+import type { ChangesGenerator } from './interfaces';
 
-export const paintBitArray = (
-  ctx: CanvasRenderingContext2D,
-  getChanges: ChangesGenerator,
-  textColor: string,
-  lineColor: string
-) => {
+export const paintBitArray = (ctx: CanvasRenderingContext2D, getChanges: ChangesGenerator, textColor: string, lineColor: string) => {
   ctx.font = `${config.fontSize}px monospace`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle"
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
 
-  const foregroundHSL = window
-    .getComputedStyle(ctx.canvas)
-    .getPropertyValue("--foreground");
+  const foregroundHSL = window.getComputedStyle(ctx.canvas).getPropertyValue('--foreground');
   const foreground = `hsl(${foregroundHSL})`;
   ctx.fillStyle = foreground;
 
@@ -42,11 +35,11 @@ export const paintBitArray = (
     const x1 = signalCanvas.timeToX(t);
     const hCenter = (x1 + x0) / 2;
     if (t > drawEnd) {
-      ctx.textAlign = "end";
+      ctx.textAlign = 'end';
       const s = v.toString();
       const width = ctx.measureText(s).width;
       const normalCenterTextEnd = hCenter + width / 2;
-      ctx.fillText(v.toString(), Math.max(x0 + width + config.representationPadding, Math.min(normalCenterTextEnd, drawEndX - config.representationPadding)), vCenter)
+      ctx.fillText(v.toString(), Math.max(x0 + width + config.representationPadding, Math.min(normalCenterTextEnd, drawEndX - config.representationPadding)), vCenter);
       break;
     }
     ctx.fillText(v.toString(), hCenter, vCenter);

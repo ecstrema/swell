@@ -6,9 +6,12 @@ export class TreeItem {
 
   hasChildren = () => {
     return this.children.length > 0;
-  }
+  };
 
-  constructor(public name: string, children: TreeItem[] = []) {
+  constructor(
+    public name: string,
+    children: TreeItem[] = [],
+  ) {
     this.children = children;
   }
 

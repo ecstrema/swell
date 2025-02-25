@@ -3,12 +3,8 @@ type EasingFunction = (x: number) => number;
 export const getAnimate = (easingFunction: EasingFunction) => {
   const stop = { value: false };
   return {
-    animate: (
-      start: number,
-      end: number,
-      duration: number,
-      callback: (x: number) => boolean | void
-    ) => {
+    // biome-ignore lint: void in an union, since this is a return type.
+    animate: (start: number, end: number, duration: number, callback: (x: number) => boolean | void) => {
       const startTime = Date.now();
       const endTime = startTime + duration;
       const stepAnimation = () => {
@@ -39,7 +35,7 @@ export class AnimatedState {
     initialValue: number,
     easingFunction: EasingFunction,
     public duration: number,
-    public animationEnabled = true
+    public animationEnabled = true,
   ) {
     this.#value = initialValue;
     this.#valueTarget = initialValue;

@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { config } from "$lib/data/config.svelte";
+import { config } from '$lib/data/config.svelte';
 
-  const { children } = $props();
+const { children } = $props();
 </script>
 
 <div

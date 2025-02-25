@@ -1,12 +1,8 @@
-import {
-  bound,
-  normalizedLinearInterpolation,
-  positiveModulo,
-} from "$lib/math";
-import { config } from "$lib/data/config.svelte";
-import { signalCanvas } from "$lib/data/signalCanvas.svelte";
-import { StyledTreeItem } from "./StyledTreeItem";
-import type { Paintable, Signal, ValueChange } from "./interfaces";
+import { config } from '$lib/data/config.svelte';
+import { signalCanvas } from '$lib/data/signalCanvas.svelte';
+import { bound, normalizedLinearInterpolation, positiveModulo } from '$lib/math';
+import { StyledTreeItem } from './StyledTreeItem';
+import type { Paintable, Signal, ValueChange } from './interfaces';
 
 type A = Paintable & Signal;
 
@@ -14,9 +10,9 @@ export class ClockSignalTreeItem extends StyledTreeItem implements A {
   // The clock starts low at time offset, and is high for dutyCycle * period
   constructor(
     name: string,
-    public period: number = 2,
+    public period = 2,
     public lowPeriod = 1,
-    public offset = 0
+    public offset = 0,
   ) {
     super(name);
   }
@@ -28,10 +24,7 @@ export class ClockSignalTreeItem extends StyledTreeItem implements A {
     const one = signalCanvas.getSignalBottom();
 
     const toXY = (valueChange: ValueChange) => {
-      return [
-        signalCanvas.timeToX(valueChange[0]),
-        normalizedLinearInterpolation(valueChange[1], zero, one),
-      ];
+      return [signalCanvas.timeToX(valueChange[0]), normalizedLinearInterpolation(valueChange[1], zero, one)];
     };
 
     const drawStart = config.getDrawStart();
@@ -69,10 +62,11 @@ export class ClockSignalTreeItem extends StyledTreeItem implements A {
   };
 
   *generatePeriods(time: number): Generator<ValueChange> {
+    let t = time;
     while (true) {
       yield [time, 0];
       yield [time + this.lowPeriod, 1];
-      time += this.period;
+      t += this.period;
     }
   }
 

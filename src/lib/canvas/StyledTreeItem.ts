@@ -1,24 +1,13 @@
-import { config } from "$lib/data/config.svelte";
-import { signalCanvas } from "$lib/data/signalCanvas.svelte";
-import { TreeItem } from "./TreeItem.svelte";
+import { config } from '$lib/data/config.svelte';
+import { signalCanvas } from '$lib/data/signalCanvas.svelte';
+import { TreeItem } from './TreeItem.svelte';
 
 export class StyledTreeItem extends TreeItem {
-  static baseColors = [
-    "red",
-    "green",
-    "blue",
-    "yellow",
-    "purple",
-    "orange",
-    "cyan",
-    "magenta",
-  ];
+  static baseColors = ['red', 'green', 'blue', 'yellow', 'purple', 'orange', 'cyan', 'magenta'];
 
   static #itemCount = 0;
 
-  #color = StyledTreeItem.baseColors[
-      StyledTreeItem.#itemCount++ % StyledTreeItem.baseColors.length
-    ]
+  #color = StyledTreeItem.baseColors[StyledTreeItem.#itemCount++ % StyledTreeItem.baseColors.length];
 
   get color() {
     return this.#color;

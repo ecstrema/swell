@@ -1,12 +1,11 @@
 <script lang="ts">
-  import { isPaintable } from "$lib/canvas/interfaces";
-  import type { TreeItem } from "$lib/canvas/TreeItem.svelte";
-  import { config } from "$lib/data/config.svelte";
-  import Canvas from "./Canvas.svelte";
-  import Item from "./Item.svelte";
+import type { TreeItem } from '$lib/canvas/TreeItem.svelte';
+import { isPaintable } from '$lib/canvas/interfaces';
+import { config } from '$lib/data/config.svelte';
+import Canvas from './Canvas.svelte';
+import Item from './Item.svelte';
 
-  const { item }: { item: TreeItem } = $props();
-
+const { item }: { item: TreeItem } = $props();
 </script>
 
 {#if isPaintable(item)}

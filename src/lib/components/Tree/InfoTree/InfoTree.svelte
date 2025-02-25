@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { config } from "$lib/data/config.svelte";
-  import { root } from "$lib/data/signals.svelte";
-  import Item from "./Item.svelte";
+import { config } from '$lib/data/config.svelte';
+import { root } from '$lib/data/signals.svelte';
+import Item from './Item.svelte';
 </script>
 
 <div

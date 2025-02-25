@@ -1,5 +1,5 @@
-import { devicePixelRatio } from "svelte/reactivity/window";
-import { config } from "$lib/data/config.svelte";
+import { config } from '$lib/data/config.svelte';
+import { devicePixelRatio } from 'svelte/reactivity/window';
 
 export class SignalCanvas {
   /** Whether the canvas should be repaint during the next frame. */
@@ -11,9 +11,7 @@ export class SignalCanvas {
   /** Because of the devicePixelratio, a single pixel unit is more than 1 pixel on screen. */
   pixelWidth = $derived.by(() => this.width * (devicePixelRatio.current || 1));
   /** @see pixelWidth */
-  pixelHeight = $derived.by(
-    () => config.itemHeight * (devicePixelRatio.current || 1)
-  );
+  pixelHeight = $derived.by(() => config.itemHeight * (devicePixelRatio.current || 1));
   /** Based on config.viewWidth, this is the ratio from a pixel to a unit of time. */
   pixelsPerTimeUnit = $derived.by(() => this.pixelWidth / config.getViewLength());
 
@@ -24,11 +22,11 @@ export class SignalCanvas {
 
   dxToTime = (dx: number) => {
     return dx / this.pixelsPerTimeUnit;
-  }
+  };
 
   xToTime = (x: number) => {
     return this.dxToTime(x) + config.viewStart.value;
-  }
+  };
 
   /** A signal's representation should not draw above this line. */
   getSignalTop = () => {
@@ -37,10 +35,7 @@ export class SignalCanvas {
 
   /** A signal's representation should not draw below this line. */
   getSignalBottom = () => {
-    return (
-      ((config.itemHeight - config.itemPadding) / config.itemHeight) *
-      this.pixelHeight
-    );
+    return ((config.itemHeight - config.itemPadding) / config.itemHeight) * this.pixelHeight;
   };
 }
 

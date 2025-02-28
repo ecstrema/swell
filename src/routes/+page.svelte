@@ -1,33 +1,35 @@
 <script lang="ts">
-import { ClockSignalTreeItem } from '$lib/canvas/ClockSignalTreeItem';
-import { CounterSignalTreeItem } from '$lib/canvas/CounterSignalTreeItem';
-import { TimelineTreeItem } from '$lib/canvas/TimelineTreeItem';
+import { getTimelinePainter } from '$lib/canvas/TimelineTreeItem';
 import { TreeItem } from '$lib/canvas/TreeItem.svelte';
 import ItemsTree from '$lib/components/Tree/InfoTree/InfoTree.svelte';
 import SignalsTree from '$lib/components/Tree/SignalsTree/SignalsTree.svelte';
 import * as Resizable from '$lib/components/ui/resizable/index.js';
+import { SwellState } from '$lib/data/SwellState.svelte';
+
+const state = new SwellState();
+
+const voidFn = () => {};
 
 // biome-ignore format:
 export const root = $state(
-  new TimelineTreeItem("filename", [
-    new TreeItem("clocks", [
-      new ClockSignalTreeItem("01"),
-      new ClockSignalTreeItem("0001", 4, 3),
-      new ClockSignalTreeItem("1000", 4, 3, 1),
-      new ClockSignalTreeItem("1100", 4, 2, 2),
-      new ClockSignalTreeItem("01"),
-      new ClockSignalTreeItem("0001", 4, 3),
-      new ClockSignalTreeItem("1000", 4, 3, 1),
-      new ClockSignalTreeItem("1100", 4, 2, 2),
-    ]),
-    new TreeItem("counters", [
-      new CounterSignalTreeItem("01234", 0, 1, 5),
-      new CounterSignalTreeItem("01234", 0, 2, 5),
-      new CounterSignalTreeItem("01234", 0, 1, 5),
-      new CounterSignalTreeItem("01234", 0, 1, 5),
-      new CounterSignalTreeItem("01234", 0, 1, 5),
-    ]),
-  ])
+  new TreeItem({name: "filename", state: state, painter: getTimelinePainter(state), children: [
+
+  ]})
+  // new TimelineTreeItem("filename", [
+  //   new TreeItem("clocks", [
+  //     new ClockSignalTreeItem("01"),
+  //     new ClockSignalTreeItem("0001", 4, 3),
+  //     new ClockSignalTreeItem("1000", 4, 3, 1),
+  //     new ClockSignalTreeItem("1100", 4, 2, 2),
+  //     new ClockSignalTreeItem("01"),
+  //     new ClockSignalTreeItem("0001", 4, 3),
+  //     new ClockSignalTreeItem("1000", 4, 3, 1),
+  //     new ClockSignalTreeItem("1100", 4, 2, 2),
+  //   ]),
+  //   new TreeItem("counters", [
+  //     new CounterSignalTreeItem("01234", 0, 1, 5),
+  //   ]),
+  // ])
 );
 </script>
 

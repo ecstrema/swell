@@ -1,19 +1,22 @@
 <script lang="ts">
 import { mode } from 'mode-watcher';
 
-import { signalCanvas } from '$lib/data/Canvas.svelte';
 import { bound } from '$lib/math';
 import Item from './Item.svelte';
-import { swellState } from '$lib/data/SwellState.svelte';
 import { TreeItem } from '$lib/canvas/TreeItem.svelte';
 import Cursor from '$lib/components/Cursor.svelte';
+import type { SwellState } from '$lib/data/SwellState.svelte';
+import { getContext } from 'svelte';
 
-const config = $derived.by(() => swellState.settings);
+const swellState = getContext<SwellState>('swellState');
+
+const config = swellState.settings;
+const signalsCanvas = swellState.temp.signalsCanvas;
 
 const { root }: { root: TreeItem } = $props();
 
 function keyDown(e: KeyboardEvent) {
-  const absScrollAmount = signalCanvas.dxToTime(signalCanvas.width / 10);
+  const absScrollAmount = signalsCanvas.dxToTime(signalsCanvas.width / 10);
 
   if (e.key === 'ArrowLeft') {
     config.scrollBy(-absScrollAmount);
@@ -27,7 +30,7 @@ function dragStart(e: MouseEvent) {
   const startViewStart = config.viewStart;
 
   function dragMove(e: MouseEvent) {
-    config.scrollViewStartTo(startViewStart - signalCanvas.dxToTime(e.clientX - startX));
+    config.scrollViewStartTo(startViewStart - signalsCanvas.dxToTime(e.clientX - startX));
   }
 
   function dragEnd() {
@@ -41,7 +44,7 @@ function dragStart(e: MouseEvent) {
 
 function updateView(e: WheelEvent) {
   if (e.shiftKey) {
-    config.scrollBy(signalCanvas.dxToTime(e.deltaY));
+    config.scrollBy(signalsCanvas.dxToTime(e.deltaY));
   } else {
     const previousViewLength = config.getViewLength();
     const viewLength = bound(previousViewLength * 1.1 ** (e.deltaY / 100), config.minimumViewLength, config.getSimulationLength() + config.viewMargin * 2);
@@ -51,13 +54,13 @@ function updateView(e: WheelEvent) {
     let offsetX = e.offsetX;
     if (offsetX < config.scrollFromEdgeMargin) {
       offsetX = 0;
-    } else if (offsetX > signalCanvas.pixelWidth - config.scrollFromEdgeMargin) {
-      offsetX = signalCanvas.pixelWidth;
+    } else if (offsetX > signalsCanvas.pixelWidth - config.scrollFromEdgeMargin) {
+      offsetX = signalsCanvas.pixelWidth;
     }
-    const centerTime = signalCanvas.xToTime(offsetX);
+    const centerTime = signalsCanvas.xToTime(offsetX);
 
     const zoomedViewStart = centerTime - (centerTime - config.viewStart) * zoomFactor;
-    const pannedViewStart = zoomedViewStart + signalCanvas.dxToTime(e.deltaX);
+    const pannedViewStart = zoomedViewStart + signalsCanvas.dxToTime(e.deltaX);
 
     config.viewStart = bound(pannedViewStart, -config.viewMargin, config.simulationEnd - viewLength + config.viewMargin);
 
@@ -85,13 +88,13 @@ $effect(() => {
   config.simulationEnd;
 
   dirty = true;
-})
+});
 
 $effect(() => {
   if (dirty) {
     root.paintWithChildren();
   }
-})
+});
 
 mode.subscribe(() => {
   dirty = true;

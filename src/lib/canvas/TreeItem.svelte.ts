@@ -1,11 +1,34 @@
-import { signalCanvas } from '$lib/data/Canvas.svelte';
-import { isPaintable } from './interfaces';
+import type { SwellState } from '$lib/data/SwellState.svelte';
+import { isPaintable, type ChangesGenerator, type Painter } from './interfaces';
+
+
+
+export interface TreeItemParams {
+  name: string;
+  children?: TreeItem[];
+  state: SwellState;
+  painter: Painter;
+  changes?: ChangesGenerator;
+}
 
 export class TreeItem {
-  // TODO: any way to move this out of svelte's reactivity system?
   selected = $state(false);
   children: TreeItem[] = $state([]);
   expanded = $state(true);
+  name = $state('');
+
+  state: SwellState;
+  ctx: CanvasRenderingContext2D | undefined;
+  painter: Painter;
+  changes?: ChangesGenerator;
+
+  constructor({ name, children = [], state, painter, changes }: TreeItemParams) {
+    this.name = name;
+    this.children = children;
+    this.state = state;
+    this.painter = painter;
+    this.changes = changes;
+  }
 
   hasChildren = () => {
     return this.children.length > 0;
@@ -19,21 +42,16 @@ export class TreeItem {
   }
 
   paintWithChildren = () => {
+    const pixelHeight = this.state.temp.signalsCanvas.pixelHeight;
+    const pixelWidth = this.state.temp.signalsCanvas.pixelWidth;
     for (const node of this.iterate()) {
       if (isPaintable(node) && node.ctx) {
-        node.ctx.canvas.height = signalCanvas.pixelHeight;
-        node.ctx.canvas.width = signalCanvas.pixelWidth;
-        node.paint();
+        node.ctx.canvas.height = pixelHeight;
+        node.ctx.canvas.width = pixelWidth;
+        node.paint({ ctx: node.ctx, changes: node.changes, state: this.state });
       }
     }
   };
-
-  constructor(
-    public name: string,
-    children: TreeItem[] = [],
-  ) {
-    this.children = children;
-  }
 
   toggleSelected = () => {
     this.selected = !this.selected;

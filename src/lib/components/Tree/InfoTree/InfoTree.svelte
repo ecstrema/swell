@@ -1,11 +1,14 @@
 <script lang="ts">
   import type { TreeItem } from '$lib/canvas/TreeItem.svelte';
-import { swellState } from '$lib/data/SwellState.svelte';
-import Item from './Item.svelte';
+  import { getContext } from 'svelte';
+  import Item from './Item.svelte';
+  import type { SwellState } from '$lib/data/SwellState.svelte';
 
 const { root } : { root: TreeItem } = $props();
 
-const config = $derived.by(() => swellState.settings);
+const swellState = getContext<SwellState>('swellState');
+
+const config = swellState.settings;
 </script>
 
 <div

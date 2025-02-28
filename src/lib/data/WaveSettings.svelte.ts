@@ -14,12 +14,4 @@ export class WaveSettings {
   getViewLength = () => {
     return this.viewEnd - this.viewStart;
   };
-
-  getDrawStart = () => {
-    return Math.max(this.simulationStart, this.viewStart);
-  };
-
-  getDrawEnd = () => {
-    return Math.min(this.simulationEnd, this.viewEnd);
-  };
 }

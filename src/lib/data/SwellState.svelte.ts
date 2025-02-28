@@ -3,7 +3,9 @@ import { TempState } from './TempState.svelte';
 
 export class SwellState {
     settings = new SwellSettings()
-    temp = new TempState()
-}
+    temp: TempState
 
-export const swellState = new SwellState();
+    constructor() {
+        this.temp = new TempState(this.settings)
+    }
+}

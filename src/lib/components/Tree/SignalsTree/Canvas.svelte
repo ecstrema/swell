@@ -1,10 +1,9 @@
 <script lang="ts">
-import type { Paintable } from '$lib/canvas/interfaces';
-import { swellState } from '$lib/data/SwellState.svelte';
-import { signalCanvas } from '$lib/data/Canvas.svelte';
-import { onMount } from 'svelte';
+import { getContext, onMount } from 'svelte';
+import type { TreeItem } from '$lib/canvas/TreeItem.svelte';
+import type { SwellState } from '$lib/data/SwellState.svelte';
 
-const { item }: { item: Paintable } = $props();
+const { item }: { item: TreeItem } = $props();
 
 let canvas: HTMLCanvasElement | null = null;
 
@@ -21,11 +20,13 @@ onMount(() => {
   };
   setCtx();
 });
+
+const swellState = getContext<SwellState>('swellState');
 </script>
 
 <canvas
   bind:this={canvas}
-  bind:clientWidth={signalCanvas.width}
+  bind:clientWidth={swellState.temp.signalsCanvas.width}
   class="w-full"
   style:height={`${swellState.settings.itemHeight}px`}
 ></canvas>

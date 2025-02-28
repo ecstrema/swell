@@ -1,7 +1,10 @@
 <script lang="ts">
-  import { swellState } from "$lib/data/SwellState.svelte";
+import { SwellState } from '$lib/data/SwellState.svelte';
+import { getContext } from 'svelte';
 
 const { children } = $props();
+
+const swellState = getContext<SwellState>('swellState');
 </script>
 
 <div

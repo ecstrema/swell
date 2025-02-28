@@ -1,3 +1,6 @@
+import { signalCanvas } from '$lib/data/Canvas.svelte';
+import { isPaintable } from './interfaces';
+
 export class TreeItem {
   // TODO: any way to move this out of svelte's reactivity system?
   selected = $state(false);
@@ -14,6 +17,16 @@ export class TreeItem {
       yield* child.iterate();
     }
   }
+
+  paintWithChildren = () => {
+    for (const node of this.iterate()) {
+      if (isPaintable(node) && node.ctx) {
+        node.ctx.canvas.height = signalCanvas.pixelHeight;
+        node.ctx.canvas.width = signalCanvas.pixelWidth;
+        node.paint();
+      }
+    }
+  };
 
   constructor(
     public name: string,

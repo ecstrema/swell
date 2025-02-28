@@ -5,7 +5,6 @@ import { signalCanvas } from '$lib/data/Canvas.svelte';
 import { bound } from '$lib/math';
 import Item from './Item.svelte';
 import { swellState } from '$lib/data/SwellState.svelte';
-import { isPaintable } from '$lib/canvas/interfaces';
 import { TreeItem } from '$lib/canvas/TreeItem.svelte';
 import Cursor from '$lib/components/Cursor.svelte';
 
@@ -90,13 +89,7 @@ $effect(() => {
 
 $effect(() => {
   if (dirty) {
-    for (const item of root.iterate()) {
-      if (isPaintable(item) && item.ctx) {
-        item.ctx.canvas.height = signalCanvas.pixelHeight;
-        item.ctx.canvas.width = signalCanvas.pixelWidth;
-        item.paint();
-      }
-    }
+    root.paintWithChildren();
   }
 })
 

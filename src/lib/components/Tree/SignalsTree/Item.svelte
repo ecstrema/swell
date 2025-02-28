@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { StyledTreeItem } from '$lib/canvas/StyledTreeItem';
 import { TreeItem } from '$lib/canvas/TreeItem.svelte';
 import { isPaintable } from '$lib/canvas/interfaces';
 import { swellState } from '$lib/data/SwellState.svelte';
@@ -6,6 +7,27 @@ import Canvas from './Canvas.svelte';
 import Item from './Item.svelte';
 
 const { item }: { item: TreeItem } = $props();
+
+let dirty = $state(false);
+
+$effect(() => {
+  item.children;
+  item.expanded;
+  item.selected;
+
+  if (item instanceof StyledTreeItem) {
+    item.color;
+  }
+
+  dirty = true;
+})
+
+$effect(() => {
+  if (dirty) {
+    item.paintWithChildren();
+  }
+})
+
 </script>
 
 {#if isPaintable(item)}

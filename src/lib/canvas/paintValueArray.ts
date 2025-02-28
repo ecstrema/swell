@@ -1,6 +1,6 @@
 import { swellState } from '$lib/data/SwellState.svelte';
-import { signalCanvas } from '$lib/data/Canvas.svelte';
-import type { ChangesGenerator } from './interfaces';
+import { SignalCanvas, signalCanvas } from '$lib/data/Canvas.svelte';
+import type { ChangesGenerator, SignalValue } from './interfaces';
 
 export const paintBitArray = (ctx: CanvasRenderingContext2D, getChanges: ChangesGenerator) => {
   ctx.font = `${swellState.settings.fontSize}px monospace`;
@@ -29,27 +29,43 @@ export const paintBitArray = (ctx: CanvasRenderingContext2D, getChanges: Changes
 
   const changesGenerator = getChanges(drawStart);
   let x0 = 0;
+  let v0: SignalValue = null;
   let valueChange = changesGenerator.next();
   while (!valueChange.done) {
     const [t, v] = valueChange.value;
     const x1 = signalCanvas.timeToX(t);
-    const hCenter = (x1 + x0) / 2;
-    if (v !== null) {
-      if (t > drawEnd) {
-        ctx.textAlign = 'end';
-        const s = v.toString();
-        const width = ctx.measureText(s).width;
-        const normalCenterTextEnd = hCenter + width / 2;
-        ctx.fillText(v.toString(), Math.max(x0 + width + swellState.settings.representationPadding, Math.min(normalCenterTextEnd, drawEndX - swellState.settings.representationPadding)), vCenter);
-        break;
+
+    if (v0 !== null) {
+      const horizontalCenter = (x0 + x1) / 2;
+      const s = v0.toString();
+      const textWidth = SignalCanvas.measureTextWidth(ctx, s);
+
+      const neededWidth = textWidth + 2 * swellState.settings.representationPadding;
+      const availableWidth = x1 - x0;
+      if (availableWidth >= neededWidth) {
+        if (t > drawEnd) {
+          ctx.textAlign = 'end';
+          const normalCenterTextEnd = horizontalCenter + textWidth / 2;
+          const maxEnd = drawEndX - swellState.settings.representationPadding;
+          const minEnd = x0 + textWidth + swellState.settings.representationPadding;
+          ctx.fillText(s, Math.max(minEnd, Math.min(maxEnd, normalCenterTextEnd)), vCenter);
+        } // No need to to handle draw start, as we do it before the loop
+        else {
+          ctx.fillText(s, horizontalCenter, vCenter);
+        }
       }
-      ctx.fillText(v.toString(), hCenter, vCenter);
     }
+
+    if (t >= drawEnd) {
+      break;
+    }
+
     ctx.moveTo(x1, top);
     ctx.lineTo(x1, bottom);
 
     valueChange = changesGenerator.next();
     x0 = x1;
+    v0 = v;
   }
 
   ctx.stroke();

@@ -9,7 +9,7 @@ export class SwellSettings extends WaveSettings {
   fontSize = $state(12);
   treeIndent = $state(12);
   lineWidth = $state(1);
-  representationPadding = $state(6);
+  representationPadding = $state(2);
   timelinePixelBetweenTicks = $state(20);
   timelineSecondaryTicksBetweenPrimary = $state(5);
   viewMargin = $state(1);

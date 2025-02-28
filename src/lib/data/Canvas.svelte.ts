@@ -1,5 +1,6 @@
 import { devicePixelRatio } from 'svelte/reactivity/window';
 import { swellState } from './SwellState.svelte';
+import { getCacheFunction } from '$lib/perf';
 
 /** Shared settings for the canvas */
 export class SignalCanvas {
@@ -38,6 +39,16 @@ export class SignalCanvas {
   getSignalBottom = () => {
     return ((swellState.settings.itemHeight - swellState.settings.itemPadding) / swellState.settings.itemHeight) * this.pixelHeight;
   };
+
+  static measureTextWidth = getCacheFunction(
+    (ctx: CanvasRenderingContext2D, text: string): number => {
+      const textMetrics = ctx.measureText(text);
+      // see https://developer.mozilla.org/en-US/docs/Web/API/TextMetrics#measuring_text_width
+      // return textMetrics.actualBoundingBoxLeft + textMetrics.actualBoundingBoxRight;
+      return textMetrics.width;
+    },
+    (ctx: CanvasRenderingContext2D, text: string) : string => `${ctx.font}-${text}`,
+  );
 }
 
 export const signalCanvas = new SignalCanvas();

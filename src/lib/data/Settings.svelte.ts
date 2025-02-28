@@ -15,6 +15,8 @@ export class Settings extends WaveSettings {
   viewMargin = $state(1);
   minimumViewLength = $state(1);
   scrollFromEdgeMargin = $state(20);
+  cursorWidth = $state(2);
+  cursorColor = $state('#AAA4');
 
   getViewMax = () => {
     return this.simulationEnd + this.viewMargin;

@@ -7,6 +7,7 @@ import Item from './Item.svelte';
 import { swellState } from '$lib/data/SwellState.svelte';
 import { isPaintable } from '$lib/canvas/interfaces';
 import { TreeItem } from '$lib/canvas/TreeItem.svelte';
+import Cursor from '$lib/components/Cursor.svelte';
 
 const config = $derived.by(() => swellState.config);
 
@@ -106,7 +107,7 @@ mode.subscribe(() => {
 
 <div
   style:--stripes-height={config.itemHeight + "px"}
-  class="stripes"
+  class="stripes relative"
   onwheel={(e) => updateView(e)}
   onmousedown={(e) => dragStart(e)}
   onkeydown={(e) => keyDown(e)}
@@ -117,5 +118,6 @@ mode.subscribe(() => {
   aria-valuemax={config.simulationEnd - config.getViewLength() + config.viewMargin}
   tabindex="0"
 >
+  <Cursor />
   <Item item={root} />
 </div>

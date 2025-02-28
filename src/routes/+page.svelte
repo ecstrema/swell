@@ -5,14 +5,13 @@ import ItemsTree from '$lib/components/Tree/InfoTree/InfoTree.svelte';
 import SignalsTree from '$lib/components/Tree/SignalsTree/SignalsTree.svelte';
 import * as Resizable from '$lib/components/ui/resizable/index.js';
 import { SwellState } from '$lib/data/SwellState.svelte';
+  import { setContext } from 'svelte';
 
-const state = new SwellState();
-
-const voidFn = () => {};
+const swellState = new SwellState();
 
 // biome-ignore format:
 export const root = $state(
-  new TreeItem({name: "filename", state: state, painter: getTimelinePainter(state), children: [
+  new TreeItem({name: "filename", state: swellState, painter: getTimelinePainter(swellState), children: [
 
   ]})
   // new TimelineTreeItem("filename", [
@@ -31,6 +30,8 @@ export const root = $state(
   //   ]),
   // ])
 );
+
+setContext("swellState", swellState);
 </script>
 
 <Resizable.PaneGroup autoSaveId="swell" direction="horizontal" class="h-full">

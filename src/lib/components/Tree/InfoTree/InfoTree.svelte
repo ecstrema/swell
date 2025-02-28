@@ -5,7 +5,7 @@ import Item from './Item.svelte';
 
 const { root } : { root: TreeItem } = $props();
 
-const config = $derived.by(() => swellState.config);
+const config = $derived.by(() => swellState.settings);
 </script>
 
 <div

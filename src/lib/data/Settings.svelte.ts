@@ -2,7 +2,7 @@ import { bound } from '$lib/math';
 import { WaveSettings } from './WaveSettings.svelte';
 
 /** These settings are global settings, not specific to a single simulation */
-export class Settings extends WaveSettings {
+export class SwellSettings extends WaveSettings {
   itemHeight = $state(26);
   itemPadding = $state(4);
   stripesItemCount = $state(1);

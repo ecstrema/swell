@@ -27,5 +27,5 @@ onMount(() => {
   bind:this={canvas}
   bind:clientWidth={signalCanvas.width}
   class="w-full"
-  style:height={`${swellState.config.itemHeight}px`}
+  style:height={`${swellState.settings.itemHeight}px`}
 ></canvas>

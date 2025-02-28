@@ -6,7 +6,7 @@ const { children } = $props();
 
 <div
   class="select-none font-medium"
-  style:font-size={`${swellState.config.fontSize}px`}
+  style:font-size={`${swellState.settings.fontSize}px`}
 >
   {@render children()}
 </div>

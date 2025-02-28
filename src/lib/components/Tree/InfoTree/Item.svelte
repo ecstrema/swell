@@ -6,7 +6,7 @@ import Label from '../Label.svelte';
 import Item from './Item.svelte';
 
 const { item }: { item: TreeItem } = $props();
-const config = $derived.by(() => swellState.config);
+const config = $derived.by(() => swellState.settings);
 </script>
 
 {#snippet label()}

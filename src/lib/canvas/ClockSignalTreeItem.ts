@@ -35,8 +35,8 @@ export class ClockSignalTreeItem extends StyledTreeItem implements A {
       return [signalCanvas.timeToX(valueChange[0]), normalizedLinearInterpolation(Number(valueChange[1]), zero, one)];
     };
 
-    const drawStart = swellState.config.getDrawStart();
-    const drawEnd = swellState.config.getDrawEnd();
+    const drawStart = swellState.settings.getDrawStart();
+    const drawEnd = swellState.settings.getDrawEnd();
 
     const changesGenerator = this.getChanges(drawStart);
     let valueChange = changesGenerator.next();

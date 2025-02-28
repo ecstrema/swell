@@ -7,7 +7,7 @@ type A = Paintable & LocalValued;
 
 export class TimelineTreeItem extends TreeItem implements A {
   static getStepsSize(): { primaryStep: number; secondaryStep: number } {
-    const config = swellState.config;
+    const config = swellState.settings;
     const tickCount = signalCanvas.pixelWidth / config.timelinePixelBetweenTicks;
     const tickInterval = config.getViewLength() / tickCount;
     const idealSecondaryStep = 10 ** Math.ceil(Math.log10(tickInterval));
@@ -37,7 +37,7 @@ export class TimelineTreeItem extends TreeItem implements A {
     type: 'primary' | 'secondary';
     value: number;
   }> {
-    let t = this.getNextSecondaryTick(swellState.config.viewStart);
+    let t = this.getNextSecondaryTick(swellState.settings.viewStart);
 
     const { primaryStep, secondaryStep } = TimelineTreeItem.getStepsSize();
     while (true) {
@@ -59,7 +59,7 @@ export class TimelineTreeItem extends TreeItem implements A {
     const foregroundHSL = window.getComputedStyle(this.ctx.canvas).getPropertyValue('--foreground');
     const foreground = `hsl(${foregroundHSL})`;
 
-    const config = swellState.config;
+    const config = swellState.settings;
 
     this.ctx.fillStyle = foreground;
     this.ctx.strokeStyle = foreground;

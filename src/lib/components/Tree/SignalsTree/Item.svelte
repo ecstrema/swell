@@ -12,7 +12,7 @@ const { item }: { item: TreeItem } = $props();
  <Canvas {item} />
 {:else}
   <div
-    style:height={`${swellState.config.itemHeight}px`}
+    style:height={`${swellState.settings.itemHeight}px`}
     class="w-full"
     ></div>
 {/if}

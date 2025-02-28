@@ -9,31 +9,34 @@ export class SignalCanvas {
   /** Because of the devicePixelratio, a single pixel unit is more than 1 pixel on screen. */
   pixelWidth = $derived.by(() => this.width * (devicePixelRatio.current || 1));
   /** @see pixelWidth */
-  pixelHeight = $derived.by(() => swellState.config.itemHeight * (devicePixelRatio.current || 1));
-  /** Based on swellState.config.viewWidth, this is the ratio from a pixel to a unit of time. */
-  pixelsPerTimeUnit = $derived.by(() => this.pixelWidth / swellState.config.getViewLength());
+  pixelHeight = $derived.by(() => swellState.settings.itemHeight * (devicePixelRatio.current || 1));
+  /** Based on the current viewLength (in time units), this is the ratio from a pixel to a unit of time. */
+  #realPxPerTimeUnit = $derived.by(() => this.pixelWidth / swellState.settings.getViewLength());
+  #fakePxPerTimeUnit = $derived.by(() => this.width / swellState.settings.getViewLength());
 
-  /** Convert from time to position in the canvas. */
+  /** Convert from time to position in the canvas. This uses real pixels, taking into account the device pixel ratio. */
   timeToX = (t: number) => {
-    return (t - swellState.config.viewStart) * this.pixelsPerTimeUnit;
+    return (t - swellState.settings.viewStart) * this.#realPxPerTimeUnit;
   };
 
+  /** transform a delta x in time units. This uses browser px, not taking into account the device's pixel ratio. */
   dxToTime = (dx: number) => {
-    return dx / this.pixelsPerTimeUnit;
+    return dx / this.#fakePxPerTimeUnit;
   };
 
+  /** Convert an x position in the canvas to a time. this uses browser px, not taking into account the device's pixel ratio. */
   xToTime = (x: number) => {
-    return this.dxToTime(x) + swellState.config.viewStart;
+    return this.dxToTime(x) + swellState.settings.viewStart;
   };
 
   /** A signal's representation should not draw above this line. */
   getSignalTop = () => {
-    return (swellState.config.itemPadding / swellState.config.itemHeight) * this.pixelHeight;
+    return (swellState.settings.itemPadding / swellState.settings.itemHeight) * this.pixelHeight;
   };
 
   /** A signal's representation should not draw below this line. */
   getSignalBottom = () => {
-    return ((swellState.config.itemHeight - swellState.config.itemPadding) / swellState.config.itemHeight) * this.pixelHeight;
+    return ((swellState.settings.itemHeight - swellState.settings.itemPadding) / swellState.settings.itemHeight) * this.pixelHeight;
   };
 }
 

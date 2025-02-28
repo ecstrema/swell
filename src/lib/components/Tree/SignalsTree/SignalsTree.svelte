@@ -9,12 +9,12 @@ import { isPaintable } from '$lib/canvas/interfaces';
 import { TreeItem } from '$lib/canvas/TreeItem.svelte';
 import Cursor from '$lib/components/Cursor.svelte';
 
-const config = $derived.by(() => swellState.config);
+const config = $derived.by(() => swellState.settings);
 
 const { root }: { root: TreeItem } = $props();
 
 function keyDown(e: KeyboardEvent) {
-  const absScrollAmount = signalCanvas.dxToTime(signalCanvas.pixelWidth / 10);
+  const absScrollAmount = signalCanvas.dxToTime(signalCanvas.width / 10);
 
   if (e.key === 'ArrowLeft') {
     config.scrollBy(-absScrollAmount);
@@ -58,7 +58,7 @@ function updateView(e: WheelEvent) {
     const centerTime = signalCanvas.xToTime(offsetX);
 
     const zoomedViewStart = centerTime - (centerTime - config.viewStart) * zoomFactor;
-    const pannedViewStart = zoomedViewStart + e.deltaX / signalCanvas.pixelsPerTimeUnit;
+    const pannedViewStart = zoomedViewStart + signalCanvas.dxToTime(e.deltaX);
 
     config.viewStart = bound(pannedViewStart, -config.viewMargin, config.simulationEnd - viewLength + config.viewMargin);
 
@@ -114,8 +114,8 @@ mode.subscribe(() => {
   role="scrollbar"
   aria-controls="signals"
   aria-valuenow={config.viewStart}
-  aria-valuemin={config.simulationStart - config.viewMargin}
-  aria-valuemax={config.simulationEnd - config.getViewLength() + config.viewMargin}
+  aria-valuemin={config.getViewMin()}
+  aria-valuemax={config.getViewMax() - config.getViewLength()}
   tabindex="0"
 >
   <Cursor />

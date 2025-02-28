@@ -9,6 +9,6 @@ export class StyledTreeItem extends TreeItem {
 
   setStyle = (ctx: CanvasRenderingContext2D) => {
     ctx.strokeStyle = this.color;
-    ctx.lineWidth = swellState.config.lineWidth;
+    ctx.lineWidth = swellState.settings.lineWidth;
   };
 }

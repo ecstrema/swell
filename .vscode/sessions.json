@@ -1,0 +1,30 @@
+{
+  "$schema": "https://cdn.statically.io/gh/nguyenngoclongdev/cdn/main/schema/v10/terminal-keeper.json",
+  "theme": "tribe",
+  "active": "default",
+  "noClear": true,
+  "activateOnStartup": true,
+  "keepExistingTerminals": false,
+  "sessions": {
+    "default": [
+      {
+        "name": "wellen-js",
+        "icon": "tools",
+        "color": "terminal.ansiGreen",
+        "cwd": "src/lib/wellen-js/",
+        "commands": [
+          "wasm-pack build --target web"
+        ]
+      },
+      {
+        "name": "swell",
+        "icon": "browser",
+        "color": "terminal.ansiBlue",
+        "cwd": "src/lib/wellen-js/",
+        "commands": [
+          "bun run dev"
+        ]
+      }
+    ]
+  }
+}

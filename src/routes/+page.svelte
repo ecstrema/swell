@@ -1,13 +1,21 @@
 <script lang="ts">
+import initWellenJs, { greet } from 'wellen-js';
+import wasmURL from 'wellen-js/wellen_js_bg.wasm?url';
+
 import { getTimelinePainter } from '$lib/canvas/TimelineTreeItem';
 import { TreeItem } from '$lib/canvas/TreeItem.svelte';
 import ItemsTree from '$lib/components/Tree/InfoTree/InfoTree.svelte';
 import SignalsTree from '$lib/components/Tree/SignalsTree/SignalsTree.svelte';
 import * as Resizable from '$lib/components/ui/resizable/index.js';
 import { SwellState } from '$lib/data/SwellState.svelte';
-  import { setContext } from 'svelte';
+import { onMount, setContext } from 'svelte';
 
 const swellState = new SwellState();
+
+onMount(async () => {
+  await initWellenJs(wasmURL);
+  greet('world');
+});
 
 // biome-ignore format:
 export const root = $state(
@@ -31,7 +39,7 @@ export const root = $state(
   // ])
 );
 
-setContext("swellState", swellState);
+setContext('swellState', swellState);
 </script>
 
 <Resizable.PaneGroup autoSaveId="swell" direction="horizontal" class="h-full">

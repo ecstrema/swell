@@ -15,7 +15,9 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@sveltejs/adapter-auto": "^4.0.0",
+    "@iconify-json/material-symbols": "^1.2.14",
+    "@iconify/tailwind": "^1.2.0",
+    "@sveltejs/adapter-static": "^3.0.8",
     "@sveltejs/kit": "^2.16.0",
     "@sveltejs/vite-plugin-svelte": "^5.0.0",
     "autoprefixer": "^10.4.20",
@@ -35,9 +37,7 @@
     "vitest": "^3.0.0"
   },
   "dependencies": {
-    "@iconify-json/material-symbols": "^1.2.14",
-    "@iconify/tailwind": "^1.2.0",
-    "@sveltejs/adapter-static": "^3.0.8",
-    "mode-watcher": "^0.5.1"
+    "mode-watcher": "^0.5.1",
+    "wellen-js": "file:./src/lib/wellen-js/pkg"
   }
 }

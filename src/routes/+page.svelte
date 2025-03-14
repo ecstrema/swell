@@ -1,5 +1,5 @@
 <script lang="ts">
-import initWellenJs, { greet } from 'wellen-js';
+import initWellenJs, { open } from 'wellen-js';
 import wasmURL from 'wellen-js/wellen_js_bg.wasm?url';
 
 import { getTimelinePainter } from '$lib/canvas/TimelineTreeItem';
@@ -14,7 +14,6 @@ const swellState = new SwellState();
 
 onMount(async () => {
   await initWellenJs(wasmURL);
-  greet('world');
 });
 
 // biome-ignore format:

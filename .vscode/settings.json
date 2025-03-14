@@ -1,3 +1,4 @@
 {
-  "rust-analyzer.linkedProjects": ["./src/lib/wellen-js/Cargo.toml"]
+  "svelte.enable-ts-plugin": true,
+  "rust-analyzer.linkedProjects": ["./src/lib/wellen-js/Cargo.toml"],
 }

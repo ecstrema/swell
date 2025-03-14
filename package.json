@@ -2,6 +2,7 @@
   "name": "swell",
   "private": true,
   "version": "0.0.1",
+  "description": "The swell waveform viewer",
   "type": "module",
   "scripts": {
     "dev": "vite dev",
@@ -10,34 +11,40 @@
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "tauri": "tauri",
     "test:unit": "vitest",
-    "test": "npm run test:unit -- --run"
+    "test": "bun run test:unit -- --run"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@tauri-apps/api": "^2.3.0",
+    "@tauri-apps/plugin-opener": "^2.2.6",
+    "mode-watcher": "^0.5.1",
+    "wellen-js": "file:./src/lib/wellen-js/pkg"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
-    "@iconify-json/material-symbols": "^1.2.14",
+    "@iconify-json/material-symbols": "^1.2.16",
     "@iconify/tailwind": "^1.2.0",
     "@sveltejs/adapter-static": "^3.0.8",
-    "@sveltejs/kit": "^2.16.0",
-    "@sveltejs/vite-plugin-svelte": "^5.0.0",
-    "autoprefixer": "^10.4.20",
-    "bits-ui": "^1.3.2",
+    "@sveltejs/kit": "^2.19.1",
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@tauri-apps/cli": "^2.3.1",
+    "@types/bun": "latest",
+    "autoprefixer": "^10.4.21",
+    "bits-ui": "^1.3.12",
     "clsx": "^2.1.1",
     "lucide-svelte": "^0.475.0",
     "mdsvex": "^0.12.3",
     "paneforge": "^1.0.0-next.4",
-    "svelte": "^5.0.0",
-    "svelte-check": "^4.0.0",
-    "tailwind-merge": "^3.0.1",
+    "svelte": "^5.23.0",
+    "svelte-check": "^4.1.5",
+    "tailwind-merge": "^3.0.2",
     "tailwind-variants": "^0.3.1",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5.0.0",
-    "vite": "^6.0.0",
-    "vitest": "^3.0.0"
-  },
-  "dependencies": {
-    "mode-watcher": "^0.5.1",
-    "wellen-js": "file:./src/lib/wellen-js/pkg"
+    "typescript": "~5.6.3",
+    "vite": "^6.2.2",
+    "vitest": "^3.0.8"
   }
 }

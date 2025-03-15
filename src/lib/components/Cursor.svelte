@@ -1,6 +1,6 @@
 <script lang="ts">
 import { SwellState } from '$lib/data/SwellState.svelte';
-import { bound } from '$lib/math';
+import { bound } from '$lib/utils/math';
 import { useBoundingRect } from '$lib/use/useBoundingRect.svelte';
 import { useMousePosition } from '$lib/use/useMousePosition.svelte';
   import { getContext } from 'svelte';

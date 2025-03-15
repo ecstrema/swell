@@ -1,5 +1,5 @@
 <script lang="ts">
-import { cn } from '$lib/utils.js';
+import { cn } from '$lib/utils/shadcn.js';
 import type { WithoutChildrenOrChild } from 'bits-ui';
 import GripVertical from 'lucide-svelte/icons/grip-vertical';
 import  * as ResizablePrimitive from 'paneforge';

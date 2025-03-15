@@ -1,5 +1,5 @@
 import { devicePixelRatio } from 'svelte/reactivity/window';
-import { getCacheFunction } from '$lib/perf';
+import { getCacheFunction } from '$lib/utils/perf';
 import type { SwellSettings } from './Settings.svelte';
 
 /** Shared settings for the canvas */

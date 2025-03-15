@@ -8,21 +8,19 @@
   "sessions": {
     "default": [
       {
-        "name": "wellen-js",
-        "icon": "tools",
+        "name": "swell web",
+        "icon": "browser",
         "color": "terminal.ansiGreen",
-        "cwd": "src/lib/wellen-js/",
         "commands": [
-          "wasm-pack build --target web"
+          "bun run dev"
         ]
       },
       {
-        "name": "swell",
-        "icon": "browser",
+        "name": "swell tauri",
+        "icon": "multiple-windows",
         "color": "terminal.ansiBlue",
-        "cwd": "src/lib/wellen-js/",
         "commands": [
-          "bun run dev"
+          "bun run tauri dev"
         ]
       }
     ]

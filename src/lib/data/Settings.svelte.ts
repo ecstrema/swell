@@ -1,4 +1,4 @@
-import { bound } from '$lib/math';
+import { bound } from '$lib/utils/math';
 import { WaveSettings } from './WaveSettings.svelte';
 
 /** These settings are global settings, not specific to a single simulation */

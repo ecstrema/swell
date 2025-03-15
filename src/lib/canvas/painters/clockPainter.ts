@@ -1,4 +1,4 @@
-import { normalizedLinearInterpolation } from "$lib/math";
+import { normalizedLinearInterpolation } from "$lib/utils/math";
 import type { Painter, ValueChange } from "../interfaces";
 
 export const clockPainter: Painter = ({ctx, changes, state}) => {

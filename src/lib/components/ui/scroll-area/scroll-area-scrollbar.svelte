@@ -1,5 +1,5 @@
 <script lang="ts">
-import { cn } from '$lib/utils.js';
+import { cn } from '$lib/utils/shadcn.js';
 import { ScrollArea as ScrollAreaPrimitive, type WithoutChild } from 'bits-ui';
 
 let { ref = $bindable(null), class: className, orientation = 'vertical', children, ...restProps }: WithoutChild<ScrollAreaPrimitive.ScrollbarProps> = $props();

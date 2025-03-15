@@ -1,7 +1,7 @@
 <script lang="ts">
 import { mode } from 'mode-watcher';
 
-import { bound } from '$lib/math';
+import { bound } from '$lib/utils/math';
 import Item from './Item.svelte';
 import { TreeItem } from '$lib/canvas/TreeItem.svelte';
 import Cursor from '$lib/components/Cursor.svelte';

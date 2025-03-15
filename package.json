@@ -20,7 +20,7 @@
     "@tauri-apps/api": "^2.3.0",
     "@tauri-apps/plugin-opener": "^2.2.6",
     "mode-watcher": "^0.5.1",
-    "wellen-js": "file:./src/lib/wellen-js/pkg"
+    "wasm": "file:./src-tauri/pkg"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

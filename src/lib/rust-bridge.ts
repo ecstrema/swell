@@ -12,10 +12,10 @@ export const getChanges = tauri
   ? async (signalId: string, start: number, end: number) => invoke('get_changes', { signalId, start, end })
   : async (signalId: string, start: number, end: number) => wasm.get_changes(signalId, start, end);
 
-export const getSignals = tauri
-  ? async (file: string) => invoke('get_signals', { file })
-  : async (file: string) => wasm.get_signals(file);
+export const getHierarchy = tauri
+  ? async (file: string) => invoke('get_hierarchy', { file })
+  : async (file: string) => wasm.get_hierarchy(file);
 
 export const openFile = tauri
-  ? async (path: string) => invoke('open_file', { path })
-  : async (path: string) => wasm.open_file(path);;
+  ? async (file: File) => invoke('open_file', { path: file.name })
+  : async (file: File) => wasm.open_file(file);;

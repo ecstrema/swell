@@ -6,11 +6,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
+    "wasm:build": "cd backend && wasm-pack build --target web",
     "build": "vite build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "rust:fmt": "cargo fmt",
+    "biome:fmt": "biome format --write",
+    "fmt": "bun run rust:fmt && bun run biome:fmt",
     "tauri": "tauri",
     "test:unit": "vitest",
     "test": "bun run test:unit -- --run"

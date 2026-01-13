@@ -8,47 +8,79 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: tauri-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   create-tag:
     runs-on: ubuntu-latest
+    # Skip if the last commit is a version bump from the bot
+    if: "!contains(github.event.head_commit.message, 'chore: bump version')"
     outputs:
-      tag: ${{ steps.get-version.outputs.tag }}
-      tag-exists: ${{ steps.check-tag.outputs.exists }}
+      tag: ${{ steps.bump-version.outputs.tag }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Get version from tauri.conf.json
-        id: get-version
+      - name: Bump version if tag exists
+        id: bump-version
         run: |
-          VERSION=$(jq -r '.version' src-tauri/tauri.conf.json)
-          echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
-          echo "Version: v${VERSION}"
+          set -e
 
-      - name: Check if tag exists
-        id: check-tag
-        run: |
-          if git rev-parse "refs/tags/${{ steps.get-version.outputs.tag }}" >/dev/null 2>&1; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "Tag ${{ steps.get-version.outputs.tag }} already exists"
+          # Get current version from tauri.conf.json
+          CURRENT_VERSION=$(jq -r '.version' src-tauri/tauri.conf.json)
+          echo "Current version in tauri.conf.json: ${CURRENT_VERSION}"
+
+          # Check if tag exists remotely
+          TAG="v${CURRENT_VERSION}"
+          if git ls-remote --exit-code origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} already exists, bumping patch version"
+
+            # Parse version (handle only MAJOR.MINOR.PATCH format)
+            if [[ ! "${CURRENT_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Error: Version ${CURRENT_VERSION} is not in MAJOR.MINOR.PATCH format"
+              exit 1
+            fi
+
+            IFS='.' read -r MAJOR MINOR PATCH <<< "${CURRENT_VERSION}"
+            NEW_PATCH=$((PATCH + 1))
+            NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
+
+            echo "New version: ${NEW_VERSION}"
+
+            # Update tauri.conf.json with unique temp file
+            TEMP_FILE="src-tauri/tauri.conf.json.tmp.$$"
+            jq --arg version "${NEW_VERSION}" '.version = $version' src-tauri/tauri.conf.json > "${TEMP_FILE}"
+            mv "${TEMP_FILE}" src-tauri/tauri.conf.json
+
+            # Commit the version bump
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add src-tauri/tauri.conf.json
+            git commit -m "chore: bump version to ${NEW_VERSION}"
+            git push origin ${{ github.ref_name }}
+
+            TAG="v${NEW_VERSION}"
           else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "Tag ${{ steps.get-version.outputs.tag }} does not exist"
+            echo "Tag ${TAG} does not exist, using current version"
           fi
 
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Final tag: ${TAG}"
+
       - name: Create and push tag
-        if: steps.check-tag.outputs.exists == 'false'
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag ${{ steps.get-version.outputs.tag }}
-          git push origin ${{ steps.get-version.outputs.tag }}
+          git tag ${{ steps.bump-version.outputs.tag }}
+          git push origin ${{ steps.bump-version.outputs.tag }}
 
   build-and-release:
     needs: create-tag
-    if: needs.create-tag.outputs.tag-exists == 'false'
     strategy:
       fail-fast: false
       matrix:

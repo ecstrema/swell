@@ -83,6 +83,12 @@ jobs:
       - name: Install frontend dependencies
         run: bun install --frozen-lockfile
 
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Build WASM backend
+        run: bun run wasm:build
+
       - name: Build Tauri app
         run: bun run tauri build
 

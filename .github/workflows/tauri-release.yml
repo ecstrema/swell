@@ -8,6 +8,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: tauri-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   create-tag:
     runs-on: ubuntu-latest

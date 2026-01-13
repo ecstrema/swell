@@ -28,6 +28,7 @@ jobs:
 
       - name: Delete existing tag if it exists
         run: |
+          set -e
           TAG="${{ steps.get-version.outputs.tag }}"
           # Check if tag exists remotely and delete it
           if git ls-remote --exit-code origin "refs/tags/${TAG}" >/dev/null 2>&1; then
@@ -39,6 +40,7 @@ jobs:
 
       - name: Create and push tag
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag ${{ steps.get-version.outputs.tag }}

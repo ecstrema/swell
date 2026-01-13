@@ -9,13 +9,15 @@ const tauri = process.env.TAURI_ENV_DEBUG !== undefined;
 console.log('tauri', tauri, process.env.TAURI_ENV_DEBUG);
 
 export const getChanges = tauri
-  ? async (signalId: string, start: number, end: number) => invoke('get_changes', { signalId, start, end })
-  : async (signalId: string, start: number, end: number) => wasm.get_changes(signalId, start, end);
+  ? async (filename: string, signalRef: number, start: number, end: number) => 
+      invoke('get_changes', { filename, signalRef, start, end })
+  : async (filename: string, signalRef: number, start: number, end: number) => 
+      wasm.get_changes(filename, signalRef, start, end);
 
 export const getHierarchy = tauri
-  ? async (file: string) => invoke('get_hierarchy', { file })
-  : async (file: string) => wasm.get_hierarchy(file);
+  ? async (filename: string) => invoke('get_hierarchy', { filename })
+  : async (filename: string) => wasm.get_hierarchy(filename);
 
 export const openFile = tauri
-  ? async (file: File) => invoke('open_file', { path: file.name })
-  : async (file: File) => wasm.open_file(file);;
+  ? async (filename: string) => invoke('open_wave_file_native', { filename })
+  : async (file: File) => wasm.open_wave_file_wasm(file);

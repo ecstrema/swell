@@ -29,10 +29,11 @@ jobs:
       - name: Delete existing tag if it exists
         run: |
           TAG="${{ steps.get-version.outputs.tag }}"
-          # Check if tag exists remotely
-          if git ls-remote --tags origin | grep -q "refs/tags/${TAG}$"; then
+          # Check if tag exists remotely (more efficient than fetching all tags)
+          if git ls-remote --exit-code origin "refs/tags/${TAG}" >/dev/null 2>&1; then
             echo "Tag ${TAG} exists remotely, deleting it"
-            git push origin --delete "${TAG}" 2>/dev/null || true
+            # Suppress only "tag not found" errors, other errors will be visible
+            git push origin --delete "${TAG}" 2>&1 | grep -v "remote ref does not exist" || true
           else
             echo "Tag ${TAG} does not exist remotely"
           fi

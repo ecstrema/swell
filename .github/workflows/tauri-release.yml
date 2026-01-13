@@ -13,7 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.get-version.outputs.tag }}
-      tag-exists: ${{ steps.check-tag.outputs.exists }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,19 +26,16 @@ jobs:
           echo "tag=v${VERSION}" >> $GITHUB_OUTPUT
           echo "Version: v${VERSION}"
 
-      - name: Check if tag exists
-        id: check-tag
+      - name: Delete existing tag if it exists
         run: |
           if git rev-parse "refs/tags/${{ steps.get-version.outputs.tag }}" >/dev/null 2>&1; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "Tag ${{ steps.get-version.outputs.tag }} already exists"
+            echo "Tag ${{ steps.get-version.outputs.tag }} already exists, deleting it"
+            git push origin --delete ${{ steps.get-version.outputs.tag }} || true
           else
-            echo "exists=false" >> $GITHUB_OUTPUT
             echo "Tag ${{ steps.get-version.outputs.tag }} does not exist"
           fi
 
       - name: Create and push tag
-        if: steps.check-tag.outputs.exists == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -48,7 +44,6 @@ jobs:
 
   build-and-release:
     needs: create-tag
-    if: needs.create-tag.outputs.tag-exists == 'false'
     strategy:
       fail-fast: false
       matrix:

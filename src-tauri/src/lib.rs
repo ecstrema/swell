@@ -53,11 +53,8 @@ fn get_hierarchy(filename: String) -> Result<HierarchyRoot, String> {
         
         let hierarchy = waveform.hierarchy();
         
-        // Build the hierarchy structure
-        let mut root_vars = Vec::new();
-        let mut root_scopes = Vec::new();
-        
-        for scope_ref in hierarchy.scopes() {
+        // Helper function to recursively build scope hierarchy
+        fn build_scope(hierarchy: &wellen::Hierarchy, scope_ref: wellen::ScopeRef) -> HierarchyScope {
             let scope = &hierarchy[scope_ref];
             
             let mut scope_vars = Vec::new();
@@ -71,22 +68,24 @@ fn get_hierarchy(filename: String) -> Result<HierarchyRoot, String> {
             
             let mut sub_scopes = Vec::new();
             for sub_scope_ref in scope.scopes(hierarchy) {
-                let sub_scope = &hierarchy[sub_scope_ref];
-                // For now, we'll create a simplified structure for sub-scopes
-                sub_scopes.push(HierarchyScope {
-                    name: sub_scope.name(hierarchy).to_string(),
-                    ref_: sub_scope_ref.index(),
-                    vars: Vec::new(), // We could recursively populate this
-                    scopes: Vec::new(),
-                });
+                // Recursively build sub-scopes
+                sub_scopes.push(build_scope(hierarchy, sub_scope_ref));
             }
             
-            root_scopes.push(HierarchyScope {
+            HierarchyScope {
                 name: scope.name(hierarchy).to_string(),
                 ref_: scope_ref.index(),
                 vars: scope_vars,
                 scopes: sub_scopes,
-            });
+            }
+        }
+        
+        // Build the hierarchy structure
+        let mut root_vars = Vec::new();
+        let mut root_scopes = Vec::new();
+        
+        for scope_ref in hierarchy.scopes() {
+            root_scopes.push(build_scope(hierarchy, scope_ref));
         }
         
         Ok(HierarchyRoot {
@@ -121,6 +120,11 @@ fn get_changes(filename: String, signal_ref: u32, start: u64, end: u64) -> Resul
         // Iterate through signal changes and filter by time range
         for (time_idx, value) in signal_data.iter_changes() {
             let time = time_table[time_idx as usize];
+            
+            // Skip changes before the start time
+            if time < start {
+                continue;
+            }
             
             if time >= start && time <= end {
                 changes.push(SignalChange {

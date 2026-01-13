@@ -119,6 +119,11 @@ impl State {
                 for (time_idx, value) in signal.iter_changes() {
                     let time = time_table[time_idx as usize];
                     
+                    // Skip changes before the start time
+                    if time < start {
+                        continue;
+                    }
+                    
                     if time >= start && time <= end {
                         let change = Object::new();
                         js_sys::Reflect::set(&change, &"time".into(), &JsValue::from_f64(time as f64))?;

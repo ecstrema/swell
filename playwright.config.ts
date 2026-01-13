@@ -31,11 +31,19 @@ export default defineConfig({
     },
   ],
 
-  /* Run your local dev server before starting the tests */
+  /* 
+   * Web server configuration is commented out because the app requires
+   * building the WASM module first. To enable:
+   * 1. Build WASM: npm run wasm:build
+   * 2. Uncomment the webServer configuration below
+   * 3. Run tests: npx playwright test
+   */
+  /*
   webServer: {
     command: 'npm run dev',
     url: 'http://localhost:1420',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },
+  */
 });

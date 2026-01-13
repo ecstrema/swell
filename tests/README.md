@@ -2,6 +2,12 @@
 
 This directory contains visual regression tests for the Swell waveform viewer. These tests capture screenshots of the canvas after opening VCD/FST files and compare them with baseline images stored in the repository.
 
+## Prerequisites
+
+Before running visual tests, you need to:
+1. Build the WASM module: `npm run wasm:build` (requires Rust toolchain)
+2. Start the dev server in a separate terminal: `npm run dev`
+
 ## Directory Structure
 
 ```
@@ -18,6 +24,15 @@ tests/
 ```
 
 ## Running Tests
+
+### Prerequisites
+```bash
+# Build the WASM module (requires Rust installed)
+npm run wasm:build
+
+# Start the development server (keep this running)
+npm run dev
+```
 
 ### Run visual regression tests
 ```bash
@@ -50,6 +65,15 @@ npm run test:visual:ui
    - `*-diff.png`: Highlights the differences in red
    - `*-actual.png`: The current screenshot for manual comparison
 
+## Current Status
+
+⚠️ **Note**: Most tests are currently skipped because they require:
+- Building the WASM module (`wellen-js` dependency)
+- Having the development server running
+- Full file loading implementation for VCD/FST files
+
+The test infrastructure is in place and ready to be enabled once these prerequisites are met.
+
 ## Writing New Tests
 
 To add a new visual regression test:
@@ -58,6 +82,9 @@ To add a new visual regression test:
 ```typescript
 test('should render my new feature', async ({ page }) => {
   const testName = 'my-new-feature';
+  
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
   
   // Set up your test scenario
   await page.click('button#my-feature');
@@ -85,14 +112,25 @@ test('should render my new feature', async ({ page }) => {
 
 Visual regression tests should be run in CI to catch unintended UI changes. The baseline images are stored in the repository and compared against in the CI environment.
 
+To enable in CI:
+1. Ensure the WASM build step is included
+2. Configure the test runner to start the dev server
+3. Run visual tests as part of the test suite
+
 ## Notes
 
 - Baseline images should be committed to the repository
 - When making intentional UI changes, update baselines and commit them with your PR
 - Use `.gitignore` to exclude diff and actual artifacts (`*-diff.png`, `*-actual.png`)
-- Tests currently skip VCD/FST file loading tests until the feature is fully implemented
+- Tests are currently skipped until VCD/FST file loading is fully implemented
 
 ## Troubleshooting
+
+### Tests failing with "Cannot find module 'wellen-js'"
+Build the WASM module first: `npm run wasm:build`
+
+### Tests timing out trying to connect
+Make sure the dev server is running: `npm run dev`
 
 ### Tests failing with dimension mismatch
 This can happen if screenshots are taken on different screen sizes or device pixel ratios. Ensure consistent viewport sizes in test configuration.

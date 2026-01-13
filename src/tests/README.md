@@ -5,12 +5,19 @@ This directory contains visual regression tests for the Swell waveform viewer. T
 ## Overview
 
 Visual regression tests work by:
-1. Loading a VCD or FST file
-2. Rendering it to a canvas
-3. Capturing the canvas as an image
-4. Comparing the captured image with a reference snapshot
+1. Creating a canvas and rendering waveforms or UI elements
+2. Capturing the canvas as an image
+3. Comparing the captured image with a reference snapshot
 
 If the images don't match, the test fails, indicating that the rendering has changed.
+
+## Test Files
+
+- **`visual-regression.spec.ts`**: Basic visual regression test demonstrating the testing approach
+- **`waveform-rendering.spec.ts`**: Tests for actual waveform rendering including:
+  - Timeline rendering
+  - Clock signal rendering
+  - Complete waveform views
 
 ## Directory Structure
 
@@ -19,7 +26,8 @@ src/tests/
 ├── fixtures/          # Test waveform files (VCD, FST, etc.)
 ├── snapshots/         # Reference images for visual comparison
 ├── visual-test-utils.ts        # Utility functions for visual testing
-└── visual-regression.spec.ts   # Visual regression test suite
+├── visual-regression.spec.ts   # Basic visual regression tests
+└── waveform-rendering.spec.ts  # Waveform rendering tests
 ```
 
 ## Running Tests
@@ -44,30 +52,43 @@ Use this command when you've made intentional changes to the UI that alter the r
 
 To add a new visual regression test:
 
-1. **Add a test fixture**: Place your VCD/FST file in `src/tests/fixtures/`
-
-2. **Create a test case**: Add a new test in `visual-regression.spec.ts`:
+1. **Create a test case** in an existing or new test file:
 
 ```typescript
-it('should match snapshot when rendering my-file.vcd', async () => {
+it('should match snapshot when rendering my waveform', async () => {
   const canvas = createTestCanvas(800, 600);
   const ctx = canvas.getContext('2d');
   
-  // Load and render your waveform here
-  // ... rendering logic ...
+  // Create SwellState and configure
+  const swellState = new SwellState();
+  swellState.settings.viewStart = 0;
+  swellState.settings.viewEnd = 100;
+  // ... more configuration
   
-  const snapshotPath = path.join(snapshotsDir, 'my-file.png');
+  // Create TreeItem with painter
+  const item = new TreeItem({
+    name: 'my-signal',
+    state: swellState,
+    painter: myPainter,
+    changes: myChangesGenerator,
+    children: []
+  });
+  
+  item.ctx = ctx;
+  item.paintWithChildren();
+  
+  const snapshotPath = path.join(snapshotsDir, 'my-signal.png');
   const result = compareCanvasWithSnapshot(canvas, snapshotPath);
   
   expect(result.pass).toBe(true);
 });
 ```
 
-3. **Generate the initial snapshot**: Run `npm run test:visual:update` to create the reference image
+2. **Generate the initial snapshot**: Run `npm run test:visual:update` to create the reference image
 
-4. **Verify the snapshot**: Check that the generated snapshot looks correct
+3. **Verify the snapshot**: Check that the generated snapshot looks correct
 
-5. **Run the test**: Run `npm run test:visual` to verify the test passes
+4. **Run the test**: Run `npm run test:visual` to verify the test passes
 
 ## How It Works
 
@@ -80,6 +101,13 @@ Provides utility functions for:
 - **`compareImages()`**: Uses pixelmatch to compare two images
 - **`loadImage()`/`saveImage()`**: Load and save PNG images
 - **`isUpdateMode()`**: Checks if running in snapshot update mode
+
+### Mock Data Generators
+The tests include mock change generators that simulate signal data:
+- **`mockClockChanges()`**: Generates a clock signal pattern
+- **`mockCounterChanges()`**: Generates an 8-bit counter pattern
+
+These can be extended or replaced with actual VCD/FST file loading.
 
 ### Environment Variables
 - **`UPDATE_SNAPSHOTS`**: Set to `true` or `1` to update reference snapshots instead of comparing
@@ -115,6 +143,14 @@ npm install --save-dev canvas
 ### Font rendering differs between systems
 Canvas rendering can vary slightly between different systems due to font rendering differences. The threshold parameter in `compareImages()` accounts for minor differences, but you may need to adjust it if tests are flaky.
 
+## Current Test Coverage
+
+- ✅ Timeline rendering with tick marks
+- ✅ Clock signal waveform rendering
+- ✅ Complete waveform view composition
+- ⏳ VCD file loading and rendering (to be integrated)
+- ⏳ FST file loading and rendering (to be integrated)
+
 ## Future Enhancements
 
 - [ ] Integrate with actual VCD/FST file loading from the backend
@@ -123,3 +159,5 @@ Canvas rendering can vary slightly between different systems due to font renderi
 - [ ] Add tests for interactive features (zooming, panning)
 - [ ] Generate visual diff images highlighting differences
 - [ ] Add CI/CD integration to run visual tests automatically
+- [ ] Test value array (bus) signal rendering
+- [ ] Test for different time units and scales

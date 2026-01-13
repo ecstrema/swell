@@ -18,8 +18,8 @@
     "tauri": "tauri",
     "test:unit": "vitest",
     "test": "bun run test:unit -- --run",
-    "test:visual": "vitest run src/tests/visual-regression.spec.ts",
-    "test:visual:update": "UPDATE_SNAPSHOTS=true vitest run src/tests/visual-regression.spec.ts"
+    "test:visual": "vitest run src/tests/visual-regression.spec.ts src/tests/waveform-rendering.spec.ts",
+    "test:visual:update": "UPDATE_SNAPSHOTS=true vitest run src/tests/visual-regression.spec.ts src/tests/waveform-rendering.spec.ts"
   },
   "license": "MIT",
   "dependencies": {

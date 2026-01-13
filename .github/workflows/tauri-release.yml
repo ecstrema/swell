@@ -28,11 +28,13 @@ jobs:
 
       - name: Delete existing tag if it exists
         run: |
-          if git rev-parse "refs/tags/${{ steps.get-version.outputs.tag }}" >/dev/null 2>&1; then
-            echo "Tag ${{ steps.get-version.outputs.tag }} already exists, deleting it"
-            git push origin --delete ${{ steps.get-version.outputs.tag }} || true
+          TAG="${{ steps.get-version.outputs.tag }}"
+          # Check if tag exists remotely
+          if git ls-remote --tags origin | grep -q "refs/tags/${TAG}$"; then
+            echo "Tag ${TAG} exists remotely, deleting it"
+            git push origin --delete "${TAG}"
           else
-            echo "Tag ${{ steps.get-version.outputs.tag }} does not exist"
+            echo "Tag ${TAG} does not exist remotely"
           fi
 
       - name: Create and push tag

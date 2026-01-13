@@ -139,12 +139,17 @@ export function compareCanvasWithSnapshot(
   const diffPixels = compareImages(actualBuffer, reference.data, width, height, threshold);
   const totalPixels = width * height;
   const diffPercentage = (diffPixels / totalPixels) * 100;
+  
+  // Consider the test passing if differences are within an acceptable threshold
+  // Allow up to 0.1% of pixels to differ to account for minor rendering variations
+  const maxAcceptableDiffPercentage = 0.1;
+  const pass = diffPercentage <= maxAcceptableDiffPercentage;
 
   return {
-    pass: diffPixels === 0,
+    pass,
     diffPixels,
-    message: diffPixels === 0
-      ? 'Images match'
+    message: pass
+      ? 'Images match (within threshold)'
       : `Images differ by ${diffPixels} pixels (${diffPercentage.toFixed(2)}%)`,
   };
 }

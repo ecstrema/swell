@@ -41,17 +41,18 @@ describe('Visual Regression Tests', () => {
    * Generates a simple clock pattern with transitions at regular intervals.
    */
   function* mockClockChanges(start: number): ChangesGenerator<boolean> {
+    const CLOCK_PERIOD = 10; // Clock period in time units
+    
     // Start with the last value before start
-    const period = 10; // Clock period in time units
-    let time = Math.floor(start / period) * period;
-    let value = (Math.floor(time / period) % 2) === 0;
+    let time = Math.floor(start / CLOCK_PERIOD) * CLOCK_PERIOD;
+    let value = (Math.floor(time / CLOCK_PERIOD) % 2) === 0;
 
     // Yield initial value
     yield [time, value];
 
     // Generate transitions
     while (time < 200) {
-      time += period;
+      time += CLOCK_PERIOD;
       value = !value;
       yield [time, value];
     }
@@ -62,17 +63,19 @@ describe('Visual Regression Tests', () => {
    * Generates a counter pattern that increments at regular intervals.
    */
   function* mockCounterChanges(start: number): ChangesGenerator<number> {
-    const period = 10; // Counter increment period
-    let time = Math.floor(start / period) * period;
-    let value = Math.floor(time / period) % 256;
+    const COUNTER_PERIOD = 10; // Counter increment period
+    const COUNTER_MAX_VALUE = 256; // 8-bit counter max value
+    
+    let time = Math.floor(start / COUNTER_PERIOD) * COUNTER_PERIOD;
+    let value = Math.floor(time / COUNTER_PERIOD) % COUNTER_MAX_VALUE;
 
     // Yield initial value
     yield [time, value];
 
     // Generate increments
     while (time < 200) {
-      time += period;
-      value = (value + 1) % 256;
+      time += COUNTER_PERIOD;
+      value = (value + 1) % COUNTER_MAX_VALUE;
       yield [time, value];
     }
   }
@@ -142,7 +145,7 @@ describe('Visual Regression Tests', () => {
       name: 'clk',
       state: swellState,
       painter: clockPainter,
-      changes: mockClockChanges as ChangesGenerator,
+      changes: mockClockChanges,
       children: []
     });
     
@@ -218,16 +221,35 @@ describe('Visual Regression Tests', () => {
       name: 'clk',
       state: swellState,
       painter: clockPainter,
-      changes: mockClockChanges as ChangesGenerator,
+      changes: mockClockChanges,
       children: []
     });
     clockItem.ctx = clockCtx;
     clockItem.paintWithChildren();
     
-    // Composite the views
+    // Create a second clock signal with different phase for variety
+    const clock2Canvas = createTestCanvas(800, 60);
+    const clock2Ctx = clock2Canvas.getContext('2d')!;
+    clock2Ctx.fillStyle = 'white';
+    clock2Ctx.fillRect(0, 0, 800, 60);
+    clock2Ctx.strokeStyle = 'blue';
+    clock2Ctx.lineWidth = 2;
+    clock2Ctx.beginPath();
+    
+    const clock2Item = new TreeItem({
+      name: 'clk2',
+      state: swellState,
+      painter: clockPainter,
+      changes: mockClockChanges,
+      children: []
+    });
+    clock2Item.ctx = clock2Ctx;
+    clock2Item.paintWithChildren();
+    
+    // Composite the views: timeline, clock1, clock2
     ctx.drawImage(timelineCanvas, 0, 0);
     ctx.drawImage(clockCanvas, 0, 60);
-    ctx.drawImage(clockCanvas, 0, 120); // Draw clock twice for demonstration
+    ctx.drawImage(clock2Canvas, 0, 120);
     
     const snapshotPath = path.join(snapshotsDir, 'complete-waveform.png');
     const result = compareCanvasWithSnapshot(canvas, snapshotPath, 0.1);

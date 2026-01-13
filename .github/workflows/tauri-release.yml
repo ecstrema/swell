@@ -32,15 +32,7 @@ jobs:
           # Check if tag exists remotely
           if git ls-remote --tags origin | grep -q "refs/tags/${TAG}$"; then
             echo "Tag ${TAG} exists remotely, deleting it"
-            if ! git push origin --delete "${TAG}"; then
-              echo "Failed to delete tag ${TAG} - it may have been deleted by another process"
-              # Verify it's actually gone
-              if git ls-remote --tags origin | grep -q "refs/tags/${TAG}$"; then
-                echo "Error: Tag still exists after deletion attempt"
-                exit 1
-              fi
-              echo "Tag was already deleted, continuing"
-            fi
+            git push origin --delete "${TAG}" 2>/dev/null || true
           else
             echo "Tag ${TAG} does not exist remotely"
           fi

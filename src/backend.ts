@@ -20,6 +20,10 @@ export async function openFileDialog(): Promise<string | File | undefined | null
       return await open({
         multiple: false,
         directory: false,
+        filters: [{
+          name: 'Waveform Files',
+          extensions: ['vcd', 'fst', 'ghw']
+        }]
       });
     } catch (e) {
       console.error("Failed to open file dialog:", e);
@@ -30,6 +34,7 @@ export async function openFileDialog(): Promise<string | File | undefined | null
     return new Promise((resolve) => {
       const input = document.createElement("input");
       input.type = "file";
+      input.accept = ".vcd,.fst,.ghw";
       input.onchange = (event) => {
         resolve((event.target as HTMLInputElement).files?.[0])
       };

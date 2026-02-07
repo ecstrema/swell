@@ -1,0 +1,13 @@
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  root: 'src', // Set the project root to the src directory
+  server: {
+    port: 1420,
+    strictPort: true,
+  },
+  build: {
+    outDir: '../dist', // Ensure the build output goes back to the real project root
+    emptyOutDir: true, // Clean the output directory before building
+  }
+})

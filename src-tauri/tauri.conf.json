@@ -1,16 +1,16 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "swell",
-  "version": "0.1.1",
-  "identifier": "com.swell.app",
+  "version": "0.1.0",
+  "identifier": "com.ecstrema.swell",
   "build": {
-    "beforeDevCommand": "bun run dev",
-    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "bun dev",
     "beforeBuildCommand": "bun run build",
+    "devUrl": "http://localhost:1420",
     "frontendDist": "../dist"
-
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "swell",

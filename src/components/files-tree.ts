@@ -65,7 +65,7 @@ export class FilesTree extends HTMLElement {
             .var-node {
                 margin-left: 20px;
                 padding: 2px 4px;
-                cursor: default; /* Selectable? Drag/Drop? */
+                cursor: pointer;
                 color: var(--color-text-muted);
             }
             .var-node:hover {
@@ -152,6 +152,13 @@ export class FilesTree extends HTMLElement {
         // Maybe store ref for logic?
         div.dataset.ref = variable.ref.toString();
         // Add click listener for future logic (adding to wave view)
+        div.addEventListener('click', () => {
+            this.dispatchEvent(new CustomEvent('signal-select', {
+                detail: { name: variable.name, ref: variable.ref },
+                bubbles: true,
+                composed: true
+            }));
+        });
         return div;
     }
 }

@@ -10,10 +10,12 @@ export class FileDisplay extends HTMLElement {
   private _filename: string = '';
   private selectedSignals: SelectedSignal[] = [];
   private signalsContainer: HTMLDivElement | null = null;
+  private boundHandleSignalSelect: (event: Event) => void;
 
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
+    this.boundHandleSignalSelect = this.handleSignalSelect.bind(this);
     this.render();
   }
 
@@ -28,11 +30,11 @@ export class FileDisplay extends HTMLElement {
 
   connectedCallback() {
     // Listen for signal selection events
-    document.addEventListener('signal-select', this.handleSignalSelect.bind(this));
+    document.addEventListener('signal-select', this.boundHandleSignalSelect);
   }
 
   disconnectedCallback() {
-    document.removeEventListener('signal-select', this.handleSignalSelect.bind(this));
+    document.removeEventListener('signal-select', this.boundHandleSignalSelect);
   }
 
   private handleSignalSelect(event: Event) {
@@ -54,6 +56,17 @@ export class FileDisplay extends HTMLElement {
     
     // Load and paint the signal
     this.paintSignal(canvas, ref);
+  }
+
+  private parseSignalValue(value: string): number {
+    // Try to parse as binary first, then decimal, default to 0
+    const binaryValue = parseInt(value, 2);
+    if (!isNaN(binaryValue)) return binaryValue;
+    
+    const decimalValue = parseInt(value, 10);
+    if (!isNaN(decimalValue)) return decimalValue;
+    
+    return 0;
   }
 
   private async paintSignal(canvas: HTMLCanvasElement, signalRef: number) {
@@ -85,14 +98,7 @@ export class FileDisplay extends HTMLElement {
 
       changes.forEach((change, index) => {
         const x = ((change.time - minTime) / timeRange) * canvas.width;
-        // For digital signals, we'll use binary values
-        // Try to parse the value as a number, default to 0 if not
-        let numValue = 0;
-        try {
-          numValue = parseInt(change.value, 2) || parseInt(change.value, 10) || 0;
-        } catch (e) {
-          numValue = 0;
-        }
+        const numValue = this.parseSignalValue(change.value);
         
         // Normalize to canvas height
         const y = canvas.height - (numValue > 0 ? canvas.height * 0.8 : canvas.height * 0.2);
@@ -103,7 +109,8 @@ export class FileDisplay extends HTMLElement {
           // Draw horizontal line to current time, then vertical to new value
           const prevChange = changes[index - 1];
           const prevX = ((prevChange.time - minTime) / timeRange) * canvas.width;
-          const prevY = canvas.height - (parseInt(prevChange.value, 2) || parseInt(prevChange.value, 10) || 0 > 0 ? canvas.height * 0.8 : canvas.height * 0.2);
+          const prevNumValue = this.parseSignalValue(prevChange.value);
+          const prevY = canvas.height - (prevNumValue > 0 ? canvas.height * 0.8 : canvas.height * 0.2);
           
           ctx.lineTo(x, prevY); // Horizontal line
           ctx.lineTo(x, y);     // Vertical line

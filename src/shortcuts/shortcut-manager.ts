@@ -92,7 +92,11 @@ export class ShortcutManager {
         }
 
         // Check modifier keys
-        const ctrlMatch = (shortcut.ctrl ?? false) === (event.ctrlKey || event.metaKey);
+        // Handle ctrl/meta properly: if ctrl or meta is specified, match against appropriate platform key
+        const wantsCtrlOrMeta = (shortcut.ctrl ?? false) || (shortcut.meta ?? false);
+        const hasCtrlOrMeta = event.ctrlKey || event.metaKey;
+        const ctrlMatch = wantsCtrlOrMeta === hasCtrlOrMeta;
+        
         const altMatch = (shortcut.alt ?? false) === event.altKey;
         const shiftMatch = (shortcut.shift ?? false) === event.shiftKey;
 

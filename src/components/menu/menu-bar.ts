@@ -59,8 +59,24 @@ export class MenuBar extends HTMLElement {
             ]
         });
 
+        const viewMenu = await Submenu.new({
+            text: 'View',
+            items: [
+                await MenuItem.new({
+                    id: 'settings',
+                    text: 'Settings',
+                    action: () => {
+                        this.dispatchEvent(new CustomEvent('settings-open-request', {
+                            bubbles: true,
+                            composed: true
+                        }));
+                    }
+                })
+            ]
+        });
+
         const menu = await Menu.new({
-            items: [fileMenu, editMenu]
+            items: [fileMenu, editMenu, viewMenu]
         });
 
         await menu.setAsAppMenu();
@@ -142,6 +158,8 @@ export class MenuBar extends HTMLElement {
                       <div class="dropdown">
                           <div class="menu-item" data-action="view-zoom-in">Zoom In</div>
                           <div class="menu-item" data-action="view-zoom-out">Zoom Out</div>
+                          <div class="separator"></div>
+                          <div class="menu-item" data-action="settings-open">Settings</div>
                       </div>
                   </div>
               </div>
@@ -161,6 +179,12 @@ export class MenuBar extends HTMLElement {
                       // Also dispatch specific event for backward compat or ease of use
                       if (action === 'file-open') {
                            this.dispatchEvent(new CustomEvent('file-open-request', {
+                             bubbles: true,
+                             composed: true
+                         }));
+                      }
+                      if (action === 'settings-open') {
+                           this.dispatchEvent(new CustomEvent('settings-open-request', {
                              bubbles: true,
                              composed: true
                          }));

@@ -2,18 +2,22 @@ import { addFile, openFileDialog, getHierarchy, getFiles, removeFile } from "../
 import "./menu/menu-bar.ts";
 import "./tab-bar.ts";
 import "./files-tree.ts";
+import "./settings-page.ts";
 import { TabBar } from "./tab-bar.ts";
 import { FileDisplay } from "./file-display.ts";
 import { FilesTree, HierarchyRoot } from "./files-tree.ts";
+import { SettingsPage } from "./settings-page.ts";
 
 
 
 export class AppMain extends HTMLElement {
     private state = {
-        activeFileId: null as string | null
+        activeFileId: null as string | null,
+        showingSettings: false
     };
 
     private fileResources = new Map<string, { element: FileDisplay, hierarchy: HierarchyRoot | null }>();
+    private settingsPage: SettingsPage | null = null;
 
     constructor() {
         super();
@@ -111,6 +115,7 @@ export class AppMain extends HTMLElement {
                         </div>
                     </div>
                     <div id="files-container"></div>
+                    <div id="settings-container" style="display: none;"></div>
                 </main>
             </div>
         </div>
@@ -122,13 +127,22 @@ export class AppMain extends HTMLElement {
 
         // Listeners
         this.addEventListener('file-open-request', () => this.handleFileOpen());
+        this.addEventListener('settings-open-request', () => this.openSettings());
 
         this.shadowRoot!.addEventListener('tab-select', (e: any) => {
-            this.setActiveFile(e.detail.id);
+            if (e.detail.id === 'settings') {
+                this.openSettings();
+            } else {
+                this.setActiveFile(e.detail.id);
+            }
         });
 
         this.shadowRoot!.addEventListener('tab-close', (e: any) => {
-            this.closeFile(e.detail.id);
+            if (e.detail.id === 'settings') {
+                this.closeSettings();
+            } else {
+                this.closeFile(e.detail.id);
+            }
         });
 
         if (filePickerBtn) {
@@ -212,6 +226,7 @@ export class AppMain extends HTMLElement {
         if (!this.fileResources.has(id)) return;
 
         this.state.activeFileId = id;
+        this.state.showingSettings = false;
 
         // Update content visibility
         for (const [fileId, config] of this.fileResources) {
@@ -238,34 +253,83 @@ export class AppMain extends HTMLElement {
         }
     }
 
+    openSettings() {
+        this.state.showingSettings = true;
+        this.state.activeFileId = null;
+
+        // Create settings page if it doesn't exist
+        if (!this.settingsPage) {
+            const settingsContainer = this.shadowRoot!.getElementById('settings-container');
+            if (settingsContainer) {
+                this.settingsPage = new SettingsPage();
+                settingsContainer.appendChild(this.settingsPage);
+            }
+        }
+
+        this.render();
+    }
+
+    closeSettings() {
+        this.state.showingSettings = false;
+
+        // Switch to the last file if any
+        const fileIds = Array.from(this.fileResources.keys());
+        if (fileIds.length > 0) {
+            this.setActiveFile(fileIds[fileIds.length - 1]);
+        } else {
+            this.render();
+        }
+    }
+
     render() {
         // Elements
         const tabBar = this.shadowRoot!.getElementById('tabs') as TabBar;
         const emptyState = this.shadowRoot!.getElementById('empty-state') as HTMLElement;
         const sidebar = this.shadowRoot!.getElementById('sidebar') as HTMLElement;
+        const filesContainer = this.shadowRoot!.getElementById('files-container') as HTMLElement;
+        const settingsContainer = this.shadowRoot!.getElementById('settings-container') as HTMLElement;
 
         const fileIds = Array.from(this.fileResources.keys());
         const hasFiles = fileIds.length > 0;
+        const hasContent = hasFiles || this.state.showingSettings;
 
         // Update Tabs
         if (tabBar) {
-            tabBar.tabs = fileIds.map(id => ({
+            const fileTabs = fileIds.map(id => ({
                 id: id,
                 label: id.split(/[/\\]/).pop() || id,
-                active: id === this.state.activeFileId
+                active: id === this.state.activeFileId && !this.state.showingSettings
             }));
 
+            const settingsTabs = this.state.showingSettings ? [{
+                id: 'settings',
+                label: 'Settings',
+                active: true
+            }] : [];
+
+            tabBar.tabs = [...fileTabs, ...settingsTabs];
+
             // Visibility
-            tabBar.style.display = hasFiles ? 'block' : 'none';
+            tabBar.style.display = hasContent ? 'block' : 'none';
+        }
+
+        // Content visibility
+        if (filesContainer) {
+            filesContainer.style.display = this.state.showingSettings ? 'none' : 'block';
+        }
+
+        if (settingsContainer) {
+            settingsContainer.style.display = this.state.showingSettings ? 'block' : 'none';
         }
 
         // Empty state & Sidebar
         if (emptyState) {
-            emptyState.style.display = hasFiles ? 'none' : 'flex';
+            emptyState.style.display = hasContent ? 'none' : 'flex';
         }
 
         if (sidebar) {
-            sidebar.style.display = hasFiles ? 'flex' : 'none';
+            // Hide sidebar when showing settings
+            sidebar.style.display = (hasFiles && !this.state.showingSettings) ? 'flex' : 'none';
         }
     }
 }

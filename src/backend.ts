@@ -112,3 +112,31 @@ export const getSignalChanges = async (filename: string, signalId: number, start
     // Let's assume passed as number/BigInt works.
     return wasm.get_signal_changes_wasm(filename, signalId, BigInt(start), BigInt(end));
 };
+
+export interface Settings {
+    theme: 'light' | 'dark' | 'auto';
+    defaultZoom: number;
+    showGrid: boolean;
+    gridSpacing: number;
+}
+
+export const getSettings = (): Settings => {
+    const saved = localStorage.getItem('swell-settings');
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch (e) {
+            console.error('Failed to load settings:', e);
+        }
+    }
+    return {
+        theme: 'auto',
+        defaultZoom: 1.0,
+        showGrid: true,
+        gridSpacing: 10,
+    };
+};
+
+export const saveSettings = (settings: Settings): void => {
+    localStorage.setItem('swell-settings', JSON.stringify(settings));
+};

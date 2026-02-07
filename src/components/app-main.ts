@@ -1,13 +1,16 @@
 import { addFile, openFileDialog, getHierarchy } from "../backend.js";
 import "./menu/menu-bar.ts";
 import "./tab-bar.ts";
+import "./files-tree.ts";
 import { TabBar } from "./tab-bar.ts";
 import { FileDisplay } from "./file-display.ts";
+import { FilesTree, HierarchyRoot } from "./files-tree.ts";
 
 interface OpenedFile {
   id: string;
   name: string;
   element: FileDisplay;
+  hierarchy: HierarchyRoot | null;
 }
 
 export class AppMain extends HTMLElement {
@@ -17,8 +20,11 @@ export class AppMain extends HTMLElement {
     };
 
     private tabBar: TabBar | null = null;
+    private filesTree: FilesTree | null = null;
     private contentArea: HTMLElement | null = null;
     private emptyState: HTMLElement | null = null;
+    private sidebar: HTMLElement | null = null;
+    private workspace: HTMLElement | null = null;
 
     constructor() {
         super();
@@ -39,6 +45,18 @@ export class AppMain extends HTMLElement {
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
+            }
+            .workspace {
+                display: flex;
+                flex: 1;
+                overflow: hidden;
+            }
+            #sidebar {
+                width: 250px;
+                background-color: var(--color-bg-surface);
+                border-right: 1px solid var(--color-border);
+                display: flex;
+                flex-direction: column;
             }
             #content-area {
                 flex: 1;
@@ -62,7 +80,7 @@ export class AppMain extends HTMLElement {
                 justify-content: center;
                 margin-top: 1rem;
             }
-
+            
             /* Button Styles imported/adapted from global styles */
             button {
                 border-radius: 8px;
@@ -86,39 +104,47 @@ export class AppMain extends HTMLElement {
                 background-color: var(--color-bg-active);
             }
         </style>
-
+        
         <app-menu-bar></app-menu-bar>
-
+        
         <div class="container">
             <app-tab-bar id="tabs"></app-tab-bar>
-
-            <main id="content-area">
-                <div id="empty-state" class="empty-state">
-                    <h1>Wave View</h1>
-                    <div class="row">
-                        <button id="file-picker-btn">Open File</button>
+            
+            <div class="workspace">
+                 <div id="sidebar">
+                     <files-tree id="hierarchy-tree"></files-tree>
+                 </div>
+                 <main id="content-area">
+                    <div id="empty-state" class="empty-state">
+                        <h1>Wave View</h1>
+                        <div class="row">
+                            <button id="file-picker-btn">Open File</button>
+                        </div>
                     </div>
-                </div>
-                <div id="files-container"></div>
-            </main>
+                    <div id="files-container"></div>
+                </main>
+            </div>
         </div>
         `;
     }
 
     connectedCallback() {
         this.tabBar = this.shadowRoot!.querySelector('#tabs') as TabBar;
+        this.filesTree = this.shadowRoot!.querySelector('#hierarchy-tree') as FilesTree;
         this.contentArea = this.shadowRoot!.querySelector('#files-container') as HTMLElement;
         this.emptyState = this.shadowRoot!.querySelector('#empty-state') as HTMLElement;
-
+        this.sidebar = this.shadowRoot!.querySelector('#sidebar') as HTMLElement;
+        this.workspace = this.shadowRoot!.querySelector('.workspace') as HTMLElement;
+        
         const filePickerBtn = this.shadowRoot!.querySelector('#file-picker-btn') as HTMLButtonElement;
-
+        
         // Listeners
         this.addEventListener('file-open-request', () => this.handleFileOpen());
-
+        
         this.shadowRoot!.addEventListener('tab-select', (e: any) => {
             this.setActiveFile(e.detail.id);
         });
-
+        
         this.shadowRoot!.addEventListener('tab-close', (e: any) => {
             this.closeFile(e.detail.id);
         });
@@ -126,7 +152,7 @@ export class AppMain extends HTMLElement {
         if (filePickerBtn) {
             filePickerBtn.addEventListener('click', () => this.handleFileOpen());
         }
-
+        
         this.render();
     }
 
@@ -135,7 +161,7 @@ export class AppMain extends HTMLElement {
             const file = await openFileDialog();
             if (file) {
                 const result = await addFile(file);
-
+                
                 // Check if already open
                 const existing = this.state.files.find(f => f.id === result);
                 if (existing) {
@@ -149,18 +175,19 @@ export class AppMain extends HTMLElement {
 
                 this.contentArea!.appendChild(fileDisplay);
 
-                const newFile: OpenedFile = {
-                    id: result,
-                    name: result.split(/[/\\]/).pop() || result,
-                    element: fileDisplay
-                };
-
-                this.state.files.push(newFile);
-
                 // Load hierarchy
                 const hierarchy = await getHierarchy(result);
                 console.log("Hierarchy for", result, ":", hierarchy);
 
+                const newFile: OpenedFile = {
+                    id: result,
+                    name: result.split(/[/\\]/).pop() || result,
+                    element: fileDisplay,
+                    hierarchy: hierarchy
+                };
+
+                this.state.files.push(newFile);
+                
                 this.setActiveFile(newFile.id);
             }
         } catch (err) {
@@ -170,10 +197,18 @@ export class AppMain extends HTMLElement {
 
     setActiveFile(id: string) {
         this.state.activeFileId = id;
-
+        
+        const activeFile = this.state.files.find(f => f.id === id);
+        
+        // Update content visibility
         this.state.files.forEach(f => {
-            f.element.style.display = f.id === id ? 'block' : 'none';
+             f.element.style.display = f.id === id ? 'block' : 'none';
         });
+        
+        // Update Tree View
+        if (this.filesTree) {
+            this.filesTree.data = activeFile ? activeFile.hierarchy : null;
+        }
 
         this.render();
     }
@@ -190,6 +225,7 @@ export class AppMain extends HTMLElement {
             if (this.state.files.length > 0) {
                 this.setActiveFile(this.state.files[this.state.files.length - 1].id);
             } else {
+                this.setActiveFile(''); // Will trigger null activeFile logic in setActiveFile
                 this.state.activeFileId = null;
                 this.render();
             }
@@ -206,14 +242,20 @@ export class AppMain extends HTMLElement {
                 label: f.name,
                 active: f.id === this.state.activeFileId
             }));
-
+            
             // Visibility
             this.tabBar.style.display = this.state.files.length > 0 ? 'block' : 'none';
         }
 
-        // Empty state
+        // Empty state & Sidebar
+        const hasFiles = this.state.files.length > 0;
+        
         if (this.emptyState) {
-            this.emptyState.style.display = this.state.files.length === 0 ? 'flex' : 'none';
+            this.emptyState.style.display = hasFiles ? 'none' : 'flex';
+        }
+        
+        if (this.sidebar) {
+            this.sidebar.style.display = hasFiles ? 'flex' : 'none';
         }
     }
 }

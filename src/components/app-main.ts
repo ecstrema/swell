@@ -7,6 +7,7 @@ import { TabBar } from "./tab-bar.ts";
 import { FileDisplay } from "./file-display.ts";
 import { FilesTree, HierarchyRoot } from "./files-tree.ts";
 import { SettingsPage } from "./settings-page.ts";
+import { CommandRegistry, ShortcutManager, defaultShortcuts } from "../shortcuts/index.ts";
 
 
 
@@ -18,9 +19,18 @@ export class AppMain extends HTMLElement {
 
     private fileResources = new Map<string, { element: FileDisplay, hierarchy: HierarchyRoot | null }>();
     private settingsPage: SettingsPage | null = null;
+    
+    // Shortcut system
+    private commandRegistry: CommandRegistry;
+    private shortcutManager: ShortcutManager;
 
     constructor() {
         super();
+        
+        // Initialize shortcut system
+        this.commandRegistry = new CommandRegistry();
+        this.shortcutManager = new ShortcutManager(this.commandRegistry);
+        
         this.attachShadow({ mode: 'open' });
         this.shadowRoot!.innerHTML = `
         <style>
@@ -125,9 +135,21 @@ export class AppMain extends HTMLElement {
     connectedCallback() {
         const filePickerBtn = this.shadowRoot!.getElementById('file-picker-btn') as HTMLButtonElement;
 
+        // Initialize shortcut system
+        this.initializeShortcuts();
+
         // Listeners
         this.addEventListener('file-open-request', () => this.handleFileOpen());
         this.addEventListener('settings-open-request', () => this.openSettings());
+
+        // Listen for menu actions and route them through command registry
+        this.addEventListener('menu-action', (e: Event) => {
+            const customEvent = e as CustomEvent;
+            const action = customEvent.detail;
+            if (action && this.commandRegistry.has(action)) {
+                this.commandRegistry.execute(action);
+            }
+        });
 
         this.shadowRoot!.addEventListener('tab-select', (e: any) => {
             if (e.detail.id === 'settings') {
@@ -150,6 +172,65 @@ export class AppMain extends HTMLElement {
         }
 
         this.refreshFiles();
+    }
+
+    disconnectedCallback() {
+        // Clean up shortcut system
+        this.shortcutManager.deactivate();
+    }
+
+    /**
+     * Initialize the shortcut system with commands and bindings
+     */
+    private initializeShortcuts() {
+        // Register commands that can be triggered by shortcuts or menu items
+        this.commandRegistry.register({
+            id: 'file-open',
+            label: 'Open File',
+            handler: () => this.handleFileOpen()
+        });
+
+        this.commandRegistry.register({
+            id: 'file-quit',
+            label: 'Quit',
+            handler: () => {
+                console.log('Quit action triggered');
+                // Tauri quit logic could be added here
+            }
+        });
+
+        this.commandRegistry.register({
+            id: 'edit-undo',
+            label: 'Undo',
+            handler: () => {
+                console.log('Undo action triggered');
+                // Undo logic could be added here
+            }
+        });
+
+        this.commandRegistry.register({
+            id: 'view-zoom-in',
+            label: 'Zoom In',
+            handler: () => {
+                console.log('Zoom in action triggered');
+                // Zoom in logic could be added here
+            }
+        });
+
+        this.commandRegistry.register({
+            id: 'view-zoom-out',
+            label: 'Zoom Out',
+            handler: () => {
+                console.log('Zoom out action triggered');
+                // Zoom out logic could be added here
+            }
+        });
+
+        // Register default shortcuts (currently empty, but ready for future use)
+        this.shortcutManager.registerMany(defaultShortcuts);
+
+        // Activate the shortcut system
+        this.shortcutManager.activate();
     }
 
     async refreshFiles() {

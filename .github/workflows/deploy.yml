@@ -23,6 +23,11 @@ jobs:
           toolchain: stable
           targets: wasm32-unknown-unknown
 
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend -> target
+
       - name: Install wasm-pack
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 

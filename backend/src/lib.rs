@@ -77,6 +77,7 @@ pub fn add_file(path: String, waveform: wellen::simple::Waveform) {
     });
 
     // Record action for undo
+    drop(files); // Release lock before acquiring another
     let mut undo_redo = UNDO_REDO.lock().unwrap();
     undo_redo.undo_stack.push(Action::AddFile { path });
     undo_redo.redo_stack.clear(); // Clear redo stack on new action
@@ -92,11 +93,13 @@ pub fn get_files() -> Vec<String> {
 pub fn remove_file(path: String) {
     let mut files = OPENED_FILES.lock().unwrap();
     if let Some(pos) = files.iter().position(|x| x.path == path) {
+        // Record action for undo BEFORE removing to avoid race condition
+        let action = Action::RemoveFile { path: path.clone(), position: pos };
         files.remove(pos);
-
-        // Record action for undo
+        
+        drop(files); // Release lock before acquiring another
         let mut undo_redo = UNDO_REDO.lock().unwrap();
-        undo_redo.undo_stack.push(Action::RemoveFile { path, position: pos });
+        undo_redo.undo_stack.push(action);
         undo_redo.redo_stack.clear(); // Clear redo stack on new action
     }
 }

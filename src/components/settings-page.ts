@@ -49,6 +49,7 @@ export class SettingsPage extends HTMLElement {
         const select = event.target as HTMLSelectElement;
         this.settings.theme = select.value as 'light' | 'dark' | 'auto';
         this.saveSettings();
+        this.render();
     }
 
     private handleZoomChange(event: Event) {
@@ -62,6 +63,7 @@ export class SettingsPage extends HTMLElement {
         const input = event.target as HTMLInputElement;
         this.settings.showGrid = input.checked;
         this.saveSettings();
+        this.render();
     }
 
     private handleGridSpacingChange(event: Event) {

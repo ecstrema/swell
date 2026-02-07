@@ -1,9 +1,7 @@
 // This file unifies the interface between the web backend (Wasm/API) and the native Tauri backend.
 
-// Import backend functions (assuming they are generated in a 'backend' module)
-import initSync, * as wasm from "../backend/pkg/backend"; // specific path may vary
+import initSync, * as wasm from "../backend/pkg/backend";
 
-// Import tauri functions (assuming standard invoke)
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 
@@ -44,7 +42,7 @@ export const addFile = async (fileOrPath: string | File): Promise<string> => {
   if (isTauri) {
     return await invoke("add_file_command", { path: fileOrPath });
   }
-``
+
   if (fileOrPath instanceof File) {
       const buffer = await fileOrPath.arrayBuffer();
       const bytes = new Uint8Array(buffer);
@@ -53,3 +51,50 @@ export const addFile = async (fileOrPath: string | File): Promise<string> => {
 
   throw new Error("Expected File object in Web mode");
 }
+
+
+export interface HierarchyVar {
+    name: string;
+    ref: number;
+}
+
+export interface HierarchyScope {
+    name: string;
+    ref: number;
+    vars: HierarchyVar[];
+    scopes: HierarchyScope[];
+}
+
+export interface HierarchyRoot {
+    name: string;
+    ref: number;
+    vars: HierarchyVar[];
+    scopes: HierarchyScope[];
+}
+
+export interface SignalChange {
+    time: number;
+    value: string;
+}
+
+export const getHierarchy = async (filename: string): Promise<HierarchyRoot> => {
+    if (isTauri) {
+        return await invoke("get_hierarchy", { filename });
+    }
+    return wasm.get_hierarchy_wasm(filename);
+};
+
+export const getSignalChanges = async (filename: string, signalId: number, start: number, end: number): Promise<SignalChange[]> => {
+    // Note: Rust u64 might come back as number or BigInt depending on bindings.
+    // Usually standard JSON keeps it as number (potential precision loss).
+    if (isTauri) {
+        // Tauri invoke passes arguments as JSON.
+        // Rust accepts `signal_id` snake_case by default for serde structs, but arguments to commands usage depends on Tauri.
+        // Tauri 2.0 usually camelCase arguments in invoke map to snake_case in Rust function arguments.
+        return await invoke("get_signal_changes", { filename, signalId, start, end });
+    }
+    // wasm-bindgen uses direct args
+    // However, JS numbers for u64 might be risky. BigInt might be required.
+    // Let's assume passed as number/BigInt works.
+    return wasm.get_signal_changes_wasm(filename, signalId, BigInt(start), BigInt(end));
+};

@@ -1,4 +1,4 @@
-import { addFile, openFileDialog } from "./backend.js";
+import { addFile, openFileDialog, getHierarchy } from "./backend.js";
 
 class FileDisplay extends HTMLElement {
   constructor() {
@@ -23,6 +23,9 @@ window.addEventListener("DOMContentLoaded", () => {
       if (file) {
         const result = await addFile(file);
         fileDisplay.filename = result;
+
+        const hierarchy = await getHierarchy(result);
+        console.log("Hierarchy:", hierarchy);
       }
     });
   }

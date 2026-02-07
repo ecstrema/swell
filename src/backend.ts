@@ -40,12 +40,16 @@ export async function openFileDialog(): Promise<string | File | undefined | null
   }
 }
 
-export async function addFile(file: string | File): Promise<string> {
-  if (isTauri && typeof file === "string") {
-    return await invoke("add_file_native", { path: file });
+export const addFile = async (fileOrPath: string | File): Promise<string> => {
+  if (isTauri) {
+    return await invoke("add_file_command", { path: fileOrPath });
   }
-  if (typeof file === "string") {
-    throw new Error("Expected a File object for web context");
+``
+  if (fileOrPath instanceof File) {
+      const buffer = await fileOrPath.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      return wasm.add_file_bytes(fileOrPath.name, bytes);
   }
-  return wasm.add_file_wasm(file);
+
+  throw new Error("Expected File object in Web mode");
 }

@@ -56,6 +56,20 @@ pub fn add_file(path: String, waveform: wellen::simple::Waveform) {
 }
 
 #[wasm_bindgen]
+pub fn get_files() -> Vec<String> {
+    let files = OPENED_FILES.lock().unwrap();
+    files.iter().map(|f| f.path.clone()).collect()
+}
+
+#[wasm_bindgen]
+pub fn remove_file(path: String) {
+    let mut files = OPENED_FILES.lock().unwrap();
+    if let Some(pos) = files.iter().position(|x| x.path == path) {
+        files.remove(pos);
+    }
+}
+
+#[wasm_bindgen]
 pub fn add_file_bytes(name: String, content: Vec<u8>) -> Result<String, String> {
     let cursor = std::io::Cursor::new(content);
     let waveform = wellen::simple::read_from_reader(cursor).map_err(|e| e.to_string())?;

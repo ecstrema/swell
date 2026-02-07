@@ -1,6 +1,6 @@
 // This file unifies the interface between the web backend (Wasm/API) and the native Tauri backend.
 
-import initSync, * as wasm from "../backend/pkg/backend";
+import init, * as wasm from "../backend/pkg/backend";
 
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -11,7 +11,7 @@ export const isTauri = !!window.__TAURI_INTERNALS__;
 
 if (!isTauri) {
   // If not in Tauri, initialize the Wasm backend
-  initSync();
+  await init();
 }
 
 export async function openFileDialog(): Promise<string | File | undefined | null> {
@@ -50,6 +50,20 @@ export const addFile = async (fileOrPath: string | File): Promise<string> => {
   }
 
   throw new Error("Expected File object in Web mode");
+}
+
+export const getFiles = async (): Promise<string[]> => {
+  if (isTauri) {
+    return await invoke("get_files");
+  }
+  return wasm.get_files();
+}
+
+export const removeFile = async (path: string) => {
+  if (isTauri) {
+    return await invoke("remove_file", { path });
+  }
+  return wasm.remove_file(path);
 }
 
 

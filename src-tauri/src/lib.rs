@@ -1,8 +1,19 @@
 use backend::add_file;
 use backend::{
-    get_hierarchy as backend_get_hierarchy, get_signal_changes as backend_get_signal_changes,
+    get_files as backend_get_files, get_hierarchy as backend_get_hierarchy,
+    get_signal_changes as backend_get_signal_changes, remove_file as backend_remove_file,
 };
 use backend::{HierarchyRoot, SignalChange};
+
+#[tauri::command]
+fn get_files() -> Vec<String> {
+    backend_get_files()
+}
+
+#[tauri::command]
+fn remove_file(path: String) {
+    backend_remove_file(path)
+}
 
 #[tauri::command]
 fn get_hierarchy(filename: String) -> Result<HierarchyRoot, String> {
@@ -42,6 +53,8 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             add_file_command,
+            get_files,
+            remove_file,
             get_hierarchy,
             get_signal_changes
         ])

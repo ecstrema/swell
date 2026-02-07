@@ -1,4 +1,4 @@
-import { addFile, openFileDialog, getHierarchy } from "../backend.js";
+import { addFile, openFileDialog, getHierarchy, getFiles, removeFile } from "../backend.js";
 import "./menu/menu-bar.ts";
 import "./tab-bar.ts";
 import "./files-tree.ts";
@@ -6,25 +6,14 @@ import { TabBar } from "./tab-bar.ts";
 import { FileDisplay } from "./file-display.ts";
 import { FilesTree, HierarchyRoot } from "./files-tree.ts";
 
-interface OpenedFile {
-  id: string;
-  name: string;
-  element: FileDisplay;
-  hierarchy: HierarchyRoot | null;
-}
+
 
 export class AppMain extends HTMLElement {
     private state = {
-        files: [] as OpenedFile[],
         activeFileId: null as string | null
     };
 
-    private tabBar: TabBar | null = null;
-    private filesTree: FilesTree | null = null;
-    private contentArea: HTMLElement | null = null;
-    private emptyState: HTMLElement | null = null;
-    private sidebar: HTMLElement | null = null;
-    private workspace: HTMLElement | null = null;
+    private fileResources = new Map<string, { element: FileDisplay, hierarchy: HierarchyRoot | null }>();
 
     constructor() {
         super();
@@ -80,7 +69,7 @@ export class AppMain extends HTMLElement {
                 justify-content: center;
                 margin-top: 1rem;
             }
-            
+
             /* Button Styles imported/adapted from global styles */
             button {
                 border-radius: 8px;
@@ -104,13 +93,13 @@ export class AppMain extends HTMLElement {
                 background-color: var(--color-bg-active);
             }
         </style>
-        
+
         <app-menu-bar></app-menu-bar>
-        
+
         <div class="container">
             <app-tab-bar id="tabs"></app-tab-bar>
-            
-            <div class="workspace">
+
+            <div class="workspace" id="workspace">
                  <div id="sidebar">
                      <files-tree id="hierarchy-tree"></files-tree>
                  </div>
@@ -129,22 +118,15 @@ export class AppMain extends HTMLElement {
     }
 
     connectedCallback() {
-        this.tabBar = this.shadowRoot!.querySelector('#tabs') as TabBar;
-        this.filesTree = this.shadowRoot!.querySelector('#hierarchy-tree') as FilesTree;
-        this.contentArea = this.shadowRoot!.querySelector('#files-container') as HTMLElement;
-        this.emptyState = this.shadowRoot!.querySelector('#empty-state') as HTMLElement;
-        this.sidebar = this.shadowRoot!.querySelector('#sidebar') as HTMLElement;
-        this.workspace = this.shadowRoot!.querySelector('.workspace') as HTMLElement;
-        
-        const filePickerBtn = this.shadowRoot!.querySelector('#file-picker-btn') as HTMLButtonElement;
-        
+        const filePickerBtn = this.shadowRoot!.getElementById('file-picker-btn') as HTMLButtonElement;
+
         // Listeners
         this.addEventListener('file-open-request', () => this.handleFileOpen());
-        
+
         this.shadowRoot!.addEventListener('tab-select', (e: any) => {
             this.setActiveFile(e.detail.id);
         });
-        
+
         this.shadowRoot!.addEventListener('tab-close', (e: any) => {
             this.closeFile(e.detail.id);
         });
@@ -152,8 +134,65 @@ export class AppMain extends HTMLElement {
         if (filePickerBtn) {
             filePickerBtn.addEventListener('click', () => this.handleFileOpen());
         }
-        
-        this.render();
+
+        this.refreshFiles();
+    }
+
+    async refreshFiles() {
+        try {
+            const files = await getFiles();
+
+            // Remove closed files
+            for (const [id, value] of this.fileResources) {
+                if (!files.includes(id)) {
+                    value.element.remove();
+                    this.fileResources.delete(id);
+                }
+            }
+
+            // Add new files
+            const contentArea = this.shadowRoot!.getElementById('files-container');
+            for (const id of files) {
+                if (!this.fileResources.has(id)) {
+
+                    const fileDisplay = new FileDisplay();
+                    fileDisplay.filename = id;
+                    fileDisplay.style.display = 'none';
+
+                    if (contentArea) contentArea.appendChild(fileDisplay);
+
+                    // Load hierarchy
+                    let hierarchy = null;
+                    try {
+                        hierarchy = await getHierarchy(id);
+                    } catch (e) {
+                        console.error("Error loading hierarchy for", id, e);
+                    }
+
+                    this.fileResources.set(id, {
+                        element: fileDisplay,
+                        hierarchy: hierarchy
+                    });
+                }
+            }
+
+            // Handle active file state
+            const fileIds = Array.from(this.fileResources.keys());
+
+            if (this.state.activeFileId && !this.fileResources.has(this.state.activeFileId)) {
+                this.state.activeFileId = null;
+            }
+
+            if (!this.state.activeFileId && fileIds.length > 0) {
+                this.setActiveFile(fileIds[fileIds.length - 1]);
+            } else if (this.state.activeFileId) {
+                this.setActiveFile(this.state.activeFileId);
+            } else {
+                this.render();
+            }
+        } catch (e) {
+            console.error("Error refreshing files:", e);
+        }
     }
 
     async handleFileOpen() {
@@ -161,34 +200,8 @@ export class AppMain extends HTMLElement {
             const file = await openFileDialog();
             if (file) {
                 const result = await addFile(file);
-                
-                // Check if already open
-                const existing = this.state.files.find(f => f.id === result);
-                if (existing) {
-                    this.setActiveFile(existing.id);
-                    return;
-                }
-
-                const fileDisplay = new FileDisplay();
-                fileDisplay.filename = result;
-                fileDisplay.style.display = 'none';
-
-                this.contentArea!.appendChild(fileDisplay);
-
-                // Load hierarchy
-                const hierarchy = await getHierarchy(result);
-                console.log("Hierarchy for", result, ":", hierarchy);
-
-                const newFile: OpenedFile = {
-                    id: result,
-                    name: result.split(/[/\\]/).pop() || result,
-                    element: fileDisplay,
-                    hierarchy: hierarchy
-                };
-
-                this.state.files.push(newFile);
-                
-                this.setActiveFile(newFile.id);
+                await this.refreshFiles();
+                this.setActiveFile(result);
             }
         } catch (err) {
             console.error("Error loading file:", err);
@@ -196,66 +209,63 @@ export class AppMain extends HTMLElement {
     }
 
     setActiveFile(id: string) {
+        if (!this.fileResources.has(id)) return;
+
         this.state.activeFileId = id;
-        
-        const activeFile = this.state.files.find(f => f.id === id);
-        
+
         // Update content visibility
-        this.state.files.forEach(f => {
-             f.element.style.display = f.id === id ? 'block' : 'none';
-        });
-        
-        // Update Tree View
-        if (this.filesTree) {
-            this.filesTree.data = activeFile ? activeFile.hierarchy : null;
+        for (const [fileId, config] of this.fileResources) {
+             config.element.style.display = fileId === id ? 'block' : 'none';
+        }
+
+        const activeRes = this.fileResources.get(id);
+
+        // Update Tree View - using getElementById/querySelector
+        const filesTree = this.shadowRoot!.getElementById('hierarchy-tree') as FilesTree;
+        if (filesTree) {
+            filesTree.data = activeRes ? activeRes.hierarchy : null;
         }
 
         this.render();
     }
 
-    closeFile(id: string) {
-        const index = this.state.files.findIndex(f => f.id === id);
-        if (index === -1) return;
-
-        const file = this.state.files[index];
-        file.element.remove();
-        this.state.files.splice(index, 1);
-
-        if (this.state.activeFileId === id) {
-            if (this.state.files.length > 0) {
-                this.setActiveFile(this.state.files[this.state.files.length - 1].id);
-            } else {
-                this.setActiveFile(''); // Will trigger null activeFile logic in setActiveFile
-                this.state.activeFileId = null;
-                this.render();
-            }
-        } else {
-            this.render();
+    async closeFile(id: string) {
+        try {
+            await removeFile(id);
+            await this.refreshFiles();
+        } catch (e) {
+            console.error(e);
         }
     }
 
     render() {
+        // Elements
+        const tabBar = this.shadowRoot!.getElementById('tabs') as TabBar;
+        const emptyState = this.shadowRoot!.getElementById('empty-state') as HTMLElement;
+        const sidebar = this.shadowRoot!.getElementById('sidebar') as HTMLElement;
+
+        const fileIds = Array.from(this.fileResources.keys());
+        const hasFiles = fileIds.length > 0;
+
         // Update Tabs
-        if (this.tabBar) {
-            this.tabBar.tabs = this.state.files.map(f => ({
-                id: f.id,
-                label: f.name,
-                active: f.id === this.state.activeFileId
+        if (tabBar) {
+            tabBar.tabs = fileIds.map(id => ({
+                id: id,
+                label: id.split(/[/\\]/).pop() || id,
+                active: id === this.state.activeFileId
             }));
-            
+
             // Visibility
-            this.tabBar.style.display = this.state.files.length > 0 ? 'block' : 'none';
+            tabBar.style.display = hasFiles ? 'block' : 'none';
         }
 
         // Empty state & Sidebar
-        const hasFiles = this.state.files.length > 0;
-        
-        if (this.emptyState) {
-            this.emptyState.style.display = hasFiles ? 'none' : 'flex';
+        if (emptyState) {
+            emptyState.style.display = hasFiles ? 'none' : 'flex';
         }
-        
-        if (this.sidebar) {
-            this.sidebar.style.display = hasFiles ? 'flex' : 'none';
+
+        if (sidebar) {
+            sidebar.style.display = hasFiles ? 'flex' : 'none';
         }
     }
 }

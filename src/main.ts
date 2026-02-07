@@ -1,4 +1,5 @@
-import { addFile, openFileDialog, getHierarchy } from "./backend.js";
+import { addFile, openFileDialog, getHierarchy, isTauri } from "./backend.js";
+import "./components/menu/menu-bar.ts";
 
 class FileDisplay extends HTMLElement {
   constructor() {
@@ -13,20 +14,34 @@ class FileDisplay extends HTMLElement {
 
 customElements.define('file-display', FileDisplay);
 
+async function handleFileOpen(fileDisplay: FileDisplay) {
+      try {
+        const file = await openFileDialog();
+        if (file) {
+          const result = await addFile(file);
+          fileDisplay.filename = result;
+
+          const hierarchy = await getHierarchy(result);
+          console.log("Hierarchy:", hierarchy);
+        }
+      } catch (err) {
+        console.error("Error loading file:", err);
+      }
+}
+
 window.addEventListener("DOMContentLoaded", () => {
-  const filePickerBtn = document.querySelector("#file-picker-btn") as HTMLButtonElement;
+  const filePickerBtn = document.querySelector("#file-picker-btn") as HTMLButtonElement | null;
   const fileDisplay = document.querySelector("#file-display") as FileDisplay;
+  const menuBar = document.querySelector("app-menu-bar");
+
+  // Hook up custom menu event
+  if (menuBar) {
+      menuBar.addEventListener("file-open-request", () => {
+          handleFileOpen(fileDisplay);
+      });
+  }
 
   if (filePickerBtn) {
-    filePickerBtn.addEventListener("click", async () => {
-      const file = await openFileDialog();
-      if (file) {
-        const result = await addFile(file);
-        fileDisplay.filename = result;
-
-        const hierarchy = await getHierarchy(result);
-        console.log("Hierarchy:", hierarchy);
-      }
-    });
+    filePickerBtn.addEventListener("click", () => handleFileOpen(fileDisplay));
   }
 });

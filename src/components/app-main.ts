@@ -1,4 +1,4 @@
-import { addFile, openFileDialog, getHierarchy, getFiles, removeFile } from "../backend.js";
+import { addFile, openFileDialog, getHierarchy, getFiles, removeFile, undo, redo } from "../backend.js";
 import "./menu/menu-bar.ts";
 import "./tab-bar.ts";
 import "./files-tree.ts";
@@ -123,6 +123,15 @@ export class AppMain extends HTMLElement {
         // Listeners
         this.addEventListener('file-open-request', () => this.handleFileOpen());
 
+        this.addEventListener('menu-action', async (e: any) => {
+            const action = e.detail;
+            if (action === 'edit-undo') {
+                await this.handleUndo();
+            } else if (action === 'edit-redo') {
+                await this.handleRedo();
+            }
+        });
+
         this.shadowRoot!.addEventListener('tab-select', (e: any) => {
             this.setActiveFile(e.detail.id);
         });
@@ -235,6 +244,26 @@ export class AppMain extends HTMLElement {
             await this.refreshFiles();
         } catch (e) {
             console.error(e);
+        }
+    }
+
+    async handleUndo() {
+        try {
+            await undo();
+            await this.refreshFiles();
+        } catch (e) {
+            console.error("Undo failed:", e);
+            alert(`Undo failed: ${e}`);
+        }
+    }
+
+    async handleRedo() {
+        try {
+            await redo();
+            await this.refreshFiles();
+        } catch (e) {
+            console.error("Redo failed:", e);
+            alert(`Redo failed: ${e}`);
         }
     }
 

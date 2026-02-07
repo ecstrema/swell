@@ -8,6 +8,13 @@ use serde::{Serialize, Deserialize};
 // Since we want to share code, we'll use a static Mutex.
 // Note: In a real Wasm environment without threads, Mutex might be stubbed or work as a plain lock.
 
+// Command pattern for undo/redo
+#[derive(Clone, Serialize, Deserialize)]
+pub enum Action {
+    AddFile { path: String },
+    RemoveFile { path: String, position: usize },
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct SignalChange {
     time: u64,
@@ -44,15 +51,35 @@ pub struct LoadedWave {
     pub wave: wellen::simple::Waveform,
 }
 
+struct UndoRedoState {
+    undo_stack: Vec<Action>,
+    redo_stack: Vec<Action>,
+}
+
+impl UndoRedoState {
+    const fn new() -> Self {
+        Self {
+            undo_stack: Vec::new(),
+            redo_stack: Vec::new(),
+        }
+    }
+}
+
 static OPENED_FILES: Mutex<Vec<LoadedWave>> = Mutex::new(Vec::new());
+static UNDO_REDO: Mutex<UndoRedoState> = Mutex::new(UndoRedoState::new());
 
 pub fn add_file(path: String, waveform: wellen::simple::Waveform) {
     let mut files = OPENED_FILES.lock().unwrap();
 
     files.push(LoadedWave {
-        path,
+        path: path.clone(),
         wave: waveform,
     });
+
+    // Record action for undo
+    let mut undo_redo = UNDO_REDO.lock().unwrap();
+    undo_redo.undo_stack.push(Action::AddFile { path });
+    undo_redo.redo_stack.clear(); // Clear redo stack on new action
 }
 
 #[wasm_bindgen]
@@ -66,6 +93,11 @@ pub fn remove_file(path: String) {
     let mut files = OPENED_FILES.lock().unwrap();
     if let Some(pos) = files.iter().position(|x| x.path == path) {
         files.remove(pos);
+
+        // Record action for undo
+        let mut undo_redo = UNDO_REDO.lock().unwrap();
+        undo_redo.undo_stack.push(Action::RemoveFile { path, position: pos });
+        undo_redo.redo_stack.clear(); // Clear redo stack on new action
     }
 }
 
@@ -176,4 +208,97 @@ pub fn get_signal_changes(filename: String, signal_id: usize, start: u64, end: u
 pub fn get_signal_changes_wasm(filename: String, signal_id: usize, start: u64, end: u64) -> Result<JsValue, String> {
     let changes = get_signal_changes(filename, signal_id, start, end)?;
     serde_wasm_bindgen::to_value(&changes).map_err(|e| e.to_string())
+}
+
+// Undo/Redo functions
+pub fn undo() -> Result<String, String> {
+    let mut undo_redo = UNDO_REDO.lock().unwrap();
+    
+    let action = undo_redo.undo_stack.pop()
+        .ok_or_else(|| "Nothing to undo".to_string())?;
+    
+    match &action {
+        Action::AddFile { path } => {
+            // Undo an AddFile means removing it
+            let mut files = OPENED_FILES.lock().unwrap();
+            if let Some(pos) = files.iter().position(|x| x.path == *path) {
+                files.remove(pos);
+            }
+        }
+        Action::RemoveFile { path: _, position: _ } => {
+            // Undo a RemoveFile means we need to restore it
+            // However, we don't have the waveform data saved
+            // For now, we'll just return an error for this case
+            return Err("Cannot undo file removal - file data not preserved".to_string());
+        }
+    }
+    
+    undo_redo.redo_stack.push(action.clone());
+    Ok("Undo successful".to_string())
+}
+
+#[wasm_bindgen]
+pub fn undo_wasm() -> Result<String, String> {
+    undo()
+}
+
+pub fn redo() -> Result<String, String> {
+    let mut undo_redo = UNDO_REDO.lock().unwrap();
+    
+    let action = undo_redo.redo_stack.pop()
+        .ok_or_else(|| "Nothing to redo".to_string())?;
+    
+    match &action {
+        Action::AddFile { path: _ } => {
+            // Redo an AddFile means we need to re-add it
+            // However, we don't have the waveform data saved
+            // For now, we'll just return an error for this case
+            return Err("Cannot redo file addition - file data not preserved".to_string());
+        }
+        Action::RemoveFile { path, position: _ } => {
+            // Redo a RemoveFile means removing it again
+            let mut files = OPENED_FILES.lock().unwrap();
+            if let Some(pos) = files.iter().position(|x| x.path == *path) {
+                files.remove(pos);
+            }
+        }
+    }
+    
+    undo_redo.undo_stack.push(action.clone());
+    Ok("Redo successful".to_string())
+}
+
+#[wasm_bindgen]
+pub fn redo_wasm() -> Result<String, String> {
+    redo()
+}
+
+#[wasm_bindgen]
+pub fn can_undo() -> bool {
+    let undo_redo = UNDO_REDO.lock().unwrap();
+    !undo_redo.undo_stack.is_empty()
+}
+
+#[wasm_bindgen]
+pub fn can_redo() -> bool {
+    let undo_redo = UNDO_REDO.lock().unwrap();
+    !undo_redo.redo_stack.is_empty()
+}
+
+#[wasm_bindgen]
+pub fn get_undo_description() -> Option<String> {
+    let undo_redo = UNDO_REDO.lock().unwrap();
+    undo_redo.undo_stack.last().map(|action| match action {
+        Action::AddFile { path } => format!("Undo: Add File '{}'", path),
+        Action::RemoveFile { path, .. } => format!("Undo: Remove File '{}'", path),
+    })
+}
+
+#[wasm_bindgen]
+pub fn get_redo_description() -> Option<String> {
+    let undo_redo = UNDO_REDO.lock().unwrap();
+    undo_redo.redo_stack.last().map(|action| match action {
+        Action::AddFile { path } => format!("Redo: Add File '{}'", path),
+        Action::RemoveFile { path, .. } => format!("Redo: Remove File '{}'", path),
+    })
 }

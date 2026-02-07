@@ -55,6 +55,17 @@ export class MenuBar extends HTMLElement {
                             detail: 'edit-undo'
                         }));
                     }
+                }),
+                await MenuItem.new({
+                    id: 'redo',
+                    text: 'Redo',
+                    action: () => {
+                        this.dispatchEvent(new CustomEvent('menu-action', {
+                            bubbles: true,
+                            composed: true,
+                            detail: 'edit-redo'
+                        }));
+                    }
                 })
             ]
         });
@@ -135,6 +146,7 @@ export class MenuBar extends HTMLElement {
                       <div class="menu-title">Edit</div>
                       <div class="dropdown">
                           <div class="menu-item" data-action="edit-undo">Undo</div>
+                          <div class="menu-item" data-action="edit-redo">Redo</div>
                       </div>
                   </div>
                   <div class="menu-group">

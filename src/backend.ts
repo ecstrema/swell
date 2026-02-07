@@ -112,3 +112,46 @@ export const getSignalChanges = async (filename: string, signalId: number, start
     // Let's assume passed as number/BigInt works.
     return wasm.get_signal_changes_wasm(filename, signalId, BigInt(start), BigInt(end));
 };
+
+// Undo/Redo functions
+export const undo = async (): Promise<string> => {
+    if (isTauri) {
+        return await invoke("undo");
+    }
+    return wasm.undo_wasm();
+};
+
+export const redo = async (): Promise<string> => {
+    if (isTauri) {
+        return await invoke("redo");
+    }
+    return wasm.redo_wasm();
+};
+
+export const canUndo = async (): Promise<boolean> => {
+    if (isTauri) {
+        return await invoke("can_undo");
+    }
+    return wasm.can_undo();
+};
+
+export const canRedo = async (): Promise<boolean> => {
+    if (isTauri) {
+        return await invoke("can_redo");
+    }
+    return wasm.can_redo();
+};
+
+export const getUndoDescription = async (): Promise<string | undefined> => {
+    if (isTauri) {
+        return await invoke("get_undo_description");
+    }
+    return wasm.get_undo_description();
+};
+
+export const getRedoDescription = async (): Promise<string | undefined> => {
+    if (isTauri) {
+        return await invoke("get_redo_description");
+    }
+    return wasm.get_redo_description();
+};

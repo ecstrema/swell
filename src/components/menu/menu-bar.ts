@@ -75,11 +75,12 @@ export class MenuBar extends HTMLElement {
               <style>
                   :host {
                       display: block;
-                      background: #f0f0f0;
-                      border-bottom: 1px solid #ccc;
+                      background: var(--menu-bg);
+                      border-bottom: 1px solid var(--menu-border);
                       font-family: sans-serif;
                       font-size: 14px;
                       user-select: none;
+                      color: var(--color-text);
                   }
                   .menu-bar {
                       display: flex;
@@ -92,16 +93,16 @@ export class MenuBar extends HTMLElement {
                       cursor: pointer;
                   }
                   .menu-title:hover {
-                      background: #e0e0e0;
+                      background: var(--menu-item-hover);
                   }
                   .dropdown {
                       display: none;
                       position: absolute;
                       top: 100%;
                       left: 0;
-                      background: white;
-                      border: 1px solid #ccc;
-                      box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+                      background: var(--menu-dropdown-bg);
+                      border: 1px solid var(--menu-border);
+                      box-shadow: 2px 2px 5px var(--menu-shadow);
                       min-width: 150px;
                       z-index: 1000;
                   }
@@ -113,11 +114,11 @@ export class MenuBar extends HTMLElement {
                       cursor: pointer;
                   }
                   .menu-item:hover {
-                      background: #f0f0f0;
+                      background: var(--menu-item-hover);
                   }
                   .separator {
                       height: 1px;
-                      background: #eee;
+                      background: var(--menu-border);
                       margin: 4px 0;
                   }
               </style>

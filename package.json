@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "wasm:build": "cd ../backend && wasm-pack build --target web"
+    "wasm:build": "cd backend && wasm-pack build --target web"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.10.1",

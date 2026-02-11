@@ -323,6 +323,7 @@ export class CommandPalette extends HTMLElement {
         });
         
         // Scroll selected item into view
+        // Note: Check for scrollIntoView is needed for jsdom compatibility in tests
         const selectedElement = this.resultsContainer.querySelector('.result-item.selected');
         if (selectedElement && typeof selectedElement.scrollIntoView === 'function') {
             selectedElement.scrollIntoView({ block: 'nearest' });

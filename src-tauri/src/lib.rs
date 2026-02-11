@@ -16,10 +16,10 @@ fn save_opened_files(app_handle: &tauri::AppHandle) {
         match store_collection.get(STORE_NAME) {
             Some(mut store) => {
                 if let Err(e) = store.set(OPENED_FILES_KEY, serde_json::json!(files)) {
-                    eprintln!("Failed to save opened files: {}", e);
+                    eprintln!("Failed to save opened files to store: {}", e);
                 }
                 if let Err(e) = store.save() {
-                    eprintln!("Failed to save store: {}", e);
+                    eprintln!("Failed to persist store to disk: {}", e);
                 }
             }
             None => {
@@ -38,8 +38,13 @@ fn load_opened_files(app_handle: &tauri::AppHandle) {
                 if let Some(value) = store.get(OPENED_FILES_KEY) {
                     if let Ok(files) = serde_json::from_value::<Vec<String>>(value.clone()) {
                         for path in files {
-                            if let Ok(wave) = wellen::simple::read(&path) {
-                                add_file(path.clone(), wave);
+                            match wellen::simple::read(&path) {
+                                Ok(wave) => {
+                                    add_file(path.clone(), wave);
+                                }
+                                Err(e) => {
+                                    eprintln!("Failed to load file '{}': {}", path, e);
+                                }
                             }
                         }
                     }

@@ -1,4 +1,5 @@
 import { isTauri } from "../../backend";
+import { themeManager } from "../../theme-manager";
 
 export class MenuBar extends HTMLElement {
   constructor() {
@@ -59,8 +60,35 @@ export class MenuBar extends HTMLElement {
             ]
         });
 
+        const viewMenu = await Submenu.new({
+            text: 'View',
+            items: [
+                await MenuItem.new({
+                    id: 'theme-light',
+                    text: 'Light Theme',
+                    action: () => {
+                        themeManager.setTheme('light');
+                    }
+                }),
+                await MenuItem.new({
+                    id: 'theme-dark',
+                    text: 'Dark Theme',
+                    action: () => {
+                        themeManager.setTheme('dark');
+                    }
+                }),
+                await MenuItem.new({
+                    id: 'theme-auto',
+                    text: 'Auto Theme',
+                    action: () => {
+                        themeManager.setTheme('auto');
+                    }
+                })
+            ]
+        });
+
         const menu = await Menu.new({
-            items: [fileMenu, editMenu]
+            items: [fileMenu, editMenu, viewMenu]
         });
 
         await menu.setAsAppMenu();
@@ -140,6 +168,10 @@ export class MenuBar extends HTMLElement {
                   <div class="menu-group">
                       <div class="menu-title">View</div>
                       <div class="dropdown">
+                          <div class="menu-item" data-action="view-theme-light">Light Theme</div>
+                          <div class="menu-item" data-action="view-theme-dark">Dark Theme</div>
+                          <div class="menu-item" data-action="view-theme-auto">Auto Theme</div>
+                          <div class="separator"></div>
                           <div class="menu-item" data-action="view-zoom-in">Zoom In</div>
                           <div class="menu-item" data-action="view-zoom-out">Zoom Out</div>
                       </div>
@@ -152,6 +184,15 @@ export class MenuBar extends HTMLElement {
                   const target = e.target as HTMLElement;
                   const action = target.dataset.action;
                   if (action) {
+                      // Handle theme actions
+                      if (action === 'view-theme-light') {
+                          themeManager.setTheme('light');
+                      } else if (action === 'view-theme-dark') {
+                          themeManager.setTheme('dark');
+                      } else if (action === 'view-theme-auto') {
+                          themeManager.setTheme('auto');
+                      }
+
                       this.dispatchEvent(new CustomEvent('menu-action', {
                           bubbles: true,
                           composed: true,

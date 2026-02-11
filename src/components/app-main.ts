@@ -7,7 +7,7 @@ import { TabBar } from "./tab-bar.ts";
 import { FileDisplay } from "./file-display.ts";
 import { FilesTree, HierarchyRoot } from "./files-tree.ts";
 import { SettingsPage } from "./settings-page.ts";
-import { CommandRegistry, ShortcutManager, defaultShortcuts } from "../shortcuts/index.ts";
+import { CommandRegistry, ShortcutManager, defaultShortcuts } from "../shortcuts/index.js";
 
 
 
@@ -141,6 +141,15 @@ export class AppMain extends HTMLElement {
         // Listeners
         this.addEventListener('file-open-request', () => this.handleFileOpen());
         this.addEventListener('settings-open-request', () => this.openSettings());
+
+        // Listen for menu actions and route them through command registry
+        this.addEventListener('menu-action', (e: Event) => {
+            const customEvent = e as CustomEvent;
+            const action = customEvent.detail;
+            if (action && this.commandRegistry.has(action)) {
+                this.commandRegistry.execute(action);
+            }
+        });
 
         // Listen for menu actions and route them through command registry
         this.addEventListener('menu-action', (e: Event) => {

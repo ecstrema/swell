@@ -33,6 +33,29 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["fst"],
+        "name": "FST Waveform File",
+        "description": "Fast Signal Trace waveform file",
+        "role": "Viewer",
+        "mimeType": "application/x-fst"
+      },
+      {
+        "ext": ["vcd"],
+        "name": "VCD Waveform File",
+        "description": "Value Change Dump waveform file",
+        "role": "Viewer",
+        "mimeType": "application/x-vcd"
+      },
+      {
+        "ext": ["ghw"],
+        "name": "GHW Waveform File",
+        "description": "GHDL Waveform file",
+        "role": "Viewer",
+        "mimeType": "application/x-ghw"
+      }
     ]
   }
 }

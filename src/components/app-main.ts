@@ -2,9 +2,11 @@ import { addFile, openFileDialog, getHierarchy, getFiles, removeFile } from "../
 import "./menu/menu-bar.ts";
 import "./tab-bar.ts";
 import "./files-tree.ts";
+import "./command-palette.ts";
 import { TabBar } from "./tab-bar.ts";
 import { FileDisplay } from "./file-display.ts";
 import { FilesTree, HierarchyRoot } from "./files-tree.ts";
+import { CommandPalette } from "./command-palette.js";
 import { CommandRegistry, ShortcutManager, defaultShortcuts } from "../shortcuts/index.js";
 
 
@@ -19,6 +21,7 @@ export class AppMain extends HTMLElement {
     // Shortcut system
     private commandRegistry: CommandRegistry;
     private shortcutManager: ShortcutManager;
+    private commandPalette: CommandPalette | null = null;
 
     constructor() {
         super();
@@ -132,6 +135,9 @@ export class AppMain extends HTMLElement {
 
         // Initialize shortcut system
         this.initializeShortcuts();
+        
+        // Initialize command palette
+        this.initializeCommandPalette();
 
         // Listeners
         this.addEventListener('file-open-request', () => this.handleFileOpen());
@@ -163,6 +169,11 @@ export class AppMain extends HTMLElement {
     disconnectedCallback() {
         // Clean up shortcut system
         this.shortcutManager.deactivate();
+        
+        // Clean up command palette
+        if (this.commandPalette && this.commandPalette.parentNode) {
+            this.commandPalette.parentNode.removeChild(this.commandPalette);
+        }
     }
 
     /**
@@ -211,12 +222,37 @@ export class AppMain extends HTMLElement {
                 // Zoom out logic could be added here
             }
         });
+        
+        // Register command palette command
+        this.commandRegistry.register({
+            id: 'command-palette-toggle',
+            label: 'Open Command Palette',
+            handler: () => {
+                if (this.commandPalette) {
+                    this.commandPalette.toggle();
+                }
+            }
+        });
 
         // Register default shortcuts (currently empty, but ready for future use)
         this.shortcutManager.registerMany(defaultShortcuts);
+        
+        // Register keyboard shortcut to open command palette (Ctrl+K or Cmd+K)
+        this.shortcutManager.register({
+            shortcut: 'Ctrl+K',
+            commandId: 'command-palette-toggle'
+        });
 
         // Activate the shortcut system
         this.shortcutManager.activate();
+    }
+    
+    /**
+     * Initialize the command palette
+     */
+    private initializeCommandPalette() {
+        this.commandPalette = new CommandPalette(this.commandRegistry);
+        document.body.appendChild(this.commandPalette);
     }
 
     async refreshFiles() {

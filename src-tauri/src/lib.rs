@@ -6,35 +6,32 @@ use backend::{
 use backend::{HierarchyRoot, SignalChange};
 use tauri::Manager;
 
-const STORE_FILENAME: &str = "opened-files.json";
+const OPENED_FILES_KEY: &str = "opened_files";
 
 fn save_opened_files(app_handle: &tauri::AppHandle) {
     let files = backend_get_files();
     
-    if let Some(app_dir) = app_handle.path().app_data_dir().ok() {
-        if let Err(e) = std::fs::create_dir_all(&app_dir) {
-            eprintln!("Failed to create app data directory: {}", e);
-            return;
-        }
-        
-        let store_path = app_dir.join(STORE_FILENAME);
-        if let Ok(json) = serde_json::to_string(&files) {
-            if let Err(e) = std::fs::write(&store_path, json) {
+    if let Some(store) = app_handle.try_state::<tauri_plugin_store::StoreCollection<tauri::Wry>>() {
+        if let Some(mut store) = store.stores().next() {
+            if let Err(e) = store.set(OPENED_FILES_KEY, serde_json::json!(files)) {
                 eprintln!("Failed to save opened files: {}", e);
+            }
+            if let Err(e) = store.save() {
+                eprintln!("Failed to save store: {}", e);
             }
         }
     }
 }
 
 fn load_opened_files(app_handle: &tauri::AppHandle) {
-    if let Some(app_dir) = app_handle.path().app_data_dir().ok() {
-        let store_path = app_dir.join(STORE_FILENAME);
-        
-        if let Ok(contents) = std::fs::read_to_string(&store_path) {
-            if let Ok(files) = serde_json::from_str::<Vec<String>>(&contents) {
-                for path in files {
-                    if let Ok(wave) = wellen::simple::read(&path) {
-                        add_file(path.clone(), wave);
+    if let Some(store) = app_handle.try_state::<tauri_plugin_store::StoreCollection<tauri::Wry>>() {
+        if let Some(store) = store.stores().next() {
+            if let Some(value) = store.get(OPENED_FILES_KEY) {
+                if let Ok(files) = serde_json::from_value::<Vec<String>>(value.clone()) {
+                    for path in files {
+                        if let Ok(wave) = wellen::simple::read(&path) {
+                            add_file(path.clone(), wave);
+                        }
                     }
                 }
             }
@@ -87,6 +84,7 @@ fn add_file_command(path: String, app_handle: tauri::AppHandle) -> Result<String
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())

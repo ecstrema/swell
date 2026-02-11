@@ -22,7 +22,7 @@ export async function openFileDialog(): Promise<string | File | undefined | null
         directory: false,
         filters: [{
           name: 'Waveform Files',
-          extensions: ['vcd', 'fst', 'ghw']
+          extensions: ['vcd', 'fst', 'ghw', 'wcp']
         }]
       });
     } catch (e) {
@@ -34,7 +34,7 @@ export async function openFileDialog(): Promise<string | File | undefined | null
     return new Promise((resolve) => {
       const input = document.createElement("input");
       input.type = "file";
-      input.accept = ".vcd,.fst,.ghw";
+      input.accept = ".vcd,.fst,.ghw,.wcp";
       input.onchange = (event) => {
         resolve((event.target as HTMLInputElement).files?.[0])
       };

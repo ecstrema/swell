@@ -3,6 +3,8 @@ use wasm_bindgen::prelude::*;
 use wellen;
 use serde::{Serialize, Deserialize};
 
+mod wcp;
+
 // We need a thread-safe global state for the Tauri side (multi-threaded).
 // For Wasm (single-threaded usually), Mutex is still fine or we could use RefCell/thread_local.
 // Since we want to share code, we'll use a static Mutex.
@@ -71,8 +73,29 @@ pub fn remove_file(path: String) {
 
 #[wasm_bindgen]
 pub fn add_file_bytes(name: String, content: Vec<u8>) -> Result<String, String> {
-    let cursor = std::io::Cursor::new(content);
-    let waveform = wellen::simple::read_from_reader(cursor).map_err(|e| e.to_string())?;
+    // Check if this is a WCP file by examining the content
+    let is_wcp = if let Ok(content_str) = std::str::from_utf8(&content) {
+        content_str.contains("HEADER") && 
+        content_str.contains("SIGNALS") && 
+        content_str.contains("WAVEFORM")
+    } else {
+        false
+    };
+    
+    let waveform = if is_wcp {
+        // Parse as WCP and convert to VCD
+        let cursor = std::io::Cursor::new(&content);
+        let wcp_waveform = wcp::parse_wcp(cursor).map_err(|e| e.to_string())?;
+        let vcd_content = wcp::wcp_to_vcd(&wcp_waveform);
+        // Convert String to Vec<u8> to avoid lifetime issues
+        let vcd_bytes = vcd_content.into_bytes();
+        let vcd_cursor = std::io::Cursor::new(vcd_bytes);
+        wellen::simple::read_from_reader(vcd_cursor).map_err(|e| e.to_string())?
+    } else {
+        // Try to parse as standard format (VCD, FST, GHW)
+        let cursor = std::io::Cursor::new(content);
+        wellen::simple::read_from_reader(cursor).map_err(|e| e.to_string())?
+    };
 
     add_file(name.clone(), waveform);
     Ok(name)

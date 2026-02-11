@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings Page Demo</title>
+    <style>
+        :root {
+            --color-bg: #ffffff;
+            --color-bg-surface: #f5f5f5;
+            --color-text: #000000;
+            --color-text-secondary: #666666;
+            --color-border: #dddddd;
+            --color-bg-hover: #e5e5e5;
+            --color-button-border: #cccccc;
+            --color-button-border-hover: #999999;
+        }
+
+        .theme-dark {
+            --color-bg: #1e1e1e;
+            --color-bg-surface: #252525;
+            --color-text: #ffffff;
+            --color-text-secondary: #aaaaaa;
+            --color-border: #404040;
+            --color-bg-hover: #2d2d2d;
+            --color-button-border: #404040;
+            --color-button-border-hover: #666666;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: var(--color-bg);
+            color: var(--color-text);
+        }
+
+        button {
+            padding: 10px 20px;
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--color-text);
+        }
+
+        button:hover {
+            background: var(--color-bg-hover);
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .info {
+            background: var(--color-bg-surface);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid var(--color-border);
+        }
+
+        .info h2 {
+            margin-top: 0;
+        }
+
+        .info code {
+            background: var(--color-bg);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .info ul {
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <h1>Settings Page Demo</h1>
+    <p>Click the button below to open the settings page:</p>
+    <button id="openSettings">Open Settings</button>
+
+    <div class="info">
+        <h2>Settings System Overview</h2>
+        <p>The settings system consists of three main components:</p>
+        <ul>
+            <li><strong>Settings Register</strong> (<code>settings-register.ts</code>): Manages settings metadata including path, description, type, and options</li>
+            <li><strong>Settings Storage</strong> (<code>settings-storage.ts</code>): Handles reading/writing settings to <code>settings.json</code> file (Tauri) or localStorage (web)</li>
+            <li><strong>Settings Page</strong> (<code>settings-page.ts</code>): UI component for displaying and editing settings</li>
+        </ul>
+
+        <h3>Example Setting Definition</h3>
+        <pre style="background: var(--color-bg); padding: 15px; border-radius: 4px; overflow-x: auto;"><code>{
+  "path": "Application/Color Theme",
+  "description": "Choose the color theme for the application",
+  "type": "enum",
+  "enumOptions": ["light", "dark", "system"]
+}</code></pre>
+
+        <h3>Supported Setting Types</h3>
+        <ul>
+            <li><code>enum</code>: Dropdown selection with predefined options</li>
+            <li><code>boolean</code>: Checkbox for true/false values</li>
+            <li><code>string</code>: Text input field</li>
+            <li><code>number</code>: Number input with optional min/max/step</li>
+        </ul>
+
+        <h3>How to Add New Settings</h3>
+        <p>Register a new setting in <code>settings-register.ts</code>:</p>
+        <pre style="background: var(--color-bg); padding: 15px; border-radius: 4px; overflow-x: auto;"><code>settingsRegister.register({
+    path: 'Editor/Font Size',
+    description: 'Set the editor font size',
+    type: 'number',
+    defaultValue: 14,
+    min: 8,
+    max: 32,
+    step: 1
+});</code></pre>
+    </div>
+
+    <script type="module">
+        // This is a demo page - the actual settings page would be imported from the component
+        document.getElementById('openSettings').addEventListener('click', () => {
+            alert('In the actual application, this would open the settings modal.\n\nThe settings page is accessible from File > Settings... in the menu bar.');
+        });
+    </script>
+</body>
+</html>

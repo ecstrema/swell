@@ -3,7 +3,7 @@
  * Handles theme switching and persistence
  */
 
-type Theme = 'light' | 'dark' | 'auto';
+type Theme = 'light' | 'dark' | 'auto' | 'system';
 
 const THEME_STORAGE_KEY = 'app-theme';
 
@@ -25,7 +25,7 @@ export class ThemeManager {
 
   private loadTheme(): void {
     const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-    if (savedTheme && ['light', 'dark', 'auto'].includes(savedTheme)) {
+    if (savedTheme && ['light', 'dark', 'auto', 'system'].includes(savedTheme)) {
       this.currentTheme = savedTheme;
     }
   }
@@ -40,13 +40,13 @@ export class ThemeManager {
     // Remove existing theme classes
     root.classList.remove('theme-light', 'theme-dark');
     
-    // Apply new theme class if not auto
+    // Apply new theme class if not auto/system
     if (this.currentTheme === 'light') {
       root.classList.add('theme-light');
     } else if (this.currentTheme === 'dark') {
       root.classList.add('theme-dark');
     }
-    // If auto, no class is added and CSS media query takes over
+    // If auto or system, no class is added and CSS media query takes over
   }
 
   setTheme(theme: Theme): void {

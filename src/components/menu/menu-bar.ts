@@ -42,6 +42,19 @@ export class MenuBar extends HTMLElement {
                             type: 'separator'
                         },
                         {
+                            id: 'settings',
+                            text: 'Settings...',
+                            action: () => {
+                                this.dispatchEvent(new CustomEvent('settings-open-request', {
+                                    bubbles: true,
+                                    composed: true
+                                }));
+                            }
+                        },
+                        {
+                            type: 'separator'
+                        },
+                        {
                             id: 'quit',
                             text: 'Quit',
                             action: () => {

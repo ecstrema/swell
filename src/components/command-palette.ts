@@ -277,11 +277,6 @@ export class CommandPalette extends HTMLElement {
         }
     }
     
-    private executeCommand(commandId: string) {
-        this.commandRegistry.execute(commandId);
-        this.close();
-    }
-    
     private render() {
         if (!this.resultsContainer) return;
         
@@ -314,7 +309,8 @@ export class CommandPalette extends HTMLElement {
             
             // Click handler
             item.addEventListener('click', () => {
-                this.executeCommand(command.id);
+                this.selectedIndex = index;
+                this.executeSelected();
             });
             
             // Mouse over handler

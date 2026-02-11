@@ -2,7 +2,6 @@ import { addFile, openFileDialog, getHierarchy, getFiles, removeFile } from "../
 import "./menu/menu-bar.ts";
 import "./tab-bar.ts";
 import "./files-tree.ts";
-import "./command-palette.ts";
 import { TabBar } from "./tab-bar.ts";
 import { FileDisplay } from "./file-display.ts";
 import { FilesTree, HierarchyRoot } from "./files-tree.ts";

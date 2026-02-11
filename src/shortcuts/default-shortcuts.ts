@@ -12,11 +12,11 @@ import { ShortcutBinding } from "./types.js";
 export const defaultShortcuts: ShortcutBinding[] = [
     // Example (currently commented out):
     // {
-    //     shortcut: { key: 'o', ctrl: true },
+    //     shortcut: 'Ctrl+O',
     //     commandId: 'file-open'
     // },
     // {
-    //     shortcut: { key: 'w', ctrl: true },
+    //     shortcut: 'Ctrl+W',
     //     commandId: 'file-close'
     // }
 ];

@@ -3,15 +3,9 @@
  */
 
 /**
- * Represents a keyboard shortcut combination
+ * Represents a keyboard shortcut combination as a string compatible with shosho (e.g. "Ctrl+S")
  */
-export interface KeyboardShortcut {
-    key: string;
-    ctrl?: boolean;
-    alt?: boolean;
-    shift?: boolean;
-    meta?: boolean;
-}
+export type KeyboardShortcut = string;
 
 /**
  * Represents a command that can be executed

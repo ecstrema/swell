@@ -1,12 +1,12 @@
+import { themeManager } from "../theme-manager.js";
+
 export interface Settings {
-    theme: 'light' | 'dark' | 'auto';
     defaultZoom: number;
     showGrid: boolean;
     gridSpacing: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-    theme: 'auto',
     defaultZoom: 1.0,
     showGrid: true,
     gridSpacing: 10,
@@ -47,8 +47,8 @@ export class SettingsPage extends HTMLElement {
 
     private handleThemeChange(event: Event) {
         const select = event.target as HTMLSelectElement;
-        this.settings.theme = select.value as 'light' | 'dark' | 'auto';
-        this.saveSettings();
+        const theme = select.value as 'light' | 'dark' | 'auto';
+        themeManager.setTheme(theme);
         this.render();
     }
 
@@ -181,9 +181,9 @@ export class SettingsPage extends HTMLElement {
                         </div>
                         <div class="setting-control">
                             <select id="theme-select">
-                                <option value="auto" ${this.settings.theme === 'auto' ? 'selected' : ''}>Auto (System)</option>
-                                <option value="light" ${this.settings.theme === 'light' ? 'selected' : ''}>Light</option>
-                                <option value="dark" ${this.settings.theme === 'dark' ? 'selected' : ''}>Dark</option>
+                                <option value="auto" ${themeManager.getTheme() === 'auto' ? 'selected' : ''}>Auto (System)</option>
+                                <option value="light" ${themeManager.getTheme() === 'light' ? 'selected' : ''}>Light</option>
+                                <option value="dark" ${themeManager.getTheme() === 'dark' ? 'selected' : ''}>Dark</option>
                             </select>
                         </div>
                     </div>

@@ -4,58 +4,36 @@ use backend::{
     get_signal_changes as backend_get_signal_changes, remove_file as backend_remove_file,
 };
 use backend::{HierarchyRoot, SignalChange};
-use tauri::Manager;
+use tauri_plugin_store::StoreExt;
 
 const OPENED_FILES_KEY: &str = "opened_files";
 const STORE_NAME: &str = "store.json";
 
 fn save_opened_files(app_handle: &tauri::AppHandle) {
     let files = backend_get_files();
-    
-    if let Some(store_collection) = app_handle.try_state::<tauri_plugin_store::StoreCollection<tauri::Wry>>() {
-        match store_collection.get(STORE_NAME) {
-            Some(mut store) => {
-                if let Err(e) = store.set(OPENED_FILES_KEY, serde_json::json!(files)) {
-                    eprintln!("Failed to save opened files to store: {}", e);
-                }
-                if let Err(e) = store.save() {
-                    eprintln!("Failed to persist store to disk: {}", e);
-                }
-            }
-            None => {
-                eprintln!("Store '{}' not found", STORE_NAME);
-            }
-        }
-    } else {
-        eprintln!("Store collection not available");
+
+    let store = app_handle.store(STORE_NAME);
+    store.set(OPENED_FILES_KEY, serde_json::json!(files));
+    if let Err(e) = store.save() {
+        eprintln!("Failed to persist store to disk: {}", e);
     }
 }
 
 fn load_opened_files(app_handle: &tauri::AppHandle) {
-    if let Some(store_collection) = app_handle.try_state::<tauri_plugin_store::StoreCollection<tauri::Wry>>() {
-        match store_collection.get(STORE_NAME) {
-            Some(store) => {
-                if let Some(value) = store.get(OPENED_FILES_KEY) {
-                    if let Ok(files) = serde_json::from_value::<Vec<String>>(value.clone()) {
-                        for path in files {
-                            match wellen::simple::read(&path) {
-                                Ok(wave) => {
-                                    add_file(path.clone(), wave);
-                                }
-                                Err(e) => {
-                                    eprintln!("Failed to load file '{}': {}", path, e);
-                                }
-                            }
-                        }
+    let store = app_handle.store(STORE_NAME);
+    if let Some(value) = store.get(OPENED_FILES_KEY) {
+        if let Ok(files) = serde_json::from_value::<Vec<String>>(value.clone()) {
+            for path in files {
+                match wellen::simple::read(&path) {
+                    Ok(wave) => {
+                        add_file(path.clone(), wave);
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to load file '{}': {}", path, e);
                     }
                 }
             }
-            None => {
-                eprintln!("Store '{}' not found", STORE_NAME);
-            }
         }
-    } else {
-        eprintln!("Store collection not available");
     }
 }
 
@@ -106,7 +84,6 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(
             tauri_plugin_store::Builder::new()
-                .store(STORE_NAME)
                 .build()
         )
         .plugin(tauri_plugin_window_state::Builder::new().build())

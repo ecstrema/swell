@@ -7,35 +7,50 @@ use backend::{HierarchyRoot, SignalChange};
 use tauri::Manager;
 
 const OPENED_FILES_KEY: &str = "opened_files";
+const STORE_NAME: &str = "store.json";
 
 fn save_opened_files(app_handle: &tauri::AppHandle) {
     let files = backend_get_files();
     
-    if let Some(store) = app_handle.try_state::<tauri_plugin_store::StoreCollection<tauri::Wry>>() {
-        if let Some(mut store) = store.stores().next() {
-            if let Err(e) = store.set(OPENED_FILES_KEY, serde_json::json!(files)) {
-                eprintln!("Failed to save opened files: {}", e);
+    if let Some(store_collection) = app_handle.try_state::<tauri_plugin_store::StoreCollection<tauri::Wry>>() {
+        match store_collection.get(STORE_NAME) {
+            Some(mut store) => {
+                if let Err(e) = store.set(OPENED_FILES_KEY, serde_json::json!(files)) {
+                    eprintln!("Failed to save opened files: {}", e);
+                }
+                if let Err(e) = store.save() {
+                    eprintln!("Failed to save store: {}", e);
+                }
             }
-            if let Err(e) = store.save() {
-                eprintln!("Failed to save store: {}", e);
+            None => {
+                eprintln!("Store '{}' not found", STORE_NAME);
             }
         }
+    } else {
+        eprintln!("Store collection not available");
     }
 }
 
 fn load_opened_files(app_handle: &tauri::AppHandle) {
-    if let Some(store) = app_handle.try_state::<tauri_plugin_store::StoreCollection<tauri::Wry>>() {
-        if let Some(store) = store.stores().next() {
-            if let Some(value) = store.get(OPENED_FILES_KEY) {
-                if let Ok(files) = serde_json::from_value::<Vec<String>>(value.clone()) {
-                    for path in files {
-                        if let Ok(wave) = wellen::simple::read(&path) {
-                            add_file(path.clone(), wave);
+    if let Some(store_collection) = app_handle.try_state::<tauri_plugin_store::StoreCollection<tauri::Wry>>() {
+        match store_collection.get(STORE_NAME) {
+            Some(store) => {
+                if let Some(value) = store.get(OPENED_FILES_KEY) {
+                    if let Ok(files) = serde_json::from_value::<Vec<String>>(value.clone()) {
+                        for path in files {
+                            if let Ok(wave) = wellen::simple::read(&path) {
+                                add_file(path.clone(), wave);
+                            }
                         }
                     }
                 }
             }
+            None => {
+                eprintln!("Store '{}' not found", STORE_NAME);
+            }
         }
+    } else {
+        eprintln!("Store collection not available");
     }
 }
 

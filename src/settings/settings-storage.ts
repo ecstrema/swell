@@ -2,14 +2,14 @@
 
 import { isTauri } from '../backend.js';
 import { invoke } from '@tauri-apps/api/core';
-import { settingsRegister } from './settings-register.js';
+import { settingsRegister, SettingValue } from './settings-register.js';
 
 const SETTINGS_FILE = 'settings.json';
 
 /**
  * Get a setting value
  */
-export async function getSetting(path: string): Promise<any> {
+export async function getSetting(path: string): Promise<SettingValue | undefined> {
     if (isTauri) {
         try {
             return await invoke('get_setting', { path });
@@ -39,7 +39,7 @@ export async function getSetting(path: string): Promise<any> {
 /**
  * Set a setting value
  */
-export async function setSetting(path: string, value: any): Promise<void> {
+export async function setSetting(path: string, value: SettingValue): Promise<void> {
     if (isTauri) {
         try {
             await invoke('set_setting', { path, value: JSON.stringify(value) });
@@ -87,7 +87,7 @@ export async function getAllSettings(): Promise<Record<string, any>> {
 /**
  * Helper to get nested value from object using path like "Application/Color Theme"
  */
-function getNestedValue(obj: any, path: string): any {
+function getNestedValue(obj: Record<string, any>, path: string): SettingValue | undefined {
     const parts = path.split('/');
     let current = obj;
     for (const part of parts) {
@@ -103,7 +103,7 @@ function getNestedValue(obj: any, path: string): any {
 /**
  * Helper to set nested value in object using path like "Application/Color Theme"
  */
-function setNestedValue(obj: any, path: string, value: any): void {
+function setNestedValue(obj: Record<string, any>, path: string, value: SettingValue): void {
     const parts = path.split('/');
     let current = obj;
     for (let i = 0; i < parts.length - 1; i++) {

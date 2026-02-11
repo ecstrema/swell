@@ -1,6 +1,6 @@
 // Settings page component
 
-import { settingsRegister, SettingMetadata } from '../settings/settings-register.js';
+import { settingsRegister, SettingMetadata, SettingValue } from '../settings/settings-register.js';
 import { getSetting, setSetting } from '../settings/settings-storage.js';
 
 export class SettingsPage extends HTMLElement {
@@ -32,7 +32,7 @@ export class SettingsPage extends HTMLElement {
         }
     }
 
-    updateInputValue(path: string, value: any) {
+    updateInputValue(path: string, value: SettingValue | undefined) {
         const input = this.shadowRoot?.querySelector(`[data-path="${path}"]`) as HTMLInputElement | HTMLSelectElement;
         if (!input) return;
 
@@ -43,7 +43,7 @@ export class SettingsPage extends HTMLElement {
         }
     }
 
-    async handleSettingChange(path: string, value: any, metadata: SettingMetadata) {
+    async handleSettingChange(path: string, value: SettingValue, metadata: SettingMetadata) {
         try {
             // Convert value based on type
             let convertedValue = value;

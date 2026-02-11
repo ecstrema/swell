@@ -3,6 +3,9 @@
  * Handles theme switching and persistence
  */
 
+// Note: Both 'auto' and 'system' are supported for backward compatibility
+// 'auto' was the original value, 'system' is the new standard
+// Both behave identically - they follow the system theme preference
 type Theme = 'light' | 'dark' | 'auto' | 'system';
 
 const THEME_STORAGE_KEY = 'app-theme';

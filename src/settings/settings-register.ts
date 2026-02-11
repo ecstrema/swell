@@ -1,5 +1,7 @@
 // Settings registry for managing application settings metadata
 
+export type SettingValue = string | number | boolean;
+
 export type SettingType = 'enum' | 'boolean' | 'string' | 'number';
 
 export interface EnumOption {
@@ -11,7 +13,7 @@ export interface SettingMetadata {
     path: string;
     description: string;
     type: SettingType;
-    defaultValue: any;
+    defaultValue: SettingValue;
     // For enum type
     enumOptions?: string[];
     // For displaying enum options with custom labels

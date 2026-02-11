@@ -23,3 +23,6 @@ package-lock.json
 *.njsproj
 *.sln
 *.sw?
+
+# Demo files
+demo-*.html

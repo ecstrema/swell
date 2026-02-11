@@ -189,9 +189,13 @@ export class AppMain extends HTMLElement {
         this.commandRegistry.register({
             id: 'file-quit',
             label: 'Quit',
-            handler: () => {
-                console.log('Quit action triggered');
-                // Tauri quit logic could be added here
+            handler: async () => {
+                // Only available in Tauri, not on web
+                const { isTauri } = await import('../backend.js');
+                if (isTauri) {
+                    const { getCurrentWindow } = await import('@tauri-apps/api/window');
+                    await getCurrentWindow().close();
+                }
             }
         });
 

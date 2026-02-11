@@ -22,33 +22,43 @@ export class MenuBar extends HTMLElement {
 
   async initMenu() {
     try {
+        // Build file menu items conditionally
+        const fileMenuItems = [
+            {
+                id: 'open',
+                text: 'Open File...',
+                action: () => {
+                    this.dispatchEvent(new CustomEvent('file-open-request', {
+                        bubbles: true,
+                        composed: true
+                    }));
+                }
+            }
+        ];
+
+        // Only add quit option for Tauri (not for web)
+        if (isTauri) {
+            fileMenuItems.push(
+                {
+                    type: 'separator' as const
+                },
+                {
+                    id: 'quit',
+                    text: 'Quit',
+                    action: async () => {
+                        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+                        await getCurrentWindow().close();
+                    }
+                }
+            );
+        }
+
         // Define menu structure using unified API
         this.menuConfig = {
             items: [
                 {
                     text: 'File',
-                    items: [
-                        {
-                            id: 'open',
-                            text: 'Open File...',
-                            action: () => {
-                                this.dispatchEvent(new CustomEvent('file-open-request', {
-                                    bubbles: true,
-                                    composed: true
-                                }));
-                            }
-                        },
-                        {
-                            type: 'separator'
-                        },
-                        {
-                            id: 'quit',
-                            text: 'Quit',
-                            action: () => {
-                               window.close();
-                            }
-                        }
-                    ]
+                    items: fileMenuItems
                 },
                 {
                     text: 'Edit',

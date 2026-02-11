@@ -103,6 +103,40 @@ fn build_scope(hierarchy: &wellen::Hierarchy, scope_ref: wellen::ScopeRef) -> Hi
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_file_management() {
+        // Clear files first (since it's a global static)
+        {
+            let mut files = OPENED_FILES.lock().unwrap();
+            files.clear();
+        }
+
+        // Initially empty
+        assert_eq!(get_files().len(), 0);
+
+        // Add a mock file (can't easily mock wellen waveform without file data, but we can try basic logic if we can construct one)
+        // Since constructing a waveform manually is hard without data, we'll just test the managing logic
+        // But `add_file` takes a `Waveform`.
+        // We can use `add_file_bytes` with an empty string? wellen might fail.
+        // Let's create a minimal VCD header to test `add_file_bytes`.
+
+        let minimal_vcd = b"$date today $end\n$version 1.0 $end\n$timescale 1ns $end\n$scope module top $end\n$enddefinitions $end\n";
+
+        let res = add_file_bytes("test.vcd".to_string(), minimal_vcd.to_vec());
+        assert!(res.is_ok());
+
+        assert_eq!(get_files().len(), 1);
+        assert_eq!(get_files()[0], "test.vcd");
+
+        remove_file("test.vcd".to_string());
+        assert_eq!(get_files().len(), 0);
+    }
+}
+
 pub fn get_hierarchy(filename: String) -> Result<HierarchyRoot, String> {
     let files = OPENED_FILES.lock().unwrap();
     let file = files.iter().find(|f| f.path.ends_with(&filename) || f.path == filename)

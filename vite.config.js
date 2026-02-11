@@ -10,5 +10,11 @@ export default defineConfig({
   build: {
     outDir: '../dist', // Ensure the build output goes back to the real project root
     emptyOutDir: true, // Clean the output directory before building
+    target: 'esnext', // Support top-level await
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
   }
 })

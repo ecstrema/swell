@@ -208,6 +208,16 @@ export class AppMain extends HTMLElement {
         });
 
         this.commandRegistry.register({
+            id: 'file-close',
+            label: 'Close File',
+            handler: () => {
+                if (this.state.activeFileId) {
+                    this.closeFile(this.state.activeFileId);
+                }
+            }
+        });
+
+        this.commandRegistry.register({
             id: 'file-quit',
             label: 'Quit',
             handler: async () => {

@@ -1,6 +1,7 @@
+import { TreeView, TreeNode } from "./tree-view.js";
 import { css } from "../utils/css-utils.js";
-import { scrollbarSheet } from "../styles/shared-sheets.js";
 import filesTreeCss from "./files-tree.css?inline";
+import "./tree-view.js";
 
 export interface HierarchyVar {
     name: string;
@@ -21,31 +22,53 @@ export interface HierarchyRoot {
     scopes: HierarchyScope[];
 }
 
-export class FilesTree extends HTMLElement {
-    private _data: HierarchyRoot | null = null;
+/**
+ * FilesTree component displays the hierarchical structure of signals from loaded waveform files.
+ * It extends TreeView to provide file-specific functionality for signal selection.
+ */
+export class FilesTree extends TreeView {
+    private _hierarchyData: HierarchyRoot | null = null;
     private _filename: string | null = null;
-    private container: HTMLDivElement;
 
     constructor() {
         super();
-        this.attachShadow({ mode: 'open' });
-
-        this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(filesTreeCss)];
-
-        this.shadowRoot!.innerHTML = `
-        <div id="tree-container"></div>
-        `;
-
-        this.container = this.shadowRoot!.querySelector('#tree-container') as HTMLDivElement;
+        
+        // Add FilesTree-specific styling
+        if (this.shadowRoot) {
+            const existingSheets = Array.from(this.shadowRoot.adoptedStyleSheets);
+            this.shadowRoot.adoptedStyleSheets = [...existingSheets, css(filesTreeCss)];
+        }
+        
+        // Configure the tree view for file hierarchy display
+        this.config = {
+            onLeafClick: (node: TreeNode) => {
+                this.dispatchEvent(new CustomEvent('signal-select', {
+                    detail: { name: node.name, ref: node.id, filename: this._filename },
+                    bubbles: true,
+                    composed: true
+                }));
+            },
+            leafNodeClass: 'var-node',
+            scopeNodeClass: 'tree-node'
+        };
     }
 
+    set hierarchyData(data: HierarchyRoot | null) {
+        this._hierarchyData = data;
+        this.updateTreeData();
+    }
+
+    get hierarchyData() {
+        return this._hierarchyData;
+    }
+
+    // Keep backward compatibility with the old 'data' property
     set data(data: HierarchyRoot | null) {
-        this._data = data;
-        this.render();
+        this.hierarchyData = data;
     }
 
     get data() {
-        return this._data;
+        return this.hierarchyData;
     }
 
     set filename(filename: string | null) {
@@ -58,71 +81,55 @@ export class FilesTree extends HTMLElement {
         return this._filename;
     }
 
-    render() {
-        this.container.innerHTML = '';
-
-        if (!this._data) {
-            this.container.innerHTML = '<div class="empty-msg">No loaded hierarchy</div>';
+    private updateTreeData() {
+        if (!this._hierarchyData) {
+            super.data = [];
             return;
         }
 
-        const rootEl = this.createScopeElement(this._data);
-        // If the root is artificial ("root"), maybe we skip displaying it and only display children?
-        // But for generic purposes, let's just dump it.
-        // Actually, often the top level list is just children.
-        // Let's iterate over the root scopes/vars directly.
+        // Convert hierarchy data to tree nodes
+        const treeNodes: TreeNode[] = [];
 
-        if (this._data.scopes) {
-            this._data.scopes.forEach(s => {
-                this.container.appendChild(this.createScopeElement(s));
+        if (this._hierarchyData.scopes) {
+            this._hierarchyData.scopes.forEach(s => {
+                treeNodes.push(this.convertScopeToNode(s));
             });
         }
-        if (this._data.vars) {
-            this._data.vars.forEach(v => {
-                this.container.appendChild(this.createVarElement(v));
+        if (this._hierarchyData.vars) {
+            this._hierarchyData.vars.forEach(v => {
+                treeNodes.push(this.convertVarToNode(v));
             });
         }
+
+        super.data = treeNodes;
     }
 
-    createScopeElement(scope: HierarchyScope | HierarchyRoot): HTMLElement {
-        const details = document.createElement('details');
-        details.className = 'tree-node';
-        details.open = true; // Auto open top levels? Maybe
+    private convertScopeToNode(scope: HierarchyScope): TreeNode {
+        const children: TreeNode[] = [];
 
-        const summary = document.createElement('summary');
-        summary.textContent = scope.name;
-        details.appendChild(summary);
-
-        // Recursively add children
         if (scope.scopes) {
             scope.scopes.forEach(s => {
-                details.appendChild(this.createScopeElement(s));
+                children.push(this.convertScopeToNode(s));
             });
         }
         if (scope.vars) {
             scope.vars.forEach(v => {
-                details.appendChild(this.createVarElement(v));
+                children.push(this.convertVarToNode(v));
             });
         }
 
-        return details;
+        return {
+            name: scope.name,
+            id: scope.ref,
+            children
+        };
     }
 
-    createVarElement(variable: HierarchyVar): HTMLElement {
-        const div = document.createElement('div');
-        div.className = 'var-node';
-        div.textContent = variable.name;
-        // Maybe store ref for logic?
-        div.dataset.ref = variable.ref.toString();
-        // Add click listener for future logic (adding to wave view)
-        div.addEventListener('click', () => {
-            this.dispatchEvent(new CustomEvent('signal-select', {
-                detail: { name: variable.name, ref: variable.ref, filename: this._filename },
-                bubbles: true,
-                composed: true
-            }));
-        });
-        return div;
+    private convertVarToNode(variable: HierarchyVar): TreeNode {
+        return {
+            name: variable.name,
+            id: variable.ref
+        };
     }
 }
 

@@ -2,6 +2,8 @@ import { getSignalChanges, SignalChange } from '../backend.js';
 import { css } from '../utils/css-utils.js';
 import { scrollbarSheet } from '../styles/shared-sheets.js';
 import fileDisplayCss from './file-display.css?inline';
+import { SelectedSignalsTree } from './selected-signals-tree.js';
+import './selected-signals-tree.js';
 
 interface SelectedSignal {
   name: string;
@@ -13,6 +15,7 @@ export class FileDisplay extends HTMLElement {
   private _filename: string = '';
   private selectedSignals: SelectedSignal[] = [];
   private signalsContainer: HTMLDivElement | null = null;
+  private selectedSignalsTree: SelectedSignalsTree;
   private boundHandleSignalSelect: (event: Event) => void;
   private visibleStart: number = 0;
   private visibleEnd: number = 1000000;
@@ -24,6 +27,10 @@ export class FileDisplay extends HTMLElement {
     this.boundHandleSignalSelect = this.handleSignalSelect.bind(this);
 
     this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(fileDisplayCss)];
+    
+    // Create the selected signals tree
+    this.selectedSignalsTree = new SelectedSignalsTree();
+    
     this.render();
   }
 
@@ -66,10 +73,21 @@ export class FileDisplay extends HTMLElement {
     canvas.height = 100;
 
     this.selectedSignals.push({ name, ref, canvas });
+    
+    // Update the selected signals tree
+    this.updateSelectedSignalsTree();
+    
     this.render();
 
     // Paint the signal after the canvas is properly sized in the DOM
     this.setupAndPaintCanvas(canvas, ref);
+  }
+
+  private updateSelectedSignalsTree() {
+    this.selectedSignalsTree.signals = this.selectedSignals.map(s => ({
+      name: s.name,
+      ref: s.ref
+    }));
   }
 
   private setupAndPaintCanvas(canvas: HTMLCanvasElement, ref: number) {

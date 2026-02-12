@@ -1,0 +1,60 @@
+:host {
+    display: block;
+    height: 100%;
+    overflow-y: auto;
+    background-color: var(--color-bg-surface);
+    font-family: monospace;
+    font-size: 14px;
+    color: var(--color-text);
+}
+
+.tree-node {
+    margin-left: 10px;
+}
+
+details > summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 2px 4px;
+    user-select: none;
+}
+
+details > summary::-webkit-details-marker {
+    display: none;
+}
+
+details > summary:hover {
+    background-color: var(--color-bg-hover);
+}
+
+details > summary::before {
+    content: '▶';
+    display: inline-block;
+    margin-right: 6px;
+    font-size: 0.8em;
+    transition: transform 0.2s;
+}
+
+details[open] > summary::before {
+    transform: rotate(90deg);
+}
+
+.leaf-node {
+    margin-left: 20px;
+    padding: 2px 4px;
+    cursor: pointer;
+    color: var(--color-text-muted);
+}
+
+.leaf-node:hover {
+    background-color: var(--color-bg-hover);
+    color: var(--color-text);
+}
+
+.empty-msg {
+    padding: 20px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-family: var(--font-family, sans-serif);
+    font-style: italic;
+}

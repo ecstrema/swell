@@ -7,8 +7,6 @@ import { scrollbarSheet } from '../styles/shared-sheets.js';
 import settingsCss from './settings-page.css?inline';
 
 export class SettingsPage extends HTMLElement {
-    private isVisible: boolean = false;
-
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -70,24 +68,7 @@ export class SettingsPage extends HTMLElement {
         }
     }
 
-    show() {
-        this.isVisible = true;
-        this.style.display = 'flex';
-        this.loadSettings();
-    }
 
-    hide() {
-        this.isVisible = false;
-        this.style.display = 'none';
-    }
-
-    toggle() {
-        if (this.isVisible) {
-            this.hide();
-        } else {
-            this.show();
-        }
-    }
 
     renderSetting(setting: SettingMetadata): string {
         const { path, description, type } = setting;
@@ -154,11 +135,7 @@ export class SettingsPage extends HTMLElement {
         this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(settingsCss)];
 
         this.shadowRoot!.innerHTML = `
-            <div class="settings-dialog">
-                <div class="settings-header">
-                    <div class="settings-title">Settings</div>
-                    <button class="close-button" id="close-btn">×</button>
-                </div>
+            <div class="settings-container">
                 <div class="settings-content">
                     ${Array.from(grouped.entries()).map(([category, settings]) => `
                         <div class="settings-category">
@@ -169,17 +146,6 @@ export class SettingsPage extends HTMLElement {
                 </div>
             </div>
         `;
-
-        // Add event listeners
-        const closeBtn = this.shadowRoot!.getElementById('close-btn');
-        closeBtn?.addEventListener('click', () => this.hide());
-
-        // Click outside to close
-        this.addEventListener('click', (e) => {
-            if (e.target === this) {
-                this.hide();
-            }
-        });
 
         // Add change listeners to all inputs
         const allSettings = settingsRegister.getAll();

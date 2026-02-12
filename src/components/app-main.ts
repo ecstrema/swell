@@ -29,12 +29,12 @@ export class AppMain extends HTMLElement {
     private dockManager: DockManager;
     private hierarchyTree: FilesTree;
     private fileViewContainer: HTMLElement;
+    private settingsComponent: SettingsPage;
 
     // Shortcut system
     private commandRegistry: CommandRegistry;
     private shortcutManager: ShortcutManager;
     private commandPalette: CommandPalette | null = null;
-    private settingsPage: SettingsPage | null = null;
 
     constructor() {
         super();
@@ -62,6 +62,9 @@ export class AppMain extends HTMLElement {
         this.hierarchyTree = new FilesTree();
         this.hierarchyTree.id = 'hierarchy-tree';
 
+        this.settingsComponent = new SettingsPage();
+        this.settingsComponent.id = 'settings-panel';
+
         this.fileViewContainer = document.createElement('div');
         this.fileViewContainer.className = 'dockable-content';
         this.fileViewContainer.innerHTML = `
@@ -80,6 +83,7 @@ export class AppMain extends HTMLElement {
         // Register components for the docking system
         this.dockManager.registerContent('signal-selection', () => this.hierarchyTree);
         this.dockManager.registerContent('file-view', () => this.fileViewContainer);
+        this.dockManager.registerContent('settings', () => this.settingsComponent);
 
         // Set initial layout
         this.dockManager.layout = {
@@ -100,6 +104,12 @@ export class AppMain extends HTMLElement {
                                 title: 'Signal Selection',
                                 contentId: 'signal-selection',
                                 closable: false
+                            },
+                            {
+                                id: 'settings-pane',
+                                title: 'Settings',
+                                contentId: 'settings',
+                                closable: true
                             }
                         ]
                     },
@@ -131,17 +141,12 @@ export class AppMain extends HTMLElement {
         // Initialize command palette
         this.initializeCommandPalette();
 
-        // Initialize settings page
-        this.initializeSettingsPage();
-
         // Listeners
         this.addEventListener('file-open-request', () => this.handleFileOpen());
 
-        // Listen for settings open request
+        // Listen for settings open request - activate the settings tab
         this.addEventListener('settings-open-request', () => {
-            if (this.settingsPage) {
-                this.settingsPage.show();
-            }
+            this.activateSettingsPane();
         });
 
         // Listen for setting changes to update theme
@@ -186,11 +191,6 @@ export class AppMain extends HTMLElement {
         // Clean up command palette
         if (this.commandPalette && this.commandPalette.parentNode) {
             this.commandPalette.parentNode.removeChild(this.commandPalette);
-        }
-
-        // Clean up settings page
-        if (this.settingsPage && this.settingsPage.parentNode) {
-            this.settingsPage.parentNode.removeChild(this.settingsPage);
         }
     }
 
@@ -275,14 +275,6 @@ export class AppMain extends HTMLElement {
     private initializeCommandPalette() {
         this.commandPalette = new CommandPalette(this.commandRegistry);
         document.body.appendChild(this.commandPalette);
-    }
-
-    /**
-     * Initialize the settings page
-     */
-    private initializeSettingsPage() {
-        this.settingsPage = new SettingsPage();
-        document.body.appendChild(this.settingsPage);
     }
 
     async refreshFiles() {
@@ -381,6 +373,24 @@ export class AppMain extends HTMLElement {
             await this.refreshFiles();
         } catch (e) {
             console.error(e);
+        }
+    }
+
+    activateSettingsPane() {
+        // Find the sidebar stack and activate the settings pane
+        const layout = this.dockManager.layout;
+        if (!layout) return;
+
+        // Navigate to the sidebar stack and activate settings pane
+        const root = layout.root;
+        if (root.type === 'box') {
+            for (const child of root.children) {
+                if (child.type === 'stack' && child.id === 'sidebar-stack') {
+                    child.activeId = 'settings-pane';
+                    this.dockManager.layout = layout; // Trigger re-render
+                    break;
+                }
+            }
         }
     }
 

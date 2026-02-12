@@ -69,4 +69,38 @@ describe('FileDisplay Component', () => {
     element.filename = 'test.vcd';
     expect(element.filename).toBe('test.vcd');
   });
+
+  it('should properly size canvas when signal is selected', async () => {
+    element.filename = 'test.vcd';
+    
+    // Dispatch a signal-select event
+    const event = new CustomEvent('signal-select', {
+      detail: {
+        name: 'test_signal',
+        ref: 1,
+        filename: 'test.vcd'
+      }
+    });
+    
+    document.dispatchEvent(event);
+    
+    // Wait for requestAnimationFrame to complete
+    await new Promise(resolve => requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve(undefined));
+    }));
+    
+    // Check that a canvas was created and has dimensions set
+    const shadowRoot = element.shadowRoot;
+    expect(shadowRoot).toBeTruthy();
+    
+    const canvas = shadowRoot?.querySelector('canvas');
+    expect(canvas).toBeTruthy();
+    
+    // Canvas should have dimensions set
+    if (canvas) {
+      expect(canvas.height).toBe(100);
+      // Width should be set (either to clientWidth or fallback to 800)
+      expect(canvas.width).toBeGreaterThan(0);
+    }
+  });
 });

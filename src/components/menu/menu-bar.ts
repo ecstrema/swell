@@ -1,6 +1,6 @@
 import { isTauri } from "../../backend.js";
 import { themeManager } from "../../theme-manager.js";
-import { createMenu, MenuConfig } from "../../menu-api.js";
+import { createMenu, MenuConfig, MenuItemConfig, SubmenuConfig } from "../../menu-api.js";
 import { css } from "../../utils/css-utils.js";
 import menuBarCss from "./menu-bar.css?inline";
 
@@ -133,15 +133,16 @@ export class MenuBar extends HTMLElement {
     }
   }
 
-  private renderMenuItems(items: any[]): string {
+  private renderMenuItems(items: (MenuItemConfig | SubmenuConfig)[]): string {
       return items.map(item => {
           if ('items' in item) {
               // Nested submenu
+              const submenu = item as SubmenuConfig;
               return `
                   <div class="menu-submenu">
-                      <div class="submenu-title">${item.text}<span class="submenu-arrow">▶</span></div>
+                      <div class="submenu-title">${submenu.text}<span class="submenu-arrow">▶</span></div>
                       <div class="submenu-dropdown">
-                          ${this.renderMenuItems(item.items)}
+                          ${this.renderMenuItems(submenu.items)}
                       </div>
                   </div>
               `;
@@ -153,16 +154,20 @@ export class MenuBar extends HTMLElement {
       }).join('');
   }
 
-  private findAndExecuteAction(itemId: string, items: any[]): boolean {
+  private findAndExecuteAction(itemId: string, items: (MenuItemConfig | SubmenuConfig)[]): boolean {
       for (const item of items) {
           if ('items' in item) {
               // Recursively search in nested submenu
-              if (this.findAndExecuteAction(itemId, item.items)) {
+              const submenu = item as SubmenuConfig;
+              if (this.findAndExecuteAction(itemId, submenu.items)) {
                   return true;
               }
-          } else if ('id' in item && item.id === itemId && item.action) {
-              item.action();
-              return true;
+          } else {
+              const menuItem = item as MenuItemConfig;
+              if (menuItem.id === itemId && menuItem.action) {
+                  menuItem.action();
+                  return true;
+              }
           }
       }
       return false;

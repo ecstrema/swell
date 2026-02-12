@@ -4,6 +4,7 @@ import init, * as wasm from "../backend/pkg/backend";
 
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
+import { saveFileToSession, removeFileFromSession, getSessionFiles } from "./utils/file-session.js";
 
 // Detect if we are running in Tauri
 // @ts-ignore
@@ -51,7 +52,12 @@ export const addFile = async (fileOrPath: string | File): Promise<string> => {
   if (fileOrPath instanceof File) {
       const buffer = await fileOrPath.arrayBuffer();
       const bytes = new Uint8Array(buffer);
-      return wasm.add_file_bytes(fileOrPath.name, bytes);
+      const result = wasm.add_file_bytes(fileOrPath.name, bytes);
+      
+      // Save to IndexedDB for session persistence
+      await saveFileToSession(fileOrPath.name, bytes);
+      
+      return result;
   }
 
   throw new Error("Expected File object in Web mode");
@@ -68,7 +74,13 @@ export const removeFile = async (path: string) => {
   if (isTauri) {
     return await invoke("remove_file", { path });
   }
-  return wasm.remove_file(path);
+  
+  const result = wasm.remove_file(path);
+  
+  // Remove from IndexedDB
+  await removeFileFromSession(path);
+  
+  return result;
 }
 
 
@@ -117,3 +129,30 @@ export const getSignalChanges = async (filename: string, signalId: number, start
     // Let's assume passed as number/BigInt works.
     return wasm.get_signal_changes_wasm(filename, signalId, BigInt(start), BigInt(end));
 };
+
+/**
+ * Restore files from the previous session (web only)
+ * This is automatically called on startup for Tauri, but needs to be manually called for web
+ */
+export const restoreSession = async (): Promise<void> => {
+    if (isTauri) {
+        // Tauri handles session restoration in Rust on startup
+        return;
+    }
+    
+    try {
+        const sessionFiles = await getSessionFiles();
+        console.log(`Restoring ${sessionFiles.length} files from session`);
+        
+        for (const file of sessionFiles) {
+            try {
+                await wasm.add_file_bytes(file.name, file.data);
+            } catch (e) {
+                console.error(`Failed to restore file ${file.name}:`, e);
+            }
+        }
+    } catch (e) {
+        console.error('Failed to restore session:', e);
+    }
+};
+

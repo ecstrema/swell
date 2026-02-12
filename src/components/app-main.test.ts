@@ -26,8 +26,11 @@ describe('AppMain - Sidebar Visibility', () => {
     });
 
     it('should hide signal selection pane when no files are open', async () => {
-        // Wait for component to initialize
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Wait for refreshFiles to complete (it's called in connectedCallback)
+        await vi.waitFor(() => {
+            const dockManager = appMain.shadowRoot!.querySelector('dock-manager');
+            return dockManager && (dockManager as any).layout;
+        });
 
         const dockManager = appMain.shadowRoot!.querySelector('dock-manager');
         expect(dockManager).toBeTruthy();
@@ -45,8 +48,11 @@ describe('AppMain - Sidebar Visibility', () => {
     });
 
     it('should have main-stack in layout', async () => {
-        // Wait for component to initialize
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Wait for refreshFiles to complete (it's called in connectedCallback)
+        await vi.waitFor(() => {
+            const dockManager = appMain.shadowRoot!.querySelector('dock-manager');
+            return dockManager && (dockManager as any).layout;
+        });
 
         const dockManager = appMain.shadowRoot!.querySelector('dock-manager');
         const layout = (dockManager as any).layout;

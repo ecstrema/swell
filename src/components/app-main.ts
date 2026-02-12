@@ -400,7 +400,7 @@ export class AppMain extends HTMLElement {
                 }
             }
         }
-        
+
         console.warn('Could not find sidebar-stack to activate settings pane');
     }
     private addDockPane(fileId: string) {
@@ -414,10 +414,6 @@ export class AppMain extends HTMLElement {
             contentId: `file-${fileId}`,
             closable: true
         };
-    render() {
-        // Elements from the docked container
-        const tabBar = this.fileViewContainer.querySelector('#tabs') as TabBar;
-        const emptyState = this.fileViewContainer.querySelector('#empty-state') as HTMLElement;
 
         mainStack.children.push(pane);
         mainStack.activeId = pane.id;
@@ -430,11 +426,11 @@ export class AppMain extends HTMLElement {
 
         const paneId = `file-pane-${fileId}`;
         mainStack.children = mainStack.children.filter(p => p.id !== paneId);
-        
+
         if (mainStack.activeId === paneId) {
             mainStack.activeId = mainStack.children.length > 0 ? mainStack.children[0].id : null;
         }
-        
+
         this.dockManager.render();
     }
 

@@ -61,14 +61,27 @@ export class FileDisplay extends HTMLElement {
 
     // Create a new canvas for this signal
     const canvas = document.createElement('canvas');
+    // Set a reasonable default width - will be updated after render
     canvas.width = 800;
     canvas.height = 100;
 
     this.selectedSignals.push({ name, ref, canvas });
     this.render();
 
-    // Load and paint the signal
-    this.paintSignal(canvas, ref);
+    // Paint the signal after the canvas is properly sized in the DOM
+    this.setupAndPaintCanvas(canvas, ref);
+  }
+
+  private setupAndPaintCanvas(canvas: HTMLCanvasElement, ref: number) {
+    // Use requestAnimationFrame to ensure the canvas is laid out and sized
+    requestAnimationFrame(() => {
+      // Update canvas width to match its display width
+      const displayWidth = canvas.clientWidth || 800;
+      canvas.width = displayWidth;
+      
+      // Now paint with the correct dimensions
+      this.paintSignal(canvas, ref);
+    });
   }
 
   private parseSignalValue(value: string): number {

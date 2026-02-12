@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "swell",
-  "version": "0.1.16",
+  "version": "0.1.17",
   "identifier": "com.ecstrema.swell",
   "build": {
     "beforeDevCommand": "bun dev",
@@ -36,21 +36,27 @@
     ],
     "fileAssociations": [
       {
-        "ext": ["fst"],
+        "ext": [
+          "fst"
+        ],
         "name": "FST Waveform File",
         "description": "Fast Signal Trace waveform file",
         "role": "Viewer",
         "mimeType": "application/x-fst"
       },
       {
-        "ext": ["vcd"],
+        "ext": [
+          "vcd"
+        ],
         "name": "VCD Waveform File",
         "description": "Value Change Dump waveform file",
         "role": "Viewer",
         "mimeType": "application/x-vcd"
       },
       {
-        "ext": ["ghw"],
+        "ext": [
+          "ghw"
+        ],
         "name": "GHW Waveform File",
         "description": "GHDL Waveform file",
         "role": "Viewer",

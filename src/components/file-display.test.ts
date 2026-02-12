@@ -28,24 +28,41 @@ describe('FileDisplay Component', () => {
     expect(range.end).toBe(1000000);
   });
 
-  it('should update visible range when setVisibleRange is called', () => {
-    element.setVisibleRange(1000, 5000);
+  it('should update visible range when setVisibleRange is called', async () => {
+    await element.setVisibleRange(1000, 5000);
     const range = element.getVisibleRange();
     expect(range.start).toBe(1000);
     expect(range.end).toBe(5000);
   });
 
-  it('should allow setting custom visible ranges', () => {
+  it('should allow setting custom visible ranges', async () => {
     // Test with different ranges
-    element.setVisibleRange(0, 100);
+    await element.setVisibleRange(0, 100);
     let range = element.getVisibleRange();
     expect(range.start).toBe(0);
     expect(range.end).toBe(100);
 
-    element.setVisibleRange(500, 1500);
+    await element.setVisibleRange(500, 1500);
     range = element.getVisibleRange();
     expect(range.start).toBe(500);
     expect(range.end).toBe(1500);
+  });
+
+  it('should validate input ranges', async () => {
+    const consoleSpy = vi.spyOn(console, 'error');
+    
+    // Test negative values
+    await element.setVisibleRange(-100, 1000);
+    expect(consoleSpy).toHaveBeenCalledWith('Invalid time range: values must be non-negative');
+    
+    // Test start >= end
+    await element.setVisibleRange(1000, 1000);
+    expect(consoleSpy).toHaveBeenCalledWith('Invalid time range: start must be less than end');
+    
+    await element.setVisibleRange(2000, 1000);
+    expect(consoleSpy).toHaveBeenCalledWith('Invalid time range: start must be less than end');
+    
+    consoleSpy.mockRestore();
   });
 
   it('should render without errors', () => {

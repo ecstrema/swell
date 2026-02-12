@@ -86,8 +86,9 @@ export class FileDisplay extends HTMLElement {
     if (this.timeRangeInitialized || !this._filename) return;
 
     try {
-      // Get a large range to detect actual min/max times
-      const changes = await getSignalChanges(this._filename, signalRef, 0, Number.MAX_SAFE_INTEGER);
+      // Use a large but reasonable upper bound to detect actual time range
+      // 1e15 nanoseconds = ~11.5 days which is reasonable for waveform simulations
+      const changes = await getSignalChanges(this._filename, signalRef, 0, 1e15);
       
       if (changes.length > 0) {
         this.visibleStart = changes[0].time;
@@ -166,14 +167,26 @@ export class FileDisplay extends HTMLElement {
    * @param start - Start time of the visible range
    * @param end - End time of the visible range
    */
-  public setVisibleRange(start: number, end: number) {
+  public async setVisibleRange(start: number, end: number): Promise<void> {
+    // Validate input
+    if (start < 0 || end < 0) {
+      console.error('Invalid time range: values must be non-negative');
+      return;
+    }
+    if (start >= end) {
+      console.error('Invalid time range: start must be less than end');
+      return;
+    }
+
     this.visibleStart = start;
     this.visibleEnd = end;
     
-    // Repaint all signals with the new range
-    this.selectedSignals.forEach(signal => {
-      this.paintSignal(signal.canvas, signal.ref);
-    });
+    // Repaint all signals with the new range, awaiting all operations
+    await Promise.all(
+      this.selectedSignals.map(signal => 
+        this.paintSignal(signal.canvas, signal.ref)
+      )
+    );
   }
 
   /**

@@ -46,7 +46,7 @@ export class FileDisplay extends HTMLElement {
     const customEvent = event as CustomEvent;
     const { name, ref, filename } = customEvent.detail;
 
-    // Only handle events for this file
+    // Only handle events for this file - signals are independent per file
     if (filename !== this._filename) {
       return;
     }

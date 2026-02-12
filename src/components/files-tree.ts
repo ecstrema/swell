@@ -50,6 +50,8 @@ export class FilesTree extends HTMLElement {
 
     set filename(filename: string | null) {
         this._filename = filename;
+        // Note: Filename should be set before data to ensure signal-select events
+        // use the correct filename. Data setter triggers render() automatically.
     }
 
     get filename() {

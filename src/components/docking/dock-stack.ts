@@ -30,7 +30,7 @@ export class DockStackComponent extends HTMLElement {
         this.shadowRoot!.innerHTML = `
             <div class="tabs-header">
                 ${this._node.children.map(pane => `
-                    <div class="tab ${pane.id === activeId ? 'active' : ''}" data-id="${pane.id}">
+                    <div class="tab ${pane.id === activeId ? 'active' : ''}" data-id="${pane.id}" draggable="true">
                         ${pane.title}
                         ${pane.closable !== false ? '<span class="close-btn">×</span>' : ''}
                     </div>
@@ -48,6 +48,59 @@ export class DockStackComponent extends HTMLElement {
                     this.closePane(id);
                 } else {
                     this.setActivePane(id);
+                }
+            }
+        });
+
+        // Add drag and drop handlers for tabs
+        header.addEventListener('dragstart', (e) => {
+            const tab = (e.target as HTMLElement).closest('.tab') as HTMLElement;
+            if (tab && (e.target as HTMLElement).classList.contains('close-btn')) {
+                // Don't allow dragging from close button
+                e.preventDefault();
+                return;
+            }
+            if (tab) {
+                const id = tab.dataset.id!;
+                const pane = this._node!.children.find(p => p.id === id);
+                if (pane) {
+                    tab.classList.add('dragging');
+                    this._manager!.handleDragStart(pane, this._node!);
+                    // Set some data for compatibility with other drag handlers
+                    e.dataTransfer!.effectAllowed = 'move';
+                    e.dataTransfer!.setData('text/plain', id);
+                }
+            }
+        });
+
+        header.addEventListener('dragend', (e) => {
+            const tab = (e.target as HTMLElement).closest('.tab') as HTMLElement;
+            if (tab) {
+                tab.classList.remove('dragging');
+            }
+        });
+
+        // Handle dropping tabs on this stack's header
+        header.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (this._manager) {
+                this._manager.handleDragOver(e as DragEvent, this._node!, this);
+            }
+        });
+
+        header.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (this._manager) {
+                this._manager.handleDrop(e as DragEvent, this._node!, this);
+            }
+        });
+
+        header.addEventListener('dragleave', (e) => {
+            // Only handle dragleave when leaving the header, not when entering child elements
+            const relatedTarget = e.relatedTarget as Node;
+            if (!header.contains(relatedTarget)) {
+                if (this._manager) {
+                    this._manager.handleDragLeave();
                 }
             }
         });

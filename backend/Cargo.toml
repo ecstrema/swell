@@ -22,3 +22,6 @@ version = "0.3.77"
 features = [
   "File"
 ]
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = false

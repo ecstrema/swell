@@ -1,6 +1,6 @@
 import { DockBox, DockLayout, DockNode, DockPane, DockStack } from "./types.js";
 import { css } from "../../utils/css-utils.js";
-import scrollbarCss from "../../styles/shared-styles.css?inline";
+import { scrollbarSheet } from "../../styles/shared-sheets.js";
 import dockManagerCss from "./dock-manager.css?inline";
 
 export class DockManager extends HTMLElement {
@@ -14,7 +14,7 @@ export class DockManager extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
-    this.shadowRoot!.adoptedStyleSheets = [css(scrollbarCss), css(dockManagerCss)];
+    this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(dockManagerCss)];
   }
 
   set layout(value: DockLayout) {

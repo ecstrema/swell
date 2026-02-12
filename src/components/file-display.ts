@@ -1,6 +1,6 @@
 import { getSignalChanges, SignalChange } from '../backend.js';
 import { css } from '../utils/css-utils.js';
-import scrollbarCss from '../styles/shared-styles.css?inline';
+import { scrollbarSheet } from '../styles/shared-sheets.js';
 import fileDisplayCss from './file-display.css?inline';
 
 interface SelectedSignal {
@@ -20,7 +20,7 @@ export class FileDisplay extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.boundHandleSignalSelect = this.handleSignalSelect.bind(this);
 
-    this.shadowRoot!.adoptedStyleSheets = [css(scrollbarCss), css(fileDisplayCss)];
+    this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(fileDisplayCss)];
     this.render();
   }
 

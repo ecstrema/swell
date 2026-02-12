@@ -3,7 +3,7 @@
 import { settingsRegister, SettingMetadata, SettingValue } from '../settings/settings-register.js';
 import { getSetting, setSetting } from '../settings/settings-storage.js';
 import { css } from '../utils/css-utils.js';
-import scrollbarCss from '../styles/shared-styles.css?inline';
+import { scrollbarSheet } from '../styles/shared-sheets.js';
 import settingsCss from './settings-page.css?inline';
 
 export class SettingsPage extends HTMLElement {
@@ -151,7 +151,7 @@ export class SettingsPage extends HTMLElement {
     render() {
         const grouped = settingsRegister.getGrouped();
 
-        this.shadowRoot!.adoptedStyleSheets = [css(scrollbarCss), css(settingsCss)];
+        this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(settingsCss)];
 
         this.shadowRoot!.innerHTML = `
             <div class="settings-dialog">

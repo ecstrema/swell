@@ -1,5 +1,5 @@
 import { css } from "../utils/css-utils.js";
-import scrollbarCss from "../styles/shared-styles.css?inline";
+import { scrollbarSheet } from "../styles/shared-sheets.js";
 import tabBarCss from "./tab-bar.css?inline";
 
 export interface Tab {
@@ -16,7 +16,7 @@ export class TabBar extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
 
-        this.shadowRoot!.adoptedStyleSheets = [css(scrollbarCss), css(tabBarCss)];
+        this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(tabBarCss)];
 
         this.shadowRoot!.innerHTML = `
         <div class="tab-bar"></div>

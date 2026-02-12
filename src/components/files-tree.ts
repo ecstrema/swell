@@ -1,5 +1,5 @@
 import { css } from "../utils/css-utils.js";
-import scrollbarCss from "../styles/shared-styles.css?inline";
+import { scrollbarSheet } from "../styles/shared-sheets.js";
 import filesTreeCss from "./files-tree.css?inline";
 
 export interface HierarchyVar {
@@ -29,7 +29,7 @@ export class FilesTree extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
 
-        this.shadowRoot!.adoptedStyleSheets = [css(scrollbarCss), css(filesTreeCss)];
+        this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(filesTreeCss)];
 
         this.shadowRoot!.innerHTML = `
         <div id="tree-container"></div>

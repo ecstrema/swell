@@ -1,7 +1,7 @@
 import { Command } from "../shortcuts/types.js";
 import { CommandRegistry } from "../shortcuts/command-registry.js";
 import { css } from "../utils/css-utils.js";
-import scrollbarCss from "../styles/shared-styles.css?inline";
+import { scrollbarSheet } from "../styles/shared-sheets.js";
 import commandPaletteCss from "./command-palette.css?inline";
 
 /**
@@ -21,7 +21,7 @@ export class CommandPalette extends HTMLElement {
         this.commandRegistry = commandRegistry;
 
         this.attachShadow({ mode: 'open' });
-        this.shadowRoot!.adoptedStyleSheets = [css(scrollbarCss), css(commandPaletteCss)];
+        this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(commandPaletteCss)];
 
         this.shadowRoot!.innerHTML = `
             <div class="overlay"></div>

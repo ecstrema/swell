@@ -54,12 +54,12 @@ export class DockStackComponent extends HTMLElement {
 
         // Add drag and drop handlers for tabs
         header.addEventListener('dragstart', (e) => {
-            const tab = (e.target as HTMLElement).closest('.tab') as HTMLElement;
-            if (tab && (e.target as HTMLElement).classList.contains('close-btn')) {
-                // Don't allow dragging from close button
+            // Don't allow dragging from close button or its descendants
+            if ((e.target as HTMLElement).closest('.close-btn')) {
                 e.preventDefault();
                 return;
             }
+            const tab = (e.target as HTMLElement).closest('.tab') as HTMLElement;
             if (tab) {
                 const id = tab.dataset.id!;
                 const pane = this._node!.children.find(p => p.id === id);
@@ -81,24 +81,26 @@ export class DockStackComponent extends HTMLElement {
         });
 
         // Handle dropping tabs on this stack's header
-        header.addEventListener('dragover', (e) => {
+        header.addEventListener('dragover', (e: DragEvent) => {
             e.preventDefault();
             if (this._manager) {
-                this._manager.handleDragOver(e as DragEvent, this._node!, this);
+                this._manager.handleDragOver(e, this._node!, this);
             }
         });
 
-        header.addEventListener('drop', (e) => {
+        header.addEventListener('drop', (e: DragEvent) => {
             e.preventDefault();
             if (this._manager) {
-                this._manager.handleDrop(e as DragEvent, this._node!, this);
+                this._manager.handleDrop(e, this._node!, this);
             }
         });
 
         header.addEventListener('dragleave', (e) => {
-            // Only handle dragleave when leaving the header, not when entering child elements
-            const relatedTarget = e.relatedTarget as Node;
-            if (!header.contains(relatedTarget)) {
+            // Handle dragleave when leaving the header
+            // relatedTarget is null when dragging outside the window/browser
+            // Only call handleDragLeave when actually leaving the header, not when moving between child elements
+            const relatedTarget = e.relatedTarget as Node | null;
+            if (!relatedTarget || !header.contains(relatedTarget)) {
                 if (this._manager) {
                     this._manager.handleDragLeave();
                 }

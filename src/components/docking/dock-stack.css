@@ -35,7 +35,7 @@
     position: relative;
 }
 .tab.dragging {
-    opacity: 0.5;
+    opacity: 0.6;
     cursor: grabbing;
 }
 .tab.active {

@@ -44,7 +44,12 @@ export class FileDisplay extends HTMLElement {
 
   private handleSignalSelect(event: Event) {
     const customEvent = event as CustomEvent;
-    const { name, ref } = customEvent.detail;
+    const { name, ref, filename } = customEvent.detail;
+
+    // Only handle events for this file - signals are independent per file
+    if (filename !== this._filename) {
+      return;
+    }
 
     // Check if signal is already selected
     if (this.selectedSignals.some(s => s.ref === ref)) {

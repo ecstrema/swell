@@ -238,25 +238,29 @@ export class FileDisplay extends HTMLElement {
       <div class="file-header">
         Current File: <strong>${this._filename}</strong>
       </div>
-      <div class="signals-container" id="signals-container">
-        ${this.selectedSignals.length === 0
-          ? '<div class="empty-message">Select signals from the left panel to display them here</div>'
-          : ''}
+      <div class="display-container">
+        <div id="signals-tree-container" class="signals-tree-container"></div>
+        <div class="waveforms-container" id="waveforms-container">
+          ${this.selectedSignals.length === 0
+            ? '<div class="empty-message">Select signals from the left panel to display them here</div>'
+            : ''}
+        </div>
       </div>
     `;
 
-    // Append canvases to the container
-    this.signalsContainer = this.shadowRoot.querySelector('#signals-container');
+    // Insert the selected signals tree
+    const treeContainer = this.shadowRoot.querySelector('#signals-tree-container');
+    if (treeContainer) {
+      treeContainer.appendChild(this.selectedSignalsTree);
+    }
+
+    // Append canvases to the waveforms container
+    this.signalsContainer = this.shadowRoot.querySelector('#waveforms-container');
     if (this.signalsContainer) {
       this.selectedSignals.forEach(signal => {
         const signalItem = document.createElement('div');
         signalItem.className = 'signal-item';
 
-        const signalName = document.createElement('div');
-        signalName.className = 'signal-name';
-        signalName.textContent = signal.name;
-
-        signalItem.appendChild(signalName);
         signalItem.appendChild(signal.canvas);
 
         this.signalsContainer!.appendChild(signalItem);

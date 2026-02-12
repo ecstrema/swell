@@ -50,9 +50,44 @@ shortcuts.deactivate();
 ```
 
 ### 3. Default Shortcuts
-A configuration file (`default-shortcuts.ts`) where default keyboard shortcuts can be defined.
+Default keyboard shortcuts are defined in a JSON configuration file (`default-shortcuts.json`) and loaded automatically at startup. The JSON file is validated to ensure all shortcuts are properly formatted before being loaded.
 
-Currently, no default shortcuts are set, but the infrastructure is ready for future additions.
+The current default shortcuts include:
+- `Ctrl+O` - Open file dialog
+- `Ctrl+W` - Close current file  
+- `Ctrl+Q` - Quit application
+- `Ctrl+Z` - Undo last action
+- `Ctrl+Shift+=` - Zoom in
+- `Ctrl+-` - Zoom out
+
+## JSON Configuration Format
+
+The default shortcuts are defined in `default-shortcuts.json` with the following structure:
+
+```json
+{
+  "shortcuts": [
+    {
+      "shortcut": "Ctrl+O",
+      "commandId": "file-open",
+      "description": "Open file dialog"
+    }
+  ]
+}
+```
+
+Each shortcut object must have:
+- `shortcut` (required): The keyboard combination as a string (e.g., "Ctrl+O", "Ctrl+Shift+K")
+- `commandId` (required): The ID of the command to execute
+- `description` (optional): A human-readable description of what the shortcut does
+
+The JSON file is validated when loaded, ensuring:
+- The file is valid JSON
+- All required fields are present
+- Field values are the correct types
+- No empty strings are used
+
+If validation fails, an error is logged and the application continues with an empty shortcuts array.
 
 ## Adding New Shortcuts
 
@@ -67,40 +102,35 @@ this.commandRegistry.register({
 });
 ```
 
-2. **Add a shortcut binding** in `default-shortcuts.ts`:
-```typescript
-export const defaultShortcuts: ShortcutBinding[] = [
+2. **Add a shortcut binding** in `default-shortcuts.json`:
+```json
+{
+  "shortcuts": [
     {
-        shortcut: { key: 'o', ctrl: true },
-        commandId: 'file-open'
-    },
-    // Add your shortcut here
-    {
-        shortcut: { key: 'm', ctrl: true, shift: true },
-        commandId: 'my-action'
+      "shortcut": "Ctrl+M",
+      "commandId": "my-action",
+      "description": "My custom action"
     }
-];
+  ]
+}
 ```
 
 ## Keyboard Shortcut Format
 
-Shortcuts are defined with the following properties:
+Shortcuts are defined as strings using the shosho library format:
 
-- `key`: The key to press (lowercase, e.g., 'o', 'w', 'enter')
-- `ctrl`: Boolean, whether Ctrl (or Cmd on Mac) should be pressed
-- `alt`: Boolean, whether Alt should be pressed
-- `shift`: Boolean, whether Shift should be pressed
-- `meta`: Boolean, whether Meta key should be pressed
+- Use `+` to combine keys: `Ctrl+S`, `Ctrl+Shift+K`
+- Modifiers: `Ctrl`, `Alt`, `Shift`, `Meta`
+- Special keys: `Enter`, `Escape`, `Tab`, `Space`, `Backspace`, `Delete`
+- Arrow keys: `ArrowUp`, `ArrowDown`, `ArrowLeft`, `ArrowRight`
+- Function keys: `F1`, `F2`, etc.
+- Regular keys: Use uppercase for the key (`A`, `B`, etc.)
 
-Example:
-```typescript
-{
-    key: 'w',
-    ctrl: true,
-    shift: false,
-    alt: false
-}
-```
+Examples:
+- `Ctrl+S` - Ctrl and S
+- `Ctrl+Shift+K` - Ctrl, Shift, and K
+- `Alt+Enter` - Alt and Enter
+- `Meta+ArrowUp` - Meta/Command and Arrow Up
 
 ## Current Commands
 

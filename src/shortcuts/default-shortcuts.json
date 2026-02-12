@@ -1,0 +1,34 @@
+{
+  "shortcuts": [
+    {
+      "shortcut": "Ctrl+O",
+      "commandId": "file-open",
+      "description": "Open file dialog"
+    },
+    {
+      "shortcut": "Ctrl+W",
+      "commandId": "file-close",
+      "description": "Close current file"
+    },
+    {
+      "shortcut": "Ctrl+Q",
+      "commandId": "file-quit",
+      "description": "Quit application"
+    },
+    {
+      "shortcut": "Ctrl+Z",
+      "commandId": "edit-undo",
+      "description": "Undo last action"
+    },
+    {
+      "shortcut": "Ctrl+=",
+      "commandId": "view-zoom-in",
+      "description": "Zoom in"
+    },
+    {
+      "shortcut": "Ctrl+-",
+      "commandId": "view-zoom-out",
+      "description": "Zoom out"
+    }
+  ]
+}

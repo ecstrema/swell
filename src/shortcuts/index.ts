@@ -35,4 +35,11 @@
 export { CommandRegistry } from "./command-registry.js";
 export { ShortcutManager } from "./shortcut-manager.js";
 export { defaultShortcuts } from "./default-shortcuts.js";
+export { 
+    loadShortcutsFromJSON, 
+    validateShortcutsConfig,
+    convertToShortcutBindings,
+    ShortcutValidationError
+} from "./shortcut-validator.js";
 export type { Command, KeyboardShortcut, ShortcutBinding } from "./types.js";
+export type { RawShortcutBinding, ShortcutsConfig } from "./shortcut-validator.js";

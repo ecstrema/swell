@@ -1,22 +1,19 @@
 import { ShortcutBinding } from "./types.js";
+import { loadShortcutsFromJSON } from "./shortcut-validator.js";
+import defaultShortcutsJSON from "./default-shortcuts.json?raw";
 
 /**
- * Default keyboard shortcut bindings.
- * Currently empty as no shortcuts are set yet.
- * This can be extended in the future to include default shortcuts like:
- * - Ctrl+O for Open File
- * - Ctrl+W for Close Tab
- * - Ctrl+Q for Quit
- * etc.
+ * Default keyboard shortcut bindings loaded from JSON configuration.
+ * The JSON file is validated on load to ensure all shortcuts are properly formatted.
  */
-export const defaultShortcuts: ShortcutBinding[] = [
-    // Example (currently commented out):
-    // {
-    //     shortcut: 'Ctrl+O',
-    //     commandId: 'file-open'
-    // },
-    // {
-    //     shortcut: 'Ctrl+W',
-    //     commandId: 'file-close'
-    // }
-];
+let defaultShortcuts: ShortcutBinding[] = [];
+
+try {
+    defaultShortcuts = loadShortcutsFromJSON(defaultShortcutsJSON);
+} catch (error) {
+    console.error('Failed to load default shortcuts. Falling back to empty shortcuts array. Error:', error);
+    // If loading fails, we fall back to an empty array
+    // This prevents the application from crashing due to a misconfigured shortcuts file
+}
+
+export { defaultShortcuts };

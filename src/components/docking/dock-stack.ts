@@ -27,6 +27,19 @@ export class DockStackComponent extends HTMLElement {
 
         const activeId = this._node.activeId || (this._node.children.length > 0 ? this._node.children[0].id : null);
 
+        // Show placeholder when no children exist
+        if (this._node.children.length === 0) {
+            this.shadowRoot!.innerHTML = `
+                <div class="empty-placeholder">
+                    <div class="empty-placeholder-content">
+                        <h2>No Open Editors</h2>
+                        <p>Open a file to get started</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
         this.shadowRoot!.innerHTML = `
             <div class="tabs-header">
                 ${this._node.children.map(pane => `

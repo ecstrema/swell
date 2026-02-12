@@ -62,3 +62,25 @@
 .close-btn:hover {
     opacity: 1;
 }
+.empty-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--dock-bg-color);
+}
+.empty-placeholder-content {
+    text-align: center;
+    color: var(--dock-tab-text);
+    opacity: 0.6;
+}
+.empty-placeholder-content h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    font-weight: 400;
+}
+.empty-placeholder-content p {
+    margin: 0;
+    font-size: 0.95rem;
+}

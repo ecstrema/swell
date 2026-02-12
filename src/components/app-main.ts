@@ -1,9 +1,7 @@
 import { addFile, openFileDialog, getHierarchy, getFiles, removeFile } from "../backend.js";
 import "./menu/menu-bar.ts";
-import "./tab-bar.ts";
 import "./files-tree.ts";
 import "./settings-page.ts";
-import { TabBar } from "./tab-bar.ts";
 import { FileDisplay } from "./file-display.ts";
 import { FilesTree, HierarchyRoot } from "./files-tree.ts";
 import { CommandPalette } from "./command-palette.js";
@@ -28,7 +26,6 @@ export class AppMain extends HTMLElement {
     // Docking system
     private dockManager: DockManager;
     private hierarchyTree: FilesTree;
-    private fileViewContainer: HTMLElement;
 
     // Shortcut system
     private commandRegistry: CommandRegistry;
@@ -62,24 +59,8 @@ export class AppMain extends HTMLElement {
         this.hierarchyTree = new FilesTree();
         this.hierarchyTree.id = 'hierarchy-tree';
 
-        this.fileViewContainer = document.createElement('div');
-        this.fileViewContainer.className = 'dockable-content';
-        this.fileViewContainer.innerHTML = `
-            <app-tab-bar id="tabs"></app-tab-bar>
-            <main id="content-area" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;">
-                <div id="empty-state" class="empty-state">
-                    <h1>Wave View</h1>
-                    <div class="row">
-                        <button id="file-picker-btn">Open File</button>
-                    </div>
-                </div>
-                <div id="files-container"></div>
-            </main>
-        `;
-
         // Register components for the docking system
         this.dockManager.registerContent('signal-selection', () => this.hierarchyTree);
-        this.dockManager.registerContent('file-view', () => this.fileViewContainer);
 
         // Set initial layout
         this.dockManager.layout = {
@@ -107,15 +88,8 @@ export class AppMain extends HTMLElement {
                         type: 'stack',
                         id: 'main-stack',
                         weight: 80,
-                        activeId: 'file-view-pane',
-                        children: [
-                            {
-                                id: 'file-view-pane',
-                                title: 'File View',
-                                contentId: 'file-view',
-                                closable: false
-                            }
-                        ]
+                        activeId: null,
+                        children: []
                     }
                 ]
             }
@@ -123,8 +97,6 @@ export class AppMain extends HTMLElement {
     }
 
     connectedCallback() {
-        const filePickerBtn = this.fileViewContainer.querySelector('#file-picker-btn') as HTMLButtonElement;
-
         // Initialize shortcut system
         this.initializeShortcuts();
 
@@ -164,17 +136,25 @@ export class AppMain extends HTMLElement {
             }
         });
 
-        this.addEventListener('tab-select', (e: any) => {
-            this.setActiveFile(e.detail.id);
+        // Listen for pane close events from dock stack
+        this.addEventListener('pane-close', (e: any) => {
+            const paneId = e.detail.id;
+            // Extract file ID from pane ID (format: "file-pane-{fileId}")
+            if (paneId.startsWith('file-pane-')) {
+                const fileId = paneId.substring('file-pane-'.length);
+                this.closeFile(fileId);
+            }
         });
 
-        this.addEventListener('tab-close', (e: any) => {
-            this.closeFile(e.detail.id);
+        // Listen for pane select events from dock stack
+        this.addEventListener('pane-select', (e: any) => {
+            const paneId = e.detail.id;
+            // Extract file ID from pane ID (format: "file-pane-{fileId}")
+            if (paneId.startsWith('file-pane-')) {
+                const fileId = paneId.substring('file-pane-'.length);
+                this.setActiveFile(fileId);
+            }
         });
-
-        if (filePickerBtn) {
-            filePickerBtn.addEventListener('click', () => this.handleFileOpen());
-        }
 
         this.refreshFiles();
     }
@@ -294,19 +274,16 @@ export class AppMain extends HTMLElement {
                 if (!files.includes(id)) {
                     value.element.remove();
                     this.fileResources.delete(id);
+                    this.removeDockPane(id);
                 }
             }
 
             // Add new files
-            const contentArea = this.fileViewContainer.querySelector('#files-container');
             for (const id of files) {
                 if (!this.fileResources.has(id)) {
 
                     const fileDisplay = new FileDisplay();
                     fileDisplay.filename = id;
-                    fileDisplay.style.display = 'none';
-
-                    if (contentArea) contentArea.appendChild(fileDisplay);
 
                     // Load hierarchy
                     let hierarchy = null;
@@ -320,6 +297,12 @@ export class AppMain extends HTMLElement {
                         element: fileDisplay,
                         hierarchy: hierarchy
                     });
+
+                    // Register the file display as content in the dock manager
+                    this.dockManager.registerContent(`file-${id}`, () => fileDisplay);
+
+                    // Add the file as a new pane in the main stack
+                    this.addDockPane(id);
                 }
             }
 
@@ -334,8 +317,6 @@ export class AppMain extends HTMLElement {
                 this.setActiveFile(fileIds[fileIds.length - 1]);
             } else if (this.state.activeFileId) {
                 this.setActiveFile(this.state.activeFileId);
-            } else {
-                this.render();
             }
         } catch (e) {
             console.error("Error refreshing files:", e);
@@ -360,11 +341,6 @@ export class AppMain extends HTMLElement {
 
         this.state.activeFileId = id;
 
-        // Update content visibility
-        for (const [fileId, config] of this.fileResources) {
-             config.element.style.display = fileId === id ? 'block' : 'none';
-        }
-
         const activeRes = this.fileResources.get(id);
 
         // Update Tree View
@@ -372,7 +348,58 @@ export class AppMain extends HTMLElement {
             this.hierarchyTree.data = activeRes ? activeRes.hierarchy : null;
         }
 
-        this.render();
+        // Set the active pane in the dock stack
+        const mainStack = this.findMainStack();
+        if (mainStack) {
+            mainStack.activeId = `file-pane-${id}`;
+            this.dockManager.render();
+        }
+    }
+
+    private findMainStack() {
+        const layout = this.dockManager.layout;
+        if (!layout) return null;
+
+        const root = layout.root;
+        if (root.type === 'box') {
+            for (const child of root.children) {
+                if (child.type === 'stack' && child.id === 'main-stack') {
+                    return child;
+                }
+            }
+        }
+        return null;
+    }
+
+    private addDockPane(fileId: string) {
+        const mainStack = this.findMainStack();
+        if (!mainStack) return;
+
+        const filename = fileId.split(/[/\\]/).pop() || fileId;
+        const pane = {
+            id: `file-pane-${fileId}`,
+            title: filename,
+            contentId: `file-${fileId}`,
+            closable: true
+        };
+
+        mainStack.children.push(pane);
+        mainStack.activeId = pane.id;
+        this.dockManager.render();
+    }
+
+    private removeDockPane(fileId: string) {
+        const mainStack = this.findMainStack();
+        if (!mainStack) return;
+
+        const paneId = `file-pane-${fileId}`;
+        mainStack.children = mainStack.children.filter(p => p.id !== paneId);
+        
+        if (mainStack.activeId === paneId) {
+            mainStack.activeId = mainStack.children.length > 0 ? mainStack.children[0].id : null;
+        }
+        
+        this.dockManager.render();
     }
 
     async closeFile(id: string) {
@@ -381,32 +408,6 @@ export class AppMain extends HTMLElement {
             await this.refreshFiles();
         } catch (e) {
             console.error(e);
-        }
-    }
-
-    render() {
-        // Elements from the docked container
-        const tabBar = this.fileViewContainer.querySelector('#tabs') as TabBar;
-        const emptyState = this.fileViewContainer.querySelector('#empty-state') as HTMLElement;
-
-        const fileIds = Array.from(this.fileResources.keys());
-        const hasFiles = fileIds.length > 0;
-
-        // Update Tabs
-        if (tabBar) {
-            tabBar.tabs = fileIds.map(id => ({
-                id: id,
-                label: id.split(/[/\\]/).pop() || id,
-                active: id === this.state.activeFileId
-            }));
-
-            // Visibility
-            tabBar.style.display = hasFiles ? 'block' : 'none';
-        }
-
-        // Empty state visibility
-        if (emptyState) {
-            emptyState.style.display = hasFiles ? 'none' : 'flex';
         }
     }
 }

@@ -20,16 +20,16 @@ The project uses a hybrid architecture where the same Rust backend code is compi
 - **Tauri CLI**: Installed as dev dependency
 
 ### Installation
-**ALWAYS run npm install first before any build or test operations:**
+**ALWAYS run bun install first before any build or test operations:**
 ```bash
-npm install
+bun install
 ```
 
 ### Build Steps
 
 **1. Build WebAssembly (CRITICAL - must be done first):**
 ```bash
-npm run wasm:build
+bun run wasm:build
 # or: cd backend && wasm-pack build --target web
 ```
 This creates `backend/pkg/` with compiled WASM files. **Frontend tests and builds will fail without this step.**
@@ -38,13 +38,13 @@ This creates `backend/pkg/` with compiled WASM files. **Frontend tests and build
 
 **2. Build Frontend:**
 ```bash
-npm run build
+bun run build
 ```
 Output goes to `dist/` directory. Build takes ~90ms after WASM is built.
 
 **3. Development Server:**
 ```bash
-npm run dev
+bun run dev:vite
 ```
 Runs on port 1420 (strictly enforced).
 
@@ -52,17 +52,17 @@ Runs on port 1420 (strictly enforced).
 
 **Frontend Tests (Vitest):**
 ```bash
-npm test
-# or: npm run test:ui for UI mode
+bun run test
+# or: bun run test:ui for UI mode
 ```
-- **CRITICAL**: Must build WASM first (`npm run wasm:build`) or tests importing backend will fail
+- **CRITICAL**: Must build WASM first (`bun run wasm:build`) or tests importing backend will fail
 - Tests are in `src/**/*.test.ts` files
 - Uses jsdom environment with global test setup in `src/test-setup.ts`
 - Expected: 34 tests passing across 6 test files
 
 **Backend Tests (Rust):**
 ```bash
-npm run test:rust
+bun run test:rust
 # or: cd backend && cargo test
 ```
 - Expected: 2 tests passing (1 unit test, 1 integration test)
@@ -71,16 +71,16 @@ npm run test:rust
 **Full Test Suite:**
 Run in this order:
 ```bash
-npm run wasm:build   # ALWAYS first
-npm run test:rust    # Backend tests
-npm run test         # Frontend tests
+bun run wasm:build   # ALWAYS first
+bun run test:rust    # Backend tests
+bun run test         # Frontend tests
 ```
 
 ### Common Issues & Workarounds
 
 1. **Error: "Failed to resolve import ../backend/pkg/backend"**
    - **Cause**: WASM not built
-   - **Fix**: Run `npm run wasm:build` first
+   - **Fix**: Run `bun run wasm:build` first
 
 2. **wasm-opt download failure warning**
    - **Impact**: None - WASM builds successfully despite warning
@@ -165,8 +165,6 @@ Runs on push/PR to main/master branches:
 4. Run backend tests: `bun run test:rust`
 5. Run frontend tests: `bun run test`
 
-**Note**: CI uses Bun, but npm works for local development.
-
 ## Development Guidelines
 
 ### Making Changes
@@ -174,13 +172,13 @@ Runs on push/PR to main/master branches:
 1. **Backend (Rust) Changes:**
    - Modify code in `backend/src/`
    - Test: `cd backend && cargo test`
-   - Rebuild WASM: `npm run wasm:build`
-   - Test frontend integration: `npm test`
+   - Rebuild WASM: `bun run wasm:build`
+   - Test frontend integration: `bun test`
 
 2. **Frontend Changes:**
    - Modify code in `src/`
-   - Test: `npm test`
-   - Visual check: `npm run dev`
+   - Test: `bun test`
+   - Visual check: `bun run dev:vite`
 
 3. **Tests:**
    - Frontend tests use Vitest with jsdom
@@ -191,16 +189,16 @@ Runs on push/PR to main/master branches:
 
 Before submitting changes:
 ```bash
-npm run wasm:build    # If backend changed
-npm run test:rust     # Backend tests
-npm run test          # Frontend tests
-npm run build         # Verify build succeeds
+bun run wasm:build    # If backend changed
+bun run test:rust     # Backend tests
+bun run test          # Frontend tests
+bun run build         # Verify build succeeds
 ```
 
 ### Dependencies
 
 - **Adding Rust dependencies**: Edit `backend/Cargo.toml` or `src-tauri/Cargo.toml`
-- **Adding Node dependencies**: Use `npm install <package>`
+- **Adding Node dependencies**: Use `bun install <package>`
 - **After adding dependencies**: Always rebuild and test
 
 ### Important Notes
@@ -226,19 +224,19 @@ npm run build         # Verify build succeeds
 
 **Most Common Commands:**
 ```bash
-npm install              # Install dependencies (FIRST)
-npm run wasm:build       # Build backend to WASM (BEFORE tests)
-npm test                 # Run frontend tests
-npm run test:rust        # Run backend tests
-npm run build            # Build for production
-npm run dev              # Start dev server
+bun install              # Install dependencies (FIRST)
+bun run wasm:build       # Build backend to WASM (BEFORE tests)
+bun test                 # Run frontend tests
+bun run test:rust        # Run backend tests
+bun run build            # Build for production
+bun run dev              # Start dev server
 ```
 
 **Critical Path for Changes:**
-1. `npm install` (if dependencies changed)
+1. `bun install` (if dependencies changed)
 2. Make code changes
-3. `npm run wasm:build` (if backend changed)
-4. `npm test` and `npm run test:rust`
-5. `npm run build` (verify production build)
+3. `bun run wasm:build` (if backend changed)
+4. `bun test` and `bun run test:rust`
+5. `bun run build` (verify production build)
 
 **Trust these instructions** - they have been validated. Only search for additional information if you encounter errors or need details beyond what's documented here.

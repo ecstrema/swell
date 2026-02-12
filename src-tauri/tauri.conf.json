@@ -4,7 +4,7 @@
   "version": "0.1.17",
   "identifier": "com.ecstrema.swell",
   "build": {
-    "beforeDevCommand": "bun dev",
+    "beforeDevCommand": "bun run dev:vite",
     "beforeBuildCommand": "bun run build",
     "devUrl": "http://localhost:1420",
     "frontendDist": "../dist",

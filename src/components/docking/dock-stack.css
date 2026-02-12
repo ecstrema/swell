@@ -81,28 +81,23 @@
     font-weight: 400;
 }
 .empty-placeholder-content p {
-    margin: 0 0 1rem 0;
+    margin: 0;
     font-size: 0.95rem;
 }
-.open-file-button {
-    border-radius: 8px;
-    border: 1px solid var(--color-button-border);
-    padding: 0.6em 1.2em;
-    font-size: 1em;
-    font-weight: 500;
+.open-file-link {
+    background: none;
+    border: none;
+    padding: 0;
     font-family: inherit;
-    color: var(--color-button-text);
-    background-color: var(--color-button-bg);
-    transition: border-color 0.25s;
-    box-shadow: 0 2px 2px var(--menu-shadow);
+    font-size: inherit;
+    color: var(--color-link, #4a9eff);
     cursor: pointer;
+    text-decoration: underline;
     opacity: 1;
 }
-.open-file-button:hover {
-    border-color: var(--color-button-border-hover);
-    background-color: var(--color-bg-hover);
+.open-file-link:hover {
+    color: var(--color-link-hover, #6eb3ff);
 }
-.open-file-button:active {
-    border-color: var(--color-button-border-hover);
-    background-color: var(--color-bg-active);
+.open-file-link:active {
+    color: var(--color-link-active, #2e7fd8);
 }

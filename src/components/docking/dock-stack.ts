@@ -33,8 +33,7 @@ export class DockStackComponent extends HTMLElement {
                 <div class="empty-placeholder">
                     <div class="empty-placeholder-content">
                         <h2>No Open Editors</h2>
-                        <p>Open a file to get started</p>
-                        <button id="open-file-btn" class="open-file-button">Open File</button>
+                        <p>Open a file to get started, <button id="open-file-btn" class="open-file-link">open a file</button></p>
                     </div>
                 </div>
             `;

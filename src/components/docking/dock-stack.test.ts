@@ -36,7 +36,7 @@ describe('DockStack - Empty State Button', () => {
         // Verify button exists
         const openFileBtn = dockStack.shadowRoot!.querySelector('#open-file-btn') as HTMLButtonElement;
         expect(openFileBtn).toBeTruthy();
-        expect(openFileBtn.textContent).toBe('Open File');
+        expect(openFileBtn.textContent).toBe('open a file');
     });
 
     it('should dispatch file-open-request event when button is clicked', () => {

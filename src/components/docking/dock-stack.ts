@@ -68,12 +68,22 @@ export class DockStackComponent extends HTMLElement {
         if (!this._node) return;
         this._node.activeId = id;
         this.render();
+        
+        // Emit event to notify parent that active pane changed
+        this.dispatchEvent(new CustomEvent('pane-select', {
+            detail: { id },
+            bubbles: true,
+            composed: true
+        }));
     }
 
     private closePane(id: string) {
-        // Logic to notify manager or handle removal
-        // For now just a placeholder
-        console.log('Close pane', id);
+        // Emit event to notify parent that a pane should be closed
+        this.dispatchEvent(new CustomEvent('pane-close', {
+            detail: { id },
+            bubbles: true,
+            composed: true
+        }));
     }
 }
 

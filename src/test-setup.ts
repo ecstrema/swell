@@ -1,4 +1,8 @@
 import { vi } from 'vitest';
+import { File as NodeFile } from 'node:buffer';
+
+// Polyfill File API with Node.js native File which has arrayBuffer() method
+global.File = NodeFile as typeof File;
 
 // Mock the backend module for all tests  
 vi.mock('../backend/pkg/backend', () => ({

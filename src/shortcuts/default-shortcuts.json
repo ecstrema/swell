@@ -21,7 +21,7 @@
       "description": "Undo last action"
     },
     {
-      "shortcut": "Ctrl+Shift+=",
+      "shortcut": "Ctrl+=",
       "commandId": "view-zoom-in",
       "description": "Zoom in"
     },

@@ -11,7 +11,7 @@ let defaultShortcuts: ShortcutBinding[] = [];
 try {
     defaultShortcuts = loadShortcutsFromJSON(defaultShortcutsJSON);
 } catch (error) {
-    console.error('Failed to load default shortcuts:', error);
+    console.error('Failed to load default shortcuts. Falling back to empty shortcuts array. Error:', error);
     // If loading fails, we fall back to an empty array
     // This prevents the application from crashing due to a misconfigured shortcuts file
 }

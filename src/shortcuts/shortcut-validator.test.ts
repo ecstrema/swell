@@ -162,6 +162,23 @@ describe('Shortcut Validator', () => {
             const result = validateShortcutsConfig(config);
             expect(result.shortcuts[0].description).toBeUndefined();
         });
+
+        it('should trim whitespace from string fields', () => {
+            const config = {
+                shortcuts: [
+                    {
+                        shortcut: '  Ctrl+O  ',
+                        commandId: '  file-open  ',
+                        description: '  Open a file  '
+                    }
+                ]
+            };
+            
+            const result = validateShortcutsConfig(config);
+            expect(result.shortcuts[0].shortcut).toBe('Ctrl+O');
+            expect(result.shortcuts[0].commandId).toBe('file-open');
+            expect(result.shortcuts[0].description).toBe('Open a file');
+        });
     });
 
     describe('convertToShortcutBindings', () => {

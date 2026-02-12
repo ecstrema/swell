@@ -38,6 +38,16 @@ function isNonEmptyString(value: unknown): value is string {
 }
 
 /**
+ * Validates and trims a string value
+ */
+function validateAndTrimString(value: unknown, fieldName: string, index: number): string {
+    if (!isNonEmptyString(value)) {
+        throw new ShortcutValidationError(`Shortcut at index ${index} has invalid '${fieldName}' field (must be a non-empty string)`);
+    }
+    return value.trim();
+}
+
+/**
  * Validates a single shortcut binding
  */
 function validateShortcutBinding(binding: unknown, index: number): RawShortcutBinding {
@@ -47,33 +57,28 @@ function validateShortcutBinding(binding: unknown, index: number): RawShortcutBi
 
     const obj = binding as Record<string, unknown>;
 
-    // Validate shortcut field
+    // Validate and trim shortcut field
     if (!('shortcut' in obj)) {
         throw new ShortcutValidationError(`Shortcut at index ${index} is missing 'shortcut' field`);
     }
-    if (!isNonEmptyString(obj.shortcut)) {
-        throw new ShortcutValidationError(`Shortcut at index ${index} has invalid 'shortcut' field (must be a non-empty string)`);
-    }
+    const shortcut = validateAndTrimString(obj.shortcut, 'shortcut', index);
 
-    // Validate commandId field
+    // Validate and trim commandId field
     if (!('commandId' in obj)) {
         throw new ShortcutValidationError(`Shortcut at index ${index} is missing 'commandId' field`);
     }
-    if (!isNonEmptyString(obj.commandId)) {
-        throw new ShortcutValidationError(`Shortcut at index ${index} has invalid 'commandId' field (must be a non-empty string)`);
-    }
+    const commandId = validateAndTrimString(obj.commandId, 'commandId', index);
 
-    // Validate optional description field
+    // Validate and trim optional description field
+    let description: string | undefined;
     if ('description' in obj && obj.description !== undefined) {
-        if (!isNonEmptyString(obj.description)) {
-            throw new ShortcutValidationError(`Shortcut at index ${index} has invalid 'description' field (must be a non-empty string or omitted)`);
-        }
+        description = validateAndTrimString(obj.description, 'description', index);
     }
 
     return {
-        shortcut: obj.shortcut,
-        commandId: obj.commandId,
-        description: obj.description as string | undefined
+        shortcut,
+        commandId,
+        description
     };
 }
 

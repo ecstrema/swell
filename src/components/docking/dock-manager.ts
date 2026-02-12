@@ -45,7 +45,7 @@ export class DockManager extends HTMLElement {
     this.addEventListener("dragover", (e) => e.preventDefault());
   }
 
-  private render() {
+  render() {
     if (!this._layout) {
       this.shadowRoot!.innerHTML = `<div>No layout defined</div>`;
       return;

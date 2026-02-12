@@ -146,6 +146,9 @@ export const restoreSession = async (): Promise<void> => {
         
         for (const file of sessionFiles) {
             try {
+                // Note: We call wasm.add_file_bytes directly instead of addFile()
+                // because the files are already persisted in IndexedDB. We don't want
+                // to re-save them via saveFileToSession().
                 await wasm.add_file_bytes(file.name, file.data);
             } catch (e) {
                 console.error(`Failed to restore file ${file.name}:`, e);

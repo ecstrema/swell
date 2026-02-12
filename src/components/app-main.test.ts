@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AppMain } from './app-main.js';
+import * as backend from '../backend.js';
 
 // Mock the backend module
 vi.mock('../backend.js', () => ({
@@ -65,5 +66,46 @@ describe('AppMain - Sidebar Visibility', () => {
         
         expect(mainStack).toBeDefined();
         expect(mainStack.id).toBe('main-stack');
+    });
+});
+
+describe('AppMain - Empty State File Picker', () => {
+    let appMain: AppMain;
+
+    beforeEach(() => {
+        appMain = new AppMain();
+        document.body.appendChild(appMain);
+    });
+
+    afterEach(() => {
+        if (appMain.parentNode) {
+            appMain.parentNode.removeChild(appMain);
+        }
+        vi.clearAllMocks();
+    });
+
+    it('should call openFileDialog when file picker button is clicked', async () => {
+        // Wait for component to be fully initialized
+        await vi.waitFor(() => {
+            const dockManager = appMain.shadowRoot!.querySelector('dock-manager');
+            return dockManager && (dockManager as any).layout;
+        });
+
+        // The fileViewContainer is registered with dock-manager but not in shadow root
+        // We need to query it from the component's property
+        const fileViewContainer = (appMain as any).fileViewContainer as HTMLElement;
+        expect(fileViewContainer).toBeTruthy();
+
+        const filePickerBtn = fileViewContainer.querySelector('#file-picker-btn') as HTMLButtonElement;
+        expect(filePickerBtn).toBeTruthy();
+        expect(filePickerBtn.textContent).toBe('Open File');
+
+        // Click the button
+        filePickerBtn.click();
+
+        // Verify that openFileDialog was called
+        await vi.waitFor(() => {
+            expect(backend.openFileDialog).toHaveBeenCalled();
+        });
     });
 });

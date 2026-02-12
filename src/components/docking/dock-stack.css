@@ -84,3 +84,20 @@
     margin: 0;
     font-size: 0.95rem;
 }
+.open-file-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+    color: var(--color-link, #4a9eff);
+    cursor: pointer;
+    text-decoration: underline;
+    opacity: 1;
+}
+.open-file-link:hover {
+    color: var(--color-link-hover, #6eb3ff);
+}
+.open-file-link:active {
+    color: var(--color-link-active, #2e7fd8);
+}

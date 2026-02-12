@@ -34,9 +34,23 @@ export class DockStackComponent extends HTMLElement {
                     <div class="empty-placeholder-content">
                         <h2>No Open Editors</h2>
                         <p>Open a file to get started</p>
+                        <button id="open-file-btn" class="open-file-button">Open File</button>
                     </div>
                 </div>
             `;
+            
+            // Add event listener for the open file button
+            const openFileBtn = this.shadowRoot!.querySelector('#open-file-btn');
+            if (openFileBtn) {
+                openFileBtn.addEventListener('click', () => {
+                    // Dispatch an event that the parent can listen to
+                    this.dispatchEvent(new CustomEvent('file-open-request', {
+                        bubbles: true,
+                        composed: true
+                    }));
+                });
+            }
+            
             return;
         }
 

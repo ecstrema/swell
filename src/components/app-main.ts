@@ -131,6 +131,12 @@ export class AppMain extends HTMLElement {
         // Listeners
         this.addEventListener('file-open-request', () => this.handleFileOpen());
 
+        // Listen for file picker button click in empty state
+        const filePickerBtn = this.fileViewContainer.querySelector('#file-picker-btn');
+        if (filePickerBtn) {
+            filePickerBtn.addEventListener('click', () => this.handleFileOpen());
+        }
+
         // Listen for settings open request - activate the settings tab
         this.addEventListener('settings-open-request', () => {
             this.activateSettingsPane();

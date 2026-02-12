@@ -1,5 +1,7 @@
 import { DockBox, DockNode } from "./types.js";
 import type { DockManager } from "./dock-manager.js";
+import { css } from "../../utils/css-utils.js";
+import dockBoxCss from "./dock-box.css?inline";
 
 export class DockBoxComponent extends HTMLElement {
     private _node: DockBox | null = null;
@@ -17,42 +19,16 @@ export class DockBoxComponent extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
+        this.shadowRoot!.adoptedStyleSheets = [css(dockBoxCss)];
     }
 
     private render() {
         if (!this._node || !this._manager) return;
 
         const direction = this._node.direction === 'row' ? 'row' : 'column';
+        this.style.setProperty('--direction', direction);
 
         this.shadowRoot!.innerHTML = `
-            <style>
-                :host {
-                    display: flex;
-                    flex-direction: ${direction};
-                    width: 100%;
-                    height: 100%;
-                    overflow: hidden;
-                }
-                .resizer {
-                    flex: 0 0 4px;
-                    background: transparent;
-                    transition: background 0.2s;
-                    z-index: 10;
-                }
-                .resizer:hover {
-                    background: var(--color-accent, #007acc);
-                }
-                .resizer.row {
-                    cursor: ew-resize;
-                    width: 4px;
-                    height: 100%;
-                }
-                .resizer.column {
-                    cursor: ns-resize;
-                    height: 4px;
-                    width: 100%;
-                }
-            </style>
             <div id="container" style="display: contents;"></div>
         `;
 

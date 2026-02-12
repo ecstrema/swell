@@ -1,0 +1,48 @@
+:host {
+    display: block;
+    background: var(--menu-bg);
+    border-bottom: 1px solid var(--menu-border);
+    font-family: sans-serif;
+    font-size: 14px;
+    user-select: none;
+    color: var(--color-text);
+}
+.menu-bar {
+    display: flex;
+}
+.menu-group {
+    position: relative;
+}
+.menu-title {
+    padding: 5px 10px;
+    cursor: pointer;
+}
+.menu-title:hover {
+    background: var(--menu-item-hover);
+}
+.dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: var(--menu-dropdown-bg);
+    border: 1px solid var(--menu-border);
+    box-shadow: 2px 2px 5px var(--menu-shadow);
+    min-width: 150px;
+    z-index: 1000;
+}
+.menu-group:hover .dropdown {
+    display: block;
+}
+.menu-item {
+    padding: 8px 15px;
+    cursor: pointer;
+}
+.menu-item:hover {
+    background: var(--menu-item-hover);
+}
+.separator {
+    height: 1px;
+    background: var(--menu-border);
+    margin: 4px 0;
+}

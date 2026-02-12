@@ -1,4 +1,7 @@
 import { DockBox, DockLayout, DockNode, DockPane, DockStack } from "./types.js";
+import { css } from "../../utils/css-utils.js";
+import scrollbarCss from "../../styles/shared-styles.css?inline";
+import dockManagerCss from "./dock-manager.css?inline";
 
 export class DockManager extends HTMLElement {
   private _layout: DockLayout | null = null;
@@ -11,6 +14,7 @@ export class DockManager extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
+    this.shadowRoot!.adoptedStyleSheets = [css(scrollbarCss), css(dockManagerCss)];
   }
 
   set layout(value: DockLayout) {
@@ -48,36 +52,6 @@ export class DockManager extends HTMLElement {
     }
 
     this.shadowRoot!.innerHTML = `
-            <style>
-                :host {
-                    display: block;
-                    width: 100%;
-                    height: 100%;
-                    position: relative;
-                    overflow: hidden;
-                    --dock-border-color: var(--color-border, #333);
-                    --dock-bg-color: var(--color-bg, #1e1e1e);
-                    --dock-tab-bg: var(--color-bg-light, #252526);
-                    --dock-tab-active-bg: var(--color-bg-surface, #1e1e1e);
-                    --dock-tab-text: var(--color-text-muted, #969696);
-                    --dock-tab-active-text: var(--color-text, #ffffff);
-                    --dock-overlay-bg: rgba(0, 122, 204, 0.2);
-                    --dock-accent: var(--color-accent, #007acc);
-                }
-                .dock-root {
-                    width: 100%;
-                    height: 100%;
-                    display: flex;
-                }
-                #drop-overlay {
-                    position: absolute;
-                    pointer-events: none;
-                    background: var(--dock-overlay-bg);
-                    border: 2px solid var(--dock-accent);
-                    display: none;
-                    z-index: 1000;
-                }
-            </style>
             <div class="dock-root"></div>
             <div id="drop-overlay"></div>
         `;

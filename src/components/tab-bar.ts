@@ -1,3 +1,7 @@
+import { css } from "../utils/css-utils.js";
+import scrollbarCss from "../styles/shared-styles.css?inline";
+import tabBarCss from "./tab-bar.css?inline";
+
 export interface Tab {
     id: string;
     label: string;
@@ -12,53 +16,9 @@ export class TabBar extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
 
-        // Initial Template
+        this.shadowRoot!.adoptedStyleSheets = [css(scrollbarCss), css(tabBarCss)];
+
         this.shadowRoot!.innerHTML = `
-        <style>
-            :host {
-                display: block;
-            }
-            .tab-bar {
-                display: flex;
-                background-color: var(--color-bg-hover);
-                border-bottom: 1px solid var(--color-border);
-                height: 32px;
-                overflow-x: auto;
-            }
-            .tab {
-                padding: 0 10px;
-                display: flex;
-                align-items: center;
-                cursor: pointer;
-                background-color: var(--color-bg);
-                border-right: 1px solid var(--color-border);
-                font-size: 0.9em;
-                user-select: none;
-                min-width: 100px;
-                justify-content: space-between;
-                color: var(--color-text);
-            }
-            .tab:hover {
-                background-color: var(--color-bg-surface);
-            }
-            .tab.active {
-                background-color: var(--color-bg-surface);
-                border-bottom: 2px solid var(--color-primary);
-            }
-            .tab-close {
-                margin-left: 8px;
-                border-radius: 50%;
-                width: 16px;
-                height: 16px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 12px;
-            }
-            .tab-close:hover {
-                background-color: var(--color-bg-active);
-            }
-        </style>
         <div class="tab-bar"></div>
         `;
 

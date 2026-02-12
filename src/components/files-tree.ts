@@ -1,3 +1,7 @@
+import { css } from "../utils/css-utils.js";
+import scrollbarCss from "../styles/shared-styles.css?inline";
+import filesTreeCss from "./files-tree.css?inline";
+
 export interface HierarchyVar {
     name: string;
     ref: number;
@@ -25,61 +29,9 @@ export class FilesTree extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
 
+        this.shadowRoot!.adoptedStyleSheets = [css(scrollbarCss), css(filesTreeCss)];
+
         this.shadowRoot!.innerHTML = `
-        <style>
-            :host {
-                display: block;
-                height: 100%;
-                overflow-y: auto;
-                background-color: var(--color-bg-surface);
-                border-right: 1px solid var(--color-border);
-                font-family: monospace; /* Often better for hierarchy */
-                font-size: 14px;
-                color: var(--color-text);
-            }
-            .tree-node {
-                margin-left: 10px;
-            }
-            details > summary {
-                cursor: pointer;
-                list-style: none; /* Hide default triangle in some browsers */
-                padding: 2px 4px;
-                user-select: none;
-            }
-            details > summary::-webkit-details-marker {
-                display: none;
-            }
-            details > summary:hover {
-                background-color: var(--color-bg-hover);
-            }
-            details > summary::before {
-                content: '▶';
-                display: inline-block;
-                margin-right: 6px;
-                font-size: 0.8em;
-                transition: transform 0.2s;
-            }
-            details[open] > summary::before {
-                transform: rotate(90deg);
-            }
-            .var-node {
-                margin-left: 20px;
-                padding: 2px 4px;
-                cursor: pointer;
-                color: var(--color-text-muted);
-            }
-            .var-node:hover {
-                background-color: var(--color-bg-hover);
-                color: var(--color-text);
-            }
-            .empty-msg {
-                padding: 20px;
-                text-align: center;
-                color: var(--color-text-muted);
-                font-family: var(--font-family, sans-serif);
-                font-style: italic;
-            }
-        </style>
         <div id="tree-container"></div>
         `;
 

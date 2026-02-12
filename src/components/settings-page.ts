@@ -2,6 +2,9 @@
 
 import { settingsRegister, SettingMetadata, SettingValue } from '../settings/settings-register.js';
 import { getSetting, setSetting } from '../settings/settings-storage.js';
+import { css } from '../utils/css-utils.js';
+import scrollbarCss from '../styles/shared-styles.css?inline';
+import settingsCss from './settings-page.css?inline';
 
 export class SettingsPage extends HTMLElement {
     private isVisible: boolean = false;
@@ -18,7 +21,7 @@ export class SettingsPage extends HTMLElement {
 
     async loadSettings() {
         const grouped = settingsRegister.getGrouped();
-        
+
         for (const [category, settings] of grouped) {
             for (const setting of settings) {
                 try {
@@ -48,13 +51,13 @@ export class SettingsPage extends HTMLElement {
             // Convert value based on type
             let convertedValue = value;
             if (metadata.type === 'number') {
-                convertedValue = parseFloat(value);
+                convertedValue = parseFloat(value as string);
             } else if (metadata.type === 'boolean') {
                 convertedValue = value === true || value === 'true';
             }
 
             await setSetting(path, convertedValue);
-            
+
             // Trigger change event for components that might need to react
             this.dispatchEvent(new CustomEvent('setting-changed', {
                 bubbles: true,
@@ -99,13 +102,13 @@ export class SettingsPage extends HTMLElement {
                             <div class="setting-description">${description}</div>
                         </label>
                         <select id="${id}" data-path="${path}" class="setting-input">
-                            ${setting.options?.map(opt => 
+                            ${setting.options?.map(opt =>
                                 `<option value="${opt.value}">${opt.label}</option>`
                             ).join('') || ''}
                         </select>
                     </div>
                 `;
-            
+
             case 'boolean':
                 return `
                     <div class="setting-row">
@@ -116,7 +119,7 @@ export class SettingsPage extends HTMLElement {
                         <input type="checkbox" id="${id}" data-path="${path}" class="setting-input">
                     </div>
                 `;
-            
+
             case 'number':
                 return `
                     <div class="setting-row">
@@ -130,7 +133,7 @@ export class SettingsPage extends HTMLElement {
                             ${setting.step !== undefined ? `step="${setting.step}"` : ''}>
                     </div>
                 `;
-            
+
             case 'string':
             default:
                 return `
@@ -148,137 +151,9 @@ export class SettingsPage extends HTMLElement {
     render() {
         const grouped = settingsRegister.getGrouped();
 
+        this.shadowRoot!.adoptedStyleSheets = [css(scrollbarCss), css(settingsCss)];
+
         this.shadowRoot!.innerHTML = `
-            <style>
-                :host {
-                    display: none;
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: rgba(0, 0, 0, 0.5);
-                    z-index: 1000;
-                    align-items: center;
-                    justify-content: center;
-                }
-
-                .settings-dialog {
-                    background: var(--color-bg-surface);
-                    border: 1px solid var(--color-border);
-                    border-radius: 8px;
-                    width: 90%;
-                    max-width: 700px;
-                    max-height: 80vh;
-                    display: flex;
-                    flex-direction: column;
-                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-                }
-
-                .settings-header {
-                    padding: 20px;
-                    border-bottom: 1px solid var(--color-border);
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-
-                .settings-title {
-                    font-size: 20px;
-                    font-weight: 600;
-                    color: var(--color-text);
-                }
-
-                .close-button {
-                    background: transparent;
-                    border: none;
-                    font-size: 24px;
-                    cursor: pointer;
-                    color: var(--color-text);
-                    padding: 0;
-                    width: 32px;
-                    height: 32px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    border-radius: 4px;
-                }
-
-                .close-button:hover {
-                    background: var(--color-bg-hover);
-                }
-
-                .settings-content {
-                    padding: 20px;
-                    overflow-y: auto;
-                    flex: 1;
-                }
-
-                .settings-category {
-                    margin-bottom: 30px;
-                }
-
-                .category-title {
-                    font-size: 16px;
-                    font-weight: 600;
-                    color: var(--color-text);
-                    margin-bottom: 15px;
-                    padding-bottom: 8px;
-                    border-bottom: 1px solid var(--color-border);
-                }
-
-                .setting-row {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 12px 0;
-                    gap: 20px;
-                }
-
-                .setting-row label {
-                    flex: 1;
-                    cursor: pointer;
-                }
-
-                .setting-label {
-                    font-weight: 500;
-                    color: var(--color-text);
-                    margin-bottom: 4px;
-                }
-
-                .setting-description {
-                    font-size: 13px;
-                    color: var(--color-text-secondary, #888);
-                }
-
-                .setting-input {
-                    min-width: 200px;
-                    padding: 6px 10px;
-                    border: 1px solid var(--color-border);
-                    border-radius: 4px;
-                    background: var(--color-bg);
-                    color: var(--color-text);
-                    font-family: inherit;
-                    font-size: 14px;
-                }
-
-                input[type="checkbox"].setting-input {
-                    min-width: auto;
-                    width: 20px;
-                    height: 20px;
-                    cursor: pointer;
-                }
-
-                select.setting-input {
-                    cursor: pointer;
-                }
-
-                .setting-input:focus {
-                    outline: 2px solid var(--color-button-border-hover);
-                    outline-offset: 1px;
-                }
-            </style>
-
             <div class="settings-dialog">
                 <div class="settings-header">
                     <div class="settings-title">Settings</div>

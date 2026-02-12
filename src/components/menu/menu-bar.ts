@@ -1,6 +1,8 @@
-import { isTauri } from "../../backend";
-import { themeManager } from "../../theme-manager";
-import { createMenu, MenuConfig } from "../../menu-api";
+import { isTauri } from "../../backend.js";
+import { themeManager } from "../../theme-manager.js";
+import { createMenu, MenuConfig } from "../../menu-api.js";
+import { css } from "../../utils/css-utils.js";
+import menuBarCss from "./menu-bar.css?inline";
 
 export class MenuBar extends HTMLElement {
   private menuConfig: MenuConfig | null = null;
@@ -8,11 +10,12 @@ export class MenuBar extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
+    this.shadowRoot!.adoptedStyleSheets = [css(menuBarCss)];
   }
 
   async connectedCallback() {
       await this.initMenu();
-      
+
       if (isTauri) {
           this.style.display = 'none';
       } else {
@@ -128,56 +131,6 @@ export class MenuBar extends HTMLElement {
   render() {
       if (this.shadowRoot && this.menuConfig) {
           this.shadowRoot.innerHTML = `
-              <style>
-                  :host {
-                      display: block;
-                      background: var(--menu-bg);
-                      border-bottom: 1px solid var(--menu-border);
-                      font-family: sans-serif;
-                      font-size: 14px;
-                      user-select: none;
-                      color: var(--color-text);
-                  }
-                  .menu-bar {
-                      display: flex;
-                  }
-                  .menu-group {
-                      position: relative;
-                  }
-                  .menu-title {
-                      padding: 5px 10px;
-                      cursor: pointer;
-                  }
-                  .menu-title:hover {
-                      background: var(--menu-item-hover);
-                  }
-                  .dropdown {
-                      display: none;
-                      position: absolute;
-                      top: 100%;
-                      left: 0;
-                      background: var(--menu-dropdown-bg);
-                      border: 1px solid var(--menu-border);
-                      box-shadow: 2px 2px 5px var(--menu-shadow);
-                      min-width: 150px;
-                      z-index: 1000;
-                  }
-                  .menu-group:hover .dropdown {
-                      display: block;
-                  }
-                  .menu-item {
-                      padding: 8px 15px;
-                      cursor: pointer;
-                  }
-                  .menu-item:hover {
-                      background: var(--menu-item-hover);
-                  }
-                  .separator {
-                      height: 1px;
-                      background: var(--menu-border);
-                      margin: 4px 0;
-                  }
-              </style>
               <div class="menu-bar">
                   ${this.menuConfig.items.map(submenu => `
                       <div class="menu-group">
@@ -204,7 +157,7 @@ export class MenuBar extends HTMLElement {
               item.addEventListener('click', (e) => {
                   const target = e.target as HTMLElement;
                   const itemId = target.dataset.id;
-                  
+
                   if (itemId && this.menuConfig) {
                       // Find and execute the action
                       for (const submenu of this.menuConfig.items) {

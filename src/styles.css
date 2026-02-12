@@ -26,6 +26,10 @@
   --menu-border: #cccccc;
   --menu-shadow: rgba(0,0,0,0.1);
 
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #cccccc;
+  --scrollbar-thumb-hover: #999999;
+
   font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 24px;
@@ -67,6 +71,10 @@
   --menu-dropdown-bg: #ffffff;
   --menu-border: #cccccc;
   --menu-shadow: rgba(0,0,0,0.1);
+
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #cccccc;
+  --scrollbar-thumb-hover: #999999;
 }
 
 /* Dark theme - explicit class */
@@ -92,6 +100,10 @@
   --menu-dropdown-bg: #222222;
   --menu-border: #444444;
   --menu-shadow: rgba(0,0,0,0.3);
+
+  --scrollbar-track: #2a2a2a;
+  --scrollbar-thumb: #444444;
+  --scrollbar-thumb-hover: #666666;
 }
 
 /* Auto theme based on system preference (when no explicit theme is set) */
@@ -118,6 +130,10 @@
     --menu-dropdown-bg: #222222;
     --menu-border: #444444;
     --menu-shadow: rgba(0,0,0,0.3);
+
+    --scrollbar-track: #2a2a2a;
+    --scrollbar-thumb: #444444;
+    --scrollbar-thumb-hover: #666666;
   }
 }
 
@@ -170,4 +186,29 @@ button:active {
 input,
 button {
   outline: none;
+}
+
+/* Scrollbar Styles */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 5px;
+  border: 2px solid var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }

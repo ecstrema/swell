@@ -1,0 +1,26 @@
+:host {
+    display: flex;
+    flex-direction: var(--direction, row);
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+.resizer {
+    flex: 0 0 4px;
+    background: transparent;
+    transition: background 0.2s;
+    z-index: 10;
+}
+.resizer:hover {
+    background: var(--color-accent, #007acc);
+}
+.resizer.row {
+    cursor: ew-resize;
+    width: 4px;
+    height: 100%;
+}
+.resizer.column {
+    cursor: ns-resize;
+    height: 4px;
+    width: 100%;
+}

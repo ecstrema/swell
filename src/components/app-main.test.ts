@@ -8,6 +8,7 @@ vi.mock('../backend.js', () => ({
     getHierarchy: vi.fn(),
     getFiles: vi.fn(() => Promise.resolve([])),
     removeFile: vi.fn(),
+    restoreSession: vi.fn(() => Promise.resolve()),
     isTauri: false
 }));
 

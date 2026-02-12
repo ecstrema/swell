@@ -14,6 +14,9 @@ export class FileDisplay extends HTMLElement {
   private selectedSignals: SelectedSignal[] = [];
   private signalsContainer: HTMLDivElement | null = null;
   private boundHandleSignalSelect: (event: Event) => void;
+  private visibleStart: number = 0;
+  private visibleEnd: number = 1000000;
+  private timeRangeInitialized: boolean = false;
 
   constructor() {
     super();
@@ -79,13 +82,38 @@ export class FileDisplay extends HTMLElement {
     return 0;
   }
 
+  private async initializeTimeRange(signalRef: number) {
+    if (this.timeRangeInitialized || !this._filename) return;
+
+    try {
+      // Use a large but reasonable upper bound to detect actual time range
+      // 1e15 nanoseconds = ~11.5 days which is reasonable for waveform simulations
+      const changes = await getSignalChanges(this._filename, signalRef, 0, 1e15);
+      
+      if (changes.length > 0) {
+        this.visibleStart = changes[0].time;
+        this.visibleEnd = changes[changes.length - 1].time;
+        this.timeRangeInitialized = true;
+      }
+    } catch (error) {
+      console.error('Error initializing time range:', error);
+    }
+  }
+
   private async paintSignal(canvas: HTMLCanvasElement, signalRef: number) {
     if (!this._filename) return;
 
     try {
-      // Fetch signal changes (using a reasonable time range)
-      // For now, we'll use 0 to 1000000 as a default range
-      const changes = await getSignalChanges(this._filename, signalRef, 0, 1000000);
+      // Initialize time range from first signal if not yet done
+      await this.initializeTimeRange(signalRef);
+
+      // Fetch signal changes using the current visible range
+      const changes = await getSignalChanges(
+        this._filename, 
+        signalRef, 
+        this.visibleStart, 
+        this.visibleEnd
+      );
 
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -131,6 +159,45 @@ export class FileDisplay extends HTMLElement {
     } catch (error) {
       console.error('Error painting signal:', error);
     }
+  }
+
+  /**
+   * Updates the visible time range and repaints all signals.
+   * This method can be called by zoom/pan controls to update the viewport.
+   * @param start - Start time of the visible range
+   * @param end - End time of the visible range
+   */
+  public async setVisibleRange(start: number, end: number): Promise<void> {
+    // Validate input
+    if (start < 0 || end < 0) {
+      console.error('Invalid time range: values must be non-negative');
+      return;
+    }
+    if (start >= end) {
+      console.error('Invalid time range: start must be less than end');
+      return;
+    }
+
+    this.visibleStart = start;
+    this.visibleEnd = end;
+    
+    // Repaint all signals with the new range, awaiting all operations
+    await Promise.all(
+      this.selectedSignals.map(signal => 
+        this.paintSignal(signal.canvas, signal.ref)
+      )
+    );
+  }
+
+  /**
+   * Gets the current visible time range.
+   * @returns Object with start and end times
+   */
+  public getVisibleRange(): { start: number; end: number } {
+    return {
+      start: this.visibleStart,
+      end: this.visibleEnd
+    };
   }
 
   private render() {

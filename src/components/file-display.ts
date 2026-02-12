@@ -17,6 +17,11 @@ export class FileDisplay extends HTMLElement {
   private visibleStart: number = 0;
   private visibleEnd: number = 1000000;
   private timeRangeInitialized: boolean = false;
+  private fullRangeStart: number = 0;
+  private fullRangeEnd: number = 1000000;
+  private rangeDisplay: HTMLDivElement | null = null;
+  private scrollbar: HTMLInputElement | null = null;
+  private scrollbarContainer: HTMLDivElement | null = null;
 
   constructor() {
     super();
@@ -104,9 +109,13 @@ export class FileDisplay extends HTMLElement {
       const changes = await getSignalChanges(this._filename, signalRef, 0, 1e15);
       
       if (changes.length > 0) {
-        this.visibleStart = changes[0].time;
-        this.visibleEnd = changes[changes.length - 1].time;
+        this.fullRangeStart = changes[0].time;
+        this.fullRangeEnd = changes[changes.length - 1].time;
+        this.visibleStart = this.fullRangeStart;
+        this.visibleEnd = this.fullRangeEnd;
         this.timeRangeInitialized = true;
+        this.updateRangeDisplay();
+        this.updateScrollbar();
       }
     } catch (error) {
       console.error('Error initializing time range:', error);
@@ -194,6 +203,10 @@ export class FileDisplay extends HTMLElement {
     this.visibleStart = start;
     this.visibleEnd = end;
     
+    // Update UI elements
+    this.updateRangeDisplay();
+    this.updateScrollbar();
+    
     // Repaint all signals with the new range, awaiting all operations
     await Promise.all(
       this.selectedSignals.map(signal => 
@@ -213,6 +226,138 @@ export class FileDisplay extends HTMLElement {
     };
   }
 
+  /**
+   * Gets the full time range of all signals.
+   * @returns Object with start and end times of the full range
+   */
+  public getFullRange(): { start: number; end: number } {
+    return {
+      start: this.fullRangeStart,
+      end: this.fullRangeEnd
+    };
+  }
+
+  /**
+   * Zoom in by a given factor, centered on the middle of the visible range.
+   * @param factor - The zoom factor (e.g., 2.0 means zoom in by 2x)
+   */
+  public async zoomIn(factor: number = 2.0): Promise<void> {
+    const currentRange = this.visibleEnd - this.visibleStart;
+    const newRange = currentRange / factor;
+    const center = (this.visibleStart + this.visibleEnd) / 2;
+    
+    const newStart = center - newRange / 2;
+    const newEnd = center + newRange / 2;
+    
+    await this.setVisibleRange(newStart, newEnd);
+  }
+
+  /**
+   * Zoom out by a given factor, centered on the middle of the visible range.
+   * @param factor - The zoom factor (e.g., 2.0 means zoom out by 2x)
+   */
+  public async zoomOut(factor: number = 2.0): Promise<void> {
+    const currentRange = this.visibleEnd - this.visibleStart;
+    const newRange = currentRange * factor;
+    const center = (this.visibleStart + this.visibleEnd) / 2;
+    
+    let newStart = center - newRange / 2;
+    let newEnd = center + newRange / 2;
+    
+    // Clamp to full range
+    if (newStart < this.fullRangeStart) {
+      newStart = this.fullRangeStart;
+    }
+    if (newEnd > this.fullRangeEnd) {
+      newEnd = this.fullRangeEnd;
+    }
+    
+    // If we've reached the full range, just show it all
+    if (newStart <= this.fullRangeStart && newEnd >= this.fullRangeEnd) {
+      await this.zoomAll();
+      return;
+    }
+    
+    await this.setVisibleRange(newStart, newEnd);
+  }
+
+  /**
+   * Zoom to show the full time range of all signals.
+   */
+  public async zoomAll(): Promise<void> {
+    await this.setVisibleRange(this.fullRangeStart, this.fullRangeEnd);
+  }
+
+  /**
+   * Format a time value for display (in nanoseconds).
+   */
+  private formatTime(time: number): string {
+    // Format time in appropriate units
+    if (time < 1000) {
+      return `${time.toFixed(0)} ns`;
+    } else if (time < 1000000) {
+      return `${(time / 1000).toFixed(2)} µs`;
+    } else if (time < 1000000000) {
+      return `${(time / 1000000).toFixed(2)} ms`;
+    } else {
+      return `${(time / 1000000000).toFixed(2)} s`;
+    }
+  }
+
+  /**
+   * Update the range display to show current visible range.
+   */
+  private updateRangeDisplay(): void {
+    if (!this.rangeDisplay) return;
+    
+    const startTime = this.formatTime(this.visibleStart);
+    const endTime = this.formatTime(this.visibleEnd);
+    const duration = this.formatTime(this.visibleEnd - this.visibleStart);
+    
+    this.rangeDisplay.textContent = `Range: ${startTime} - ${endTime} (Duration: ${duration})`;
+  }
+
+  /**
+   * Update scrollbar position and visibility based on current range.
+   */
+  private updateScrollbar(): void {
+    if (!this.scrollbar || !this.scrollbarContainer) return;
+    
+    const fullRange = this.fullRangeEnd - this.fullRangeStart;
+    const visibleRange = this.visibleEnd - this.visibleStart;
+    
+    // Hide scrollbar if showing full range
+    const isFullRange = Math.abs(this.visibleStart - this.fullRangeStart) < 0.01 * fullRange &&
+                        Math.abs(this.visibleEnd - this.fullRangeEnd) < 0.01 * fullRange;
+    
+    if (isFullRange) {
+      this.scrollbarContainer.style.display = 'none';
+    } else {
+      this.scrollbarContainer.style.display = 'block';
+      
+      // Calculate scrollbar position (0-100)
+      const position = ((this.visibleStart - this.fullRangeStart) / (fullRange - visibleRange)) * 100;
+      this.scrollbar.value = position.toString();
+    }
+  }
+
+  /**
+   * Handle scrollbar input.
+   */
+  private handleScrollbarInput = (event: Event): void => {
+    const target = event.target as HTMLInputElement;
+    const position = parseFloat(target.value);
+    
+    const fullRange = this.fullRangeEnd - this.fullRangeStart;
+    const visibleRange = this.visibleEnd - this.visibleStart;
+    
+    // Calculate new start based on scrollbar position
+    const newStart = this.fullRangeStart + (position / 100) * (fullRange - visibleRange);
+    const newEnd = newStart + visibleRange;
+    
+    this.setVisibleRange(newStart, newEnd);
+  };
+
   private render() {
     if (!this.shadowRoot) return;
 
@@ -220,12 +365,30 @@ export class FileDisplay extends HTMLElement {
       <div class="file-header">
         Current File: <strong>${this._filename}</strong>
       </div>
+      <div class="range-display" id="range-display"></div>
+      <div class="scrollbar-container" id="scrollbar-container">
+        <input type="range" class="scrollbar" id="scrollbar" min="0" max="100" step="0.1" value="0" />
+      </div>
       <div class="signals-container" id="signals-container">
         ${this.selectedSignals.length === 0
           ? '<div class="empty-message">Select signals from the left panel to display them here</div>'
           : ''}
       </div>
     `;
+
+    // Get references to new elements
+    this.rangeDisplay = this.shadowRoot.querySelector('#range-display');
+    this.scrollbarContainer = this.shadowRoot.querySelector('#scrollbar-container');
+    this.scrollbar = this.shadowRoot.querySelector('#scrollbar');
+    
+    // Add scrollbar event listener
+    if (this.scrollbar) {
+      this.scrollbar.addEventListener('input', this.handleScrollbarInput);
+    }
+    
+    // Update initial display
+    this.updateRangeDisplay();
+    this.updateScrollbar();
 
     // Append canvases to the container
     this.signalsContainer = this.shadowRoot.querySelector('#signals-container');

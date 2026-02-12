@@ -93,3 +93,13 @@ settingsRegister.register({
         { value: 'system', label: 'System' }
     ]
 });
+
+settingsRegister.register({
+    path: 'Waveform/Zoom Factor',
+    description: 'The factor by which to zoom in/out when using zoom commands',
+    type: 'number',
+    defaultValue: 2.0,
+    min: 1.1,
+    max: 10.0,
+    step: 0.1
+});

@@ -13,6 +13,7 @@ import { DockLayout, DockStack } from "./docking/types.js";
 import { css } from "../utils/css-utils.js";
 import appMainCss from "./app-main.css?inline";
 import "./docking/index.js";
+import { getSetting } from "../settings/settings-storage.js";
 
 
 
@@ -232,18 +233,35 @@ export class AppMain extends HTMLElement {
         this.commandRegistry.register({
             id: 'view-zoom-in',
             label: 'Zoom In',
-            handler: () => {
-                console.log('Zoom in action triggered');
-                // Zoom in logic could be added here
+            handler: async () => {
+                const fileDisplay = this.getActiveFileDisplay();
+                if (fileDisplay) {
+                    const zoomFactor = await getSetting('Waveform/Zoom Factor') as number || 2.0;
+                    fileDisplay.zoomIn(zoomFactor);
+                }
             }
         });
 
         this.commandRegistry.register({
             id: 'view-zoom-out',
             label: 'Zoom Out',
+            handler: async () => {
+                const fileDisplay = this.getActiveFileDisplay();
+                if (fileDisplay) {
+                    const zoomFactor = await getSetting('Waveform/Zoom Factor') as number || 2.0;
+                    fileDisplay.zoomOut(zoomFactor);
+                }
+            }
+        });
+
+        this.commandRegistry.register({
+            id: 'view-zoom-all',
+            label: 'Zoom All',
             handler: () => {
-                console.log('Zoom out action triggered');
-                // Zoom out logic could be added here
+                const fileDisplay = this.getActiveFileDisplay();
+                if (fileDisplay) {
+                    fileDisplay.zoomAll();
+                }
             }
         });
 
@@ -442,6 +460,15 @@ export class AppMain extends HTMLElement {
         }
 
         return null;
+    }
+
+    /**
+     * Get the currently active FileDisplay element
+     */
+    private getActiveFileDisplay(): FileDisplay | null {
+        if (!this.state.activeFileId) return null;
+        const resource = this.fileResources.get(this.state.activeFileId);
+        return resource ? resource.element : null;
     }
 
     private closeSettingsPane() {

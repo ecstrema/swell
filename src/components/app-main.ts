@@ -10,6 +10,9 @@ import { CommandPalette } from "./command-palette.js";
 import { CommandRegistry, ShortcutManager, defaultShortcuts } from "../shortcuts/index.js";
 import { SettingsPage } from "./settings-page.js";
 import { themeManager } from "../theme-manager.js";
+import { DockManager } from "./docking/dock-manager.js";
+import { DockLayout } from "./docking/types.js";
+import "./docking/index.js";
 
 
 
@@ -19,7 +22,12 @@ export class AppMain extends HTMLElement {
     };
 
     private fileResources = new Map<string, { element: FileDisplay, hierarchy: HierarchyRoot | null }>();
-    
+
+    // Docking system
+    private dockManager: DockManager;
+    private hierarchyTree: FilesTree;
+    private fileViewContainer: HTMLElement;
+
     // Shortcut system
     private commandRegistry: CommandRegistry;
     private shortcutManager: ShortcutManager;
@@ -28,11 +36,11 @@ export class AppMain extends HTMLElement {
 
     constructor() {
         super();
-        
+
         // Initialize shortcut system
         this.commandRegistry = new CommandRegistry();
         this.shortcutManager = new ShortcutManager(this.commandRegistry);
-        
+
         this.attachShadow({ mode: 'open' });
         this.shadowRoot!.innerHTML = `
         <style>
@@ -51,26 +59,22 @@ export class AppMain extends HTMLElement {
                 flex-direction: column;
                 overflow: hidden;
             }
-            .workspace {
+            #workspace {
                 display: flex;
                 flex: 1;
                 overflow: hidden;
             }
-            #sidebar {
-                width: 250px;
-                background-color: var(--color-bg-surface);
-                border-right: 1px solid var(--color-border);
+
+            /* Styles for the docked content */
+            .dockable-content {
                 display: flex;
                 flex-direction: column;
-            }
-            #content-area {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
+                height: 100%;
+                width: 100%;
                 overflow: hidden;
                 background-color: var(--color-bg-surface);
-                position: relative;
             }
+
             .empty-state {
                 flex: 1;
                 display: flex;
@@ -86,7 +90,7 @@ export class AppMain extends HTMLElement {
                 margin-top: 1rem;
             }
 
-            /* Button Styles imported/adapted from global styles */
+            /* Button Styles */
             button {
                 border-radius: 8px;
                 border: 1px solid var(--color-button-border);
@@ -113,32 +117,84 @@ export class AppMain extends HTMLElement {
         <app-menu-bar></app-menu-bar>
 
         <div class="container">
-            <app-tab-bar id="tabs"></app-tab-bar>
-
-            <div class="workspace" id="workspace">
-                 <div id="sidebar">
-                     <files-tree id="hierarchy-tree"></files-tree>
-                 </div>
-                 <main id="content-area">
-                    <div id="empty-state" class="empty-state">
-                        <h1>Wave View</h1>
-                        <div class="row">
-                            <button id="file-picker-btn">Open File</button>
-                        </div>
-                    </div>
-                    <div id="files-container"></div>
-                </main>
+            <div id="workspace">
+                <dock-manager id="main-dock"></dock-manager>
             </div>
         </div>
         `;
+
+        this.dockManager = this.shadowRoot!.getElementById('main-dock') as DockManager;
+
+        // Initialize docked elements
+        this.hierarchyTree = new FilesTree();
+        this.hierarchyTree.id = 'hierarchy-tree';
+
+        this.fileViewContainer = document.createElement('div');
+        this.fileViewContainer.className = 'dockable-content';
+        this.fileViewContainer.innerHTML = `
+            <app-tab-bar id="tabs"></app-tab-bar>
+            <main id="content-area" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative;">
+                <div id="empty-state" class="empty-state">
+                    <h1>Wave View</h1>
+                    <div class="row">
+                        <button id="file-picker-btn">Open File</button>
+                    </div>
+                </div>
+                <div id="files-container"></div>
+            </main>
+        `;
+
+        // Register components for the docking system
+        this.dockManager.registerContent('signal-selection', () => this.hierarchyTree);
+        this.dockManager.registerContent('file-view', () => this.fileViewContainer);
+
+        // Set initial layout
+        this.dockManager.layout = {
+            root: {
+                type: 'box',
+                id: 'root-box',
+                direction: 'row',
+                weight: 1,
+                children: [
+                    {
+                        type: 'stack',
+                        id: 'sidebar-stack',
+                        weight: 20,
+                        activeId: 'signal-selection-pane',
+                        children: [
+                            {
+                                id: 'signal-selection-pane',
+                                title: 'Signal Selection',
+                                contentId: 'signal-selection',
+                                closable: false
+                            }
+                        ]
+                    },
+                    {
+                        type: 'stack',
+                        id: 'main-stack',
+                        weight: 80,
+                        activeId: 'file-view-pane',
+                        children: [
+                            {
+                                id: 'file-view-pane',
+                                title: 'File View',
+                                contentId: 'file-view',
+                                closable: false
+                            }
+                        ]
+                    }
+                ]
+            }
+        };
     }
 
     connectedCallback() {
-        const filePickerBtn = this.shadowRoot!.getElementById('file-picker-btn') as HTMLButtonElement;
+        const filePickerBtn = this.fileViewContainer.querySelector('#file-picker-btn') as HTMLButtonElement;
 
         // Initialize shortcut system
         this.initializeShortcuts();
-        
+
         // Initialize command palette
         this.initializeCommandPalette();
 
@@ -159,7 +215,7 @@ export class AppMain extends HTMLElement {
         this.addEventListener('setting-changed', (e: Event) => {
             const customEvent = e as CustomEvent;
             const { path, value } = customEvent.detail;
-            
+
             // Handle theme changes
             if (path === 'Application/Color Theme') {
                 themeManager.setTheme(value);
@@ -175,11 +231,11 @@ export class AppMain extends HTMLElement {
             }
         });
 
-        this.shadowRoot!.addEventListener('tab-select', (e: any) => {
+        this.addEventListener('tab-select', (e: any) => {
             this.setActiveFile(e.detail.id);
         });
 
-        this.shadowRoot!.addEventListener('tab-close', (e: any) => {
+        this.addEventListener('tab-close', (e: any) => {
             this.closeFile(e.detail.id);
         });
 
@@ -193,12 +249,12 @@ export class AppMain extends HTMLElement {
     disconnectedCallback() {
         // Clean up shortcut system
         this.shortcutManager.deactivate();
-        
+
         // Clean up command palette
         if (this.commandPalette && this.commandPalette.parentNode) {
             this.commandPalette.parentNode.removeChild(this.commandPalette);
         }
-        
+
         // Clean up settings page
         if (this.settingsPage && this.settingsPage.parentNode) {
             this.settingsPage.parentNode.removeChild(this.settingsPage);
@@ -255,7 +311,7 @@ export class AppMain extends HTMLElement {
                 // Zoom out logic could be added here
             }
         });
-        
+
         // Register command palette command
         this.commandRegistry.register({
             id: 'command-palette-toggle',
@@ -269,7 +325,7 @@ export class AppMain extends HTMLElement {
 
         // Register default shortcuts (currently empty, but ready for future use)
         this.shortcutManager.registerMany(defaultShortcuts);
-        
+
         // Register keyboard shortcut to open command palette (Ctrl+K or Cmd+K)
         this.shortcutManager.register({
             shortcut: 'Ctrl+K',
@@ -279,7 +335,7 @@ export class AppMain extends HTMLElement {
         // Activate the shortcut system
         this.shortcutManager.activate();
     }
-    
+
     /**
      * Initialize the command palette
      */
@@ -309,7 +365,7 @@ export class AppMain extends HTMLElement {
             }
 
             // Add new files
-            const contentArea = this.shadowRoot!.getElementById('files-container');
+            const contentArea = this.fileViewContainer.querySelector('#files-container');
             for (const id of files) {
                 if (!this.fileResources.has(id)) {
 
@@ -378,10 +434,9 @@ export class AppMain extends HTMLElement {
 
         const activeRes = this.fileResources.get(id);
 
-        // Update Tree View - using getElementById/querySelector
-        const filesTree = this.shadowRoot!.getElementById('hierarchy-tree') as FilesTree;
-        if (filesTree) {
-            filesTree.data = activeRes ? activeRes.hierarchy : null;
+        // Update Tree View
+        if (this.hierarchyTree) {
+            this.hierarchyTree.data = activeRes ? activeRes.hierarchy : null;
         }
 
         this.render();
@@ -397,10 +452,9 @@ export class AppMain extends HTMLElement {
     }
 
     render() {
-        // Elements
-        const tabBar = this.shadowRoot!.getElementById('tabs') as TabBar;
-        const emptyState = this.shadowRoot!.getElementById('empty-state') as HTMLElement;
-        const sidebar = this.shadowRoot!.getElementById('sidebar') as HTMLElement;
+        // Elements from the docked container
+        const tabBar = this.fileViewContainer.querySelector('#tabs') as TabBar;
+        const emptyState = this.fileViewContainer.querySelector('#empty-state') as HTMLElement;
 
         const fileIds = Array.from(this.fileResources.keys());
         const hasFiles = fileIds.length > 0;
@@ -417,13 +471,9 @@ export class AppMain extends HTMLElement {
             tabBar.style.display = hasFiles ? 'block' : 'none';
         }
 
-        // Empty state & Sidebar
+        // Empty state visibility
         if (emptyState) {
             emptyState.style.display = hasFiles ? 'none' : 'flex';
-        }
-
-        if (sidebar) {
-            sidebar.style.display = hasFiles ? 'flex' : 'none';
         }
     }
 }

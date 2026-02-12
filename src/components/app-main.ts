@@ -421,7 +421,7 @@ export class AppMain extends HTMLElement {
 
         if (node.type === 'box') {
             let biggestStack: DockStack | null = null;
-            let biggestWeight = 0;
+            let biggestWeight = -Infinity;
 
             for (const child of node.children) {
                 const stack = this.findBiggestStack(child);

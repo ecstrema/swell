@@ -81,6 +81,8 @@ export class DockBoxComponent extends HTMLElement {
         const prevChild = this._node.children[prevIndex];
         const nextChild = this._node.children[nextIndex];
         const totalWeight = prevChild.weight + nextChild.weight;
+        const initialPrevWeight = prevChild.weight;
+        const initialNextWeight = nextChild.weight;
 
         const container = this.shadowRoot!.querySelector('#container')!;
         const children = Array.from(container.children).filter(c => c.tagName.toLowerCase().startsWith('dock-'));
@@ -100,8 +102,8 @@ export class DockBoxComponent extends HTMLElement {
             let deltaWeight = (delta / totalSize) * totalWeight;
 
             // Constrain
-            const newPrevWeight = Math.max(0.1, prevChild.weight + deltaWeight);
-            const newNextWeight = Math.max(0.1, nextChild.weight - (newPrevWeight - prevChild.weight));
+            const newPrevWeight = Math.max(0.1, initialPrevWeight + deltaWeight);
+            const newNextWeight = Math.max(0.1, initialNextWeight - (newPrevWeight - initialPrevWeight));
 
             prevChild.weight = newPrevWeight;
             nextChild.weight = newNextWeight;

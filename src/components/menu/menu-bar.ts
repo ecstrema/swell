@@ -1,6 +1,6 @@
 import { isTauri } from "../../backend.js";
 import { themeManager } from "../../theme-manager.js";
-import { createMenu, MenuConfig } from "../../menu-api.js";
+import { createMenu, MenuConfig, MenuItemConfig, SubmenuConfig } from "../../menu-api.js";
 import { css } from "../../utils/css-utils.js";
 import menuBarCss from "./menu-bar.css?inline";
 
@@ -96,25 +96,30 @@ export class MenuBar extends HTMLElement {
                     text: 'View',
                     items: [
                         {
-                            id: 'theme-light',
-                            text: 'Light Theme',
-                            action: () => {
-                                themeManager.setTheme('light');
-                            }
-                        },
-                        {
-                            id: 'theme-dark',
-                            text: 'Dark Theme',
-                            action: () => {
-                                themeManager.setTheme('dark');
-                            }
-                        },
-                        {
-                            id: 'theme-auto',
-                            text: 'Auto Theme',
-                            action: () => {
-                                themeManager.setTheme('auto');
-                            }
+                            text: 'Theme',
+                            items: [
+                                {
+                                    id: 'theme-light',
+                                    text: 'Light',
+                                    action: () => {
+                                        themeManager.setTheme('light');
+                                    }
+                                },
+                                {
+                                    id: 'theme-dark',
+                                    text: 'Dark',
+                                    action: () => {
+                                        themeManager.setTheme('dark');
+                                    }
+                                },
+                                {
+                                    id: 'theme-auto',
+                                    text: 'Auto',
+                                    action: () => {
+                                        themeManager.setTheme('auto');
+                                    }
+                                }
+                            ]
                         }
                     ]
                 }
@@ -128,6 +133,46 @@ export class MenuBar extends HTMLElement {
     }
   }
 
+  private renderMenuItems(items: (MenuItemConfig | SubmenuConfig)[]): string {
+      return items.map(item => {
+          if ('items' in item) {
+              // Nested submenu
+              const submenu = item as SubmenuConfig;
+              return `
+                  <div class="menu-submenu">
+                      <div class="submenu-title">${submenu.text}<span class="submenu-arrow">▶</span></div>
+                      <div class="submenu-dropdown">
+                          ${this.renderMenuItems(submenu.items)}
+                      </div>
+                  </div>
+              `;
+          }
+          if (item.type === 'separator') {
+              return '<div class="separator"></div>';
+          }
+          return `<div class="menu-item" data-id="${item.id}">${item.text}</div>`;
+      }).join('');
+  }
+
+  private findAndExecuteAction(itemId: string, items: (MenuItemConfig | SubmenuConfig)[]): boolean {
+      for (const item of items) {
+          if ('items' in item) {
+              // Recursively search in nested submenu
+              const submenu = item as SubmenuConfig;
+              if (this.findAndExecuteAction(itemId, submenu.items)) {
+                  return true;
+              }
+          } else {
+              const menuItem = item as MenuItemConfig;
+              if (menuItem.id === itemId && menuItem.action) {
+                  menuItem.action();
+                  return true;
+              }
+          }
+      }
+      return false;
+  }
+
   render() {
       if (this.shadowRoot && this.menuConfig) {
           this.shadowRoot.innerHTML = `
@@ -136,16 +181,7 @@ export class MenuBar extends HTMLElement {
                       <div class="menu-group">
                           <div class="menu-title">${submenu.text}</div>
                           <div class="dropdown">
-                              ${submenu.items.map(item => {
-                                  if ('items' in item) {
-                                      // Nested submenu - not rendering for now
-                                      return '';
-                                  }
-                                  if (item.type === 'separator') {
-                                      return '<div class="separator"></div>';
-                                  }
-                                  return `<div class="menu-item" data-id="${item.id}">${item.text}</div>`;
-                              }).join('')}
+                              ${this.renderMenuItems(submenu.items)}
                           </div>
                       </div>
                   `).join('')}
@@ -159,13 +195,10 @@ export class MenuBar extends HTMLElement {
                   const itemId = target.dataset.id;
 
                   if (itemId && this.menuConfig) {
-                      // Find and execute the action
+                      // Find and execute the action recursively
                       for (const submenu of this.menuConfig.items) {
-                          for (const menuItem of submenu.items) {
-                              if ('id' in menuItem && menuItem.id === itemId && menuItem.action) {
-                                  menuItem.action();
-                                  break;
-                              }
+                          if (this.findAndExecuteAction(itemId, submenu.items)) {
+                              break;
                           }
                       }
                   }

@@ -46,3 +46,34 @@
     background: var(--menu-border);
     margin: 4px 0;
 }
+.menu-submenu {
+    position: relative;
+}
+.submenu-title {
+    padding: 8px 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.submenu-title:hover {
+    background: var(--menu-item-hover);
+}
+.submenu-arrow {
+    margin-left: 10px;
+    font-size: 10px;
+}
+.submenu-dropdown {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 100%;
+    background: var(--menu-dropdown-bg);
+    border: 1px solid var(--menu-border);
+    box-shadow: 2px 2px 5px var(--menu-shadow);
+    min-width: 150px;
+    z-index: 1001;
+}
+.menu-submenu:hover > .submenu-dropdown {
+    display: block;
+}

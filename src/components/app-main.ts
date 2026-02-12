@@ -272,9 +272,9 @@ export class AppMain extends HTMLElement {
             // Remove closed files
             for (const [id, value] of this.fileResources) {
                 if (!files.includes(id)) {
+                    this.removeDockPane(id);
                     value.element.remove();
                     this.fileResources.delete(id);
-                    this.removeDockPane(id);
                 }
             }
 

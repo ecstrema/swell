@@ -102,12 +102,6 @@ export class AppMain extends HTMLElement {
                                 title: 'Signal Selection',
                                 contentId: 'signal-selection',
                                 closable: false
-                            },
-                            {
-                                id: 'settings-pane',
-                                title: 'Settings',
-                                contentId: 'settings',
-                                closable: true
                             }
                         ]
                     },
@@ -161,6 +155,13 @@ export class AppMain extends HTMLElement {
         // Listen for pane close events from dock stack
         this.addEventListener('pane-close', (e: any) => {
             const paneId = e.detail.id;
+            
+            // Handle settings pane close
+            if (paneId === 'settings-pane') {
+                this.closeSettingsPane();
+                return;
+            }
+            
             // Extract file ID from pane ID (format: "file-pane-{fileId}")
             if (paneId.startsWith('file-pane-')) {
                 const fileId = paneId.substring('file-pane-'.length);
@@ -382,27 +383,82 @@ export class AppMain extends HTMLElement {
     }
 
     activateSettingsPane() {
-        // Find the sidebar stack and activate the settings pane
+        // Find the biggest stack and open settings there
         const layout = this.dockManager.layout;
         if (!layout) {
             console.warn('No layout available to activate settings pane');
             return;
         }
 
-        // Navigate to the sidebar stack and activate settings pane
-        const root = layout.root;
-        if (root.type === 'box') {
-            for (const child of root.children) {
-                if (child.type === 'stack' && child.id === 'sidebar-stack') {
-                    child.activeId = 'settings-pane';
-                    this.dockManager.layout = layout; // Trigger re-render
-                    return;
-                }
-            }
+        const biggestStack = this.findBiggestStack(layout.root);
+        if (!biggestStack) {
+            console.warn('Could not find any stack to activate settings pane');
+            return;
         }
 
-        console.warn('Could not find sidebar-stack to activate settings pane');
+        // Check if settings pane already exists in this stack
+        const settingsPaneExists = biggestStack.children.some(p => p.id === 'settings-pane');
+        
+        if (!settingsPaneExists) {
+            // Add settings pane to the biggest stack
+            biggestStack.children.push({
+                id: 'settings-pane',
+                title: 'Settings',
+                contentId: 'settings',
+                closable: true
+            });
+        }
+
+        // Activate the settings pane
+        biggestStack.activeId = 'settings-pane';
+        this.dockManager.layout = layout; // Trigger re-render
     }
+
+    private findBiggestStack(node: DockNode): DockStack | null {
+        if (node.type === 'stack') {
+            return node;
+        }
+
+        if (node.type === 'box') {
+            let biggestStack: DockStack | null = null;
+            let biggestWeight = -Infinity;
+
+            for (const child of node.children) {
+                const stack = this.findBiggestStack(child);
+                if (stack && stack.weight > biggestWeight) {
+                    biggestWeight = stack.weight;
+                    biggestStack = stack;
+                }
+            }
+
+            return biggestStack;
+        }
+
+        return null;
+    }
+
+    private closeSettingsPane() {
+        const layout = this.dockManager.layout;
+        if (!layout) return;
+
+        // Find and remove settings pane from all stacks
+        this.removeSettingsPaneFromNode(layout.root);
+        this.dockManager.layout = layout; // Trigger re-render
+    }
+
+    private removeSettingsPaneFromNode(node: DockNode): void {
+        if (node.type === 'stack') {
+            node.children = node.children.filter(p => p.id !== 'settings-pane');
+            if (node.activeId === 'settings-pane') {
+                node.activeId = node.children.length > 0 ? node.children[0].id : null;
+            }
+        } else if (node.type === 'box') {
+            for (const child of node.children) {
+                this.removeSettingsPaneFromNode(child);
+            }
+        }
+    }
+    
     private addDockPane(fileId: string) {
         const mainStack = this.findMainStack();
         if (!mainStack) return;

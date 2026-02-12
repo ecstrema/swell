@@ -9,10 +9,11 @@ import { CommandRegistry, ShortcutManager, defaultShortcuts } from "../shortcuts
 import { SettingsPage } from "./settings-page.js";
 import { themeManager } from "../theme-manager.js";
 import { DockManager } from "./docking/dock-manager.js";
-import { DockLayout } from "./docking/types.js";
+import { DockLayout, DockStack } from "./docking/types.js";
 import { css } from "../utils/css-utils.js";
 import appMainCss from "./app-main.css?inline";
 import "./docking/index.js";
+
 
 
 
@@ -328,6 +329,9 @@ export class AppMain extends HTMLElement {
             } else if (this.state.activeFileId) {
                 this.setActiveFile(this.state.activeFileId);
             }
+
+            // Update layout to show/hide sidebar based on file count
+            this.updateSidebarVisibility(fileIds.length > 0);
         } catch (e) {
             console.error("Error refreshing files:", e);
         }
@@ -496,6 +500,53 @@ export class AppMain extends HTMLElement {
             await this.refreshFiles();
         } catch (e) {
             console.error(e);
+        }
+    }
+
+    private updateSidebarVisibility(hasFiles: boolean) {
+        const layout = this.dockManager.layout;
+        if (!layout || layout.root.type !== 'box') return;
+
+        const rootBox = layout.root;
+        const sidebarIndex = rootBox.children.findIndex(
+            child => child.type === 'stack' && child.id === 'sidebar-stack'
+        );
+        const mainStackIndex = rootBox.children.findIndex(
+            child => child.type === 'stack' && child.id === 'main-stack'
+        );
+
+        if (hasFiles) {
+            // Show sidebar if hidden
+            if (sidebarIndex === -1 && mainStackIndex !== -1) {
+                const sidebarStack: DockStack = {
+                    type: 'stack',
+                    id: 'sidebar-stack',
+                    weight: 20,
+                    activeId: 'signal-selection-pane',
+                    children: [
+                        {
+                            id: 'signal-selection-pane',
+                            title: 'Signal Selection',
+                            contentId: 'signal-selection',
+                            closable: false
+                        },
+                        {
+                            id: 'settings-pane',
+                            title: 'Settings',
+                            contentId: 'settings',
+                            closable: true
+                        }
+                    ]
+                };
+                rootBox.children.unshift(sidebarStack);
+                this.dockManager.render();
+            }
+        } else {
+            // Hide sidebar if visible
+            if (sidebarIndex !== -1) {
+                rootBox.children.splice(sidebarIndex, 1);
+                this.dockManager.render();
+            }
         }
     }
 }

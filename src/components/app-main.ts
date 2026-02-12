@@ -29,7 +29,7 @@ export class AppMain extends HTMLElement {
     private dockManager: DockManager;
     private hierarchyTree: FilesTree;
     private fileViewContainer: HTMLElement;
-    private settingsComponent: SettingsPage;
+    private settingsPage!: SettingsPage;
 
     // Shortcut system
     private commandRegistry: CommandRegistry;
@@ -62,8 +62,8 @@ export class AppMain extends HTMLElement {
         this.hierarchyTree = new FilesTree();
         this.hierarchyTree.id = 'hierarchy-tree';
 
-        this.settingsComponent = new SettingsPage();
-        this.settingsComponent.id = 'settings-panel';
+        this.settingsPage = new SettingsPage();
+        this.settingsPage.id = 'settings-panel';
 
         this.fileViewContainer = document.createElement('div');
         this.fileViewContainer.className = 'dockable-content';
@@ -83,7 +83,7 @@ export class AppMain extends HTMLElement {
         // Register components for the docking system
         this.dockManager.registerContent('signal-selection', () => this.hierarchyTree);
         this.dockManager.registerContent('file-view', () => this.fileViewContainer);
-        this.dockManager.registerContent('settings', () => this.settingsComponent);
+        this.dockManager.registerContent('settings', () => this.settingsPage);
 
         // Set initial layout
         this.dockManager.layout = {
@@ -379,7 +379,10 @@ export class AppMain extends HTMLElement {
     activateSettingsPane() {
         // Find the sidebar stack and activate the settings pane
         const layout = this.dockManager.layout;
-        if (!layout) return;
+        if (!layout) {
+            console.warn('No layout available to activate settings pane');
+            return;
+        }
 
         // Navigate to the sidebar stack and activate settings pane
         const root = layout.root;
@@ -388,10 +391,12 @@ export class AppMain extends HTMLElement {
                 if (child.type === 'stack' && child.id === 'sidebar-stack') {
                     child.activeId = 'settings-pane';
                     this.dockManager.layout = layout; // Trigger re-render
-                    break;
+                    return;
                 }
             }
         }
+        
+        console.warn('Could not find sidebar-stack to activate settings pane');
     }
 
     render() {

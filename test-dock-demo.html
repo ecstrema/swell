@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings Dock Demo</title>
+    <style>
+        :root {
+            --color-bg: #1e1e1e;
+            --color-bg-surface: #252525;
+            --color-text: #ffffff;
+            --color-text-secondary: #aaaaaa;
+            --color-border: #404040;
+            --color-bg-hover: #2d2d2d;
+            --color-button-border: #404040;
+            --color-button-border-hover: #666666;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--color-bg);
+            color: var(--color-text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: var(--color-bg-surface);
+            padding: 8px 16px;
+            border-bottom: 1px solid var(--color-border);
+            font-weight: 600;
+        }
+
+        .container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .dock-area {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 300px;
+            border-right: 1px solid var(--color-border);
+            display: flex;
+            flex-direction: column;
+            background: var(--color-bg-surface);
+        }
+
+        .tabs-header {
+            display: flex;
+            border-bottom: 1px solid var(--color-border);
+            background: var(--color-bg);
+        }
+
+        .tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-right: 1px solid var(--color-border);
+            background: var(--color-bg-surface);
+            transition: background 0.2s;
+        }
+
+        .tab:hover {
+            background: var(--color-bg-hover);
+        }
+
+        .tab.active {
+            background: var(--color-bg);
+            border-bottom: 2px solid #007acc;
+        }
+
+        .pane-content {
+            flex: 1;
+            overflow: hidden;
+            display: none;
+        }
+
+        .pane-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Settings Panel Styles */
+        .settings-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .settings-content {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .settings-category {
+            margin-bottom: 30px;
+        }
+
+        .category-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            gap: 20px;
+        }
+
+        .setting-row label {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .setting-label {
+            font-weight: 500;
+            color: var(--color-text);
+            margin-bottom: 4px;
+        }
+
+        .setting-description {
+            font-size: 13px;
+            color: var(--color-text-secondary);
+        }
+
+        .setting-input {
+            min-width: 200px;
+            padding: 6px 10px;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            background: var(--color-bg);
+            color: var(--color-text);
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        input[type="checkbox"].setting-input {
+            min-width: auto;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        select.setting-input {
+            cursor: pointer;
+        }
+
+        .setting-input:focus {
+            outline: 2px solid var(--color-button-border-hover);
+            outline-offset: 1px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-text-secondary);
+        }
+
+        .demo-info {
+            background: var(--color-bg-surface);
+            padding: 24px;
+            border-radius: 8px;
+            border: 1px solid var(--color-border);
+            max-width: 600px;
+        }
+
+        .demo-info h2 {
+            margin-bottom: 16px;
+            color: var(--color-text);
+        }
+
+        .demo-info ul {
+            line-height: 1.8;
+            padding-left: 24px;
+        }
+
+        .demo-info code {
+            background: var(--color-bg);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #4ec9b0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">Swell - Settings as Dock Panel Demo</div>
+    
+    <div class="container">
+        <div class="dock-area">
+            <!-- Sidebar with tabs -->
+            <div class="sidebar">
+                <div class="tabs-header">
+                    <div class="tab" onclick="switchTab('signals')">Signal Selection</div>
+                    <div class="tab active" onclick="switchTab('settings')">Settings</div>
+                </div>
+                
+                <!-- Signal Selection Pane -->
+                <div class="pane-content" id="signals-pane">
+                    <div style="padding: 16px; color: var(--color-text-secondary);">
+                        Signal selection tree would appear here...
+                    </div>
+                </div>
+                
+                <!-- Settings Pane -->
+                <div class="pane-content active" id="settings-pane">
+                    <div class="settings-container">
+                        <div class="settings-content">
+                            <div class="settings-category">
+                                <div class="category-title">Application</div>
+                                
+                                <div class="setting-row">
+                                    <label>
+                                        <div class="setting-label">Color Theme</div>
+                                        <div class="setting-description">Choose the color theme for the application</div>
+                                    </label>
+                                    <select class="setting-input">
+                                        <option value="light">Light</option>
+                                        <option value="dark" selected>Dark</option>
+                                        <option value="system">System</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="setting-row">
+                                    <label>
+                                        <div class="setting-label">Auto Save</div>
+                                        <div class="setting-description">Automatically save workspace state</div>
+                                    </label>
+                                    <input type="checkbox" class="setting-input" checked>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-category">
+                                <div class="category-title">Editor</div>
+                                
+                                <div class="setting-row">
+                                    <label>
+                                        <div class="setting-label">Font Size</div>
+                                        <div class="setting-description">Set the editor font size</div>
+                                    </label>
+                                    <input type="number" class="setting-input" value="14" min="8" max="32" step="1">
+                                </div>
+                                
+                                <div class="setting-row">
+                                    <label>
+                                        <div class="setting-label">Line Numbers</div>
+                                        <div class="setting-description">Show line numbers in the editor</div>
+                                    </label>
+                                    <input type="checkbox" class="setting-input" checked>
+                                </div>
+                            </div>
+                            
+                            <div class="settings-category">
+                                <div class="category-title">Performance</div>
+                                
+                                <div class="setting-row">
+                                    <label>
+                                        <div class="setting-label">Max Signals</div>
+                                        <div class="setting-description">Maximum number of signals to display</div>
+                                    </label>
+                                    <input type="number" class="setting-input" value="100" min="10" max="1000" step="10">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main content area -->
+            <div class="main-content">
+                <div class="demo-info">
+                    <h2>✅ Settings Panel Conversion Complete</h2>
+                    <p style="margin-bottom: 16px;">The settings page has been successfully converted from a popup/modal to a docked panel.</p>
+                    
+                    <h3 style="margin-top: 24px; margin-bottom: 12px;">Changes Made:</h3>
+                    <ul>
+                        <li>Removed <code>show()</code>, <code>hide()</code>, and <code>toggle()</code> methods</li>
+                        <li>Removed modal overlay styles and close button</li>
+                        <li>Registered settings component with DockManager</li>
+                        <li>Added settings pane to sidebar stack layout</li>
+                        <li>Updated CSS for docked panel layout</li>
+                        <li>Settings now activates via tab selection instead of popup</li>
+                    </ul>
+                    
+                    <h3 style="margin-top: 24px; margin-bottom: 12px;">Benefits:</h3>
+                    <ul>
+                        <li>Consistent with other panels (Signal Selection, File View)</li>
+                        <li>Can be dragged and repositioned within the dock system</li>
+                        <li>Stays visible while working with files</li>
+                        <li>Tab-based interface for better organization</li>
+                        <li>No modal overlay blocking the UI</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        function switchTab(tabName) {
+            const clickedTab = event ? event.target : null;
+            
+            // Update tab active state
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            if (clickedTab) {
+                clickedTab.classList.add('active');
+            }
+            
+            // Update pane active state
+            document.querySelectorAll('.pane-content').forEach(pane => {
+                pane.classList.remove('active');
+            });
+            document.getElementById(tabName + '-pane').classList.add('active');
+        }
+    </script>
+</body>
+</html>

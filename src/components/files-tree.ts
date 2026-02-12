@@ -23,6 +23,7 @@ export interface HierarchyRoot {
 
 export class FilesTree extends HTMLElement {
     private _data: HierarchyRoot | null = null;
+    private _filename: string | null = null;
     private container: HTMLDivElement;
 
     constructor() {
@@ -45,6 +46,14 @@ export class FilesTree extends HTMLElement {
 
     get data() {
         return this._data;
+    }
+
+    set filename(filename: string | null) {
+        this._filename = filename;
+    }
+
+    get filename() {
+        return this._filename;
     }
 
     render() {
@@ -106,7 +115,7 @@ export class FilesTree extends HTMLElement {
         // Add click listener for future logic (adding to wave view)
         div.addEventListener('click', () => {
             this.dispatchEvent(new CustomEvent('signal-select', {
-                detail: { name: variable.name, ref: variable.ref },
+                detail: { name: variable.name, ref: variable.ref, filename: this._filename },
                 bubbles: true,
                 composed: true
             }));

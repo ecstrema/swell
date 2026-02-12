@@ -369,6 +369,7 @@ export class AppMain extends HTMLElement {
 
         // Update Tree View
         if (this.hierarchyTree) {
+            this.hierarchyTree.filename = id;
             this.hierarchyTree.data = activeRes ? activeRes.hierarchy : null;
         }
 

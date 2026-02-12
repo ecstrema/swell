@@ -96,25 +96,30 @@ export class MenuBar extends HTMLElement {
                     text: 'View',
                     items: [
                         {
-                            id: 'theme-light',
-                            text: 'Light Theme',
-                            action: () => {
-                                themeManager.setTheme('light');
-                            }
-                        },
-                        {
-                            id: 'theme-dark',
-                            text: 'Dark Theme',
-                            action: () => {
-                                themeManager.setTheme('dark');
-                            }
-                        },
-                        {
-                            id: 'theme-auto',
-                            text: 'Auto Theme',
-                            action: () => {
-                                themeManager.setTheme('auto');
-                            }
+                            text: 'Theme',
+                            items: [
+                                {
+                                    id: 'theme-light',
+                                    text: 'Light',
+                                    action: () => {
+                                        themeManager.setTheme('light');
+                                    }
+                                },
+                                {
+                                    id: 'theme-dark',
+                                    text: 'Dark',
+                                    action: () => {
+                                        themeManager.setTheme('dark');
+                                    }
+                                },
+                                {
+                                    id: 'theme-auto',
+                                    text: 'Auto',
+                                    action: () => {
+                                        themeManager.setTheme('auto');
+                                    }
+                                }
+                            ]
                         }
                     ]
                 }
@@ -128,6 +133,41 @@ export class MenuBar extends HTMLElement {
     }
   }
 
+  private renderMenuItems(items: any[]): string {
+      return items.map(item => {
+          if ('items' in item) {
+              // Nested submenu
+              return `
+                  <div class="menu-submenu">
+                      <div class="submenu-title">${item.text}<span class="submenu-arrow">▶</span></div>
+                      <div class="submenu-dropdown">
+                          ${this.renderMenuItems(item.items)}
+                      </div>
+                  </div>
+              `;
+          }
+          if (item.type === 'separator') {
+              return '<div class="separator"></div>';
+          }
+          return `<div class="menu-item" data-id="${item.id}">${item.text}</div>`;
+      }).join('');
+  }
+
+  private findAndExecuteAction(itemId: string, items: any[]): boolean {
+      for (const item of items) {
+          if ('items' in item) {
+              // Recursively search in nested submenu
+              if (this.findAndExecuteAction(itemId, item.items)) {
+                  return true;
+              }
+          } else if ('id' in item && item.id === itemId && item.action) {
+              item.action();
+              return true;
+          }
+      }
+      return false;
+  }
+
   render() {
       if (this.shadowRoot && this.menuConfig) {
           this.shadowRoot.innerHTML = `
@@ -136,16 +176,7 @@ export class MenuBar extends HTMLElement {
                       <div class="menu-group">
                           <div class="menu-title">${submenu.text}</div>
                           <div class="dropdown">
-                              ${submenu.items.map(item => {
-                                  if ('items' in item) {
-                                      // Nested submenu - not rendering for now
-                                      return '';
-                                  }
-                                  if (item.type === 'separator') {
-                                      return '<div class="separator"></div>';
-                                  }
-                                  return `<div class="menu-item" data-id="${item.id}">${item.text}</div>`;
-                              }).join('')}
+                              ${this.renderMenuItems(submenu.items)}
                           </div>
                       </div>
                   `).join('')}
@@ -159,13 +190,10 @@ export class MenuBar extends HTMLElement {
                   const itemId = target.dataset.id;
 
                   if (itemId && this.menuConfig) {
-                      // Find and execute the action
+                      // Find and execute the action recursively
                       for (const submenu of this.menuConfig.items) {
-                          for (const menuItem of submenu.items) {
-                              if ('id' in menuItem && menuItem.id === itemId && menuItem.action) {
-                                  menuItem.action();
-                                  break;
-                              }
+                          if (this.findAndExecuteAction(itemId, submenu.items)) {
+                              break;
                           }
                       }
                   }

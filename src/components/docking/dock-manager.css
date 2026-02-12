@@ -4,15 +4,15 @@
     height: 100%;
     position: relative;
     overflow: hidden;
-    /* Docking variables mapped from global theme */
-    --dock-border-color: var(--color-border, #333);
-    --dock-bg-color: var(--color-bg, #1e1e1e);
-    --dock-tab-bg: var(--color-bg-light, #252526);
-    --dock-tab-active-bg: var(--color-bg-surface, #1e1e1e);
-    --dock-tab-text: var(--color-text-muted, #969696);
-    --dock-tab-active-text: var(--color-text, #ffffff);
+    /* Docking variables inherit from global theme */
+    --dock-border-color: var(--color-border);
+    --dock-bg-color: var(--color-bg);
+    --dock-tab-bg: var(--color-bg-surface);
+    --dock-tab-active-bg: var(--color-bg-hover);
+    --dock-tab-text: var(--color-text-muted);
+    --dock-tab-active-text: var(--color-text);
     --dock-overlay-bg: rgba(0, 122, 204, 0.2);
-    --dock-accent: var(--color-accent, #007acc);
+    --dock-accent: var(--color-primary);
 }
 
 .dock-root {

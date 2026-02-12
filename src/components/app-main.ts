@@ -1,4 +1,4 @@
-import { addFile, openFileDialog, getHierarchy, getFiles, removeFile } from "../backend.js";
+import { addFile, openFileDialog, getHierarchy, getFiles, removeFile, restoreSession } from "../backend.js";
 import "./menu/menu-bar.ts";
 import "./files-tree.ts";
 import "./settings-page.ts";
@@ -118,7 +118,10 @@ export class AppMain extends HTMLElement {
         };
     }
 
-    connectedCallback() {
+    async connectedCallback() {
+        // Restore session (web only - Tauri handles this on startup)
+        await restoreSession();
+
         // Initialize shortcut system
         this.initializeShortcuts();
 
@@ -180,7 +183,7 @@ export class AppMain extends HTMLElement {
             }
         });
 
-        this.refreshFiles();
+        await this.refreshFiles();
     }
 
     disconnectedCallback() {

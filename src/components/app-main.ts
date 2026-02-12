@@ -2,11 +2,14 @@ import { addFile, openFileDialog, getHierarchy, getFiles, removeFile } from "../
 import "./menu/menu-bar.ts";
 import "./tab-bar.ts";
 import "./files-tree.ts";
+import "./settings-page.ts";
 import { TabBar } from "./tab-bar.ts";
 import { FileDisplay } from "./file-display.ts";
 import { FilesTree, HierarchyRoot } from "./files-tree.ts";
 import { CommandPalette } from "./command-palette.js";
 import { CommandRegistry, ShortcutManager, defaultShortcuts } from "../shortcuts/index.js";
+import { SettingsPage } from "./settings-page.js";
+import { themeManager } from "../theme-manager.js";
 
 
 
@@ -21,6 +24,7 @@ export class AppMain extends HTMLElement {
     private commandRegistry: CommandRegistry;
     private shortcutManager: ShortcutManager;
     private commandPalette: CommandPalette | null = null;
+    private settingsPage: SettingsPage | null = null;
 
     constructor() {
         super();
@@ -138,8 +142,29 @@ export class AppMain extends HTMLElement {
         // Initialize command palette
         this.initializeCommandPalette();
 
+        // Initialize settings page
+        this.initializeSettingsPage();
+
         // Listeners
         this.addEventListener('file-open-request', () => this.handleFileOpen());
+
+        // Listen for settings open request
+        this.addEventListener('settings-open-request', () => {
+            if (this.settingsPage) {
+                this.settingsPage.show();
+            }
+        });
+
+        // Listen for setting changes to update theme
+        this.addEventListener('setting-changed', (e: Event) => {
+            const customEvent = e as CustomEvent;
+            const { path, value } = customEvent.detail;
+            
+            // Handle theme changes
+            if (path === 'Application/Color Theme') {
+                themeManager.setTheme(value);
+            }
+        });
 
         // Listen for menu actions and route them through command registry
         this.addEventListener('menu-action', (e: Event) => {
@@ -172,6 +197,11 @@ export class AppMain extends HTMLElement {
         // Clean up command palette
         if (this.commandPalette && this.commandPalette.parentNode) {
             this.commandPalette.parentNode.removeChild(this.commandPalette);
+        }
+        
+        // Clean up settings page
+        if (this.settingsPage && this.settingsPage.parentNode) {
+            this.settingsPage.parentNode.removeChild(this.settingsPage);
         }
     }
 
@@ -256,6 +286,14 @@ export class AppMain extends HTMLElement {
     private initializeCommandPalette() {
         this.commandPalette = new CommandPalette(this.commandRegistry);
         document.body.appendChild(this.commandPalette);
+    }
+
+    /**
+     * Initialize the settings page
+     */
+    private initializeSettingsPage() {
+        this.settingsPage = new SettingsPage();
+        document.body.appendChild(this.settingsPage);
     }
 
     async refreshFiles() {

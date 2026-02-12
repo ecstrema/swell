@@ -33,6 +33,19 @@ export class MenuBar extends HTMLElement {
                         composed: true
                     }));
                 }
+            },
+            {
+                type: 'separator' as const
+            },
+            {
+                id: 'settings',
+                text: 'Settings...',
+                action: () => {
+                    this.dispatchEvent(new CustomEvent('settings-open-request', {
+                        bubbles: true,
+                        composed: true
+                    }));
+                }
             }
         ];
 

@@ -110,3 +110,155 @@ describe('DockStack - Empty State Button', () => {
         expect(openFileBtn).toBeNull();
     });
 });
+
+describe('DockStack - Tab Dragging', () => {
+    let dockStack: DockStackComponent;
+    let dockManager: DockManager;
+
+    beforeEach(() => {
+        dockStack = new DockStackComponent();
+        dockManager = new DockManager();
+        dockStack.manager = dockManager;
+        document.body.appendChild(dockStack);
+    });
+
+    afterEach(() => {
+        if (dockStack.parentNode) {
+            dockStack.parentNode.removeChild(dockStack);
+        }
+    });
+
+    it('should make tabs draggable', () => {
+        // Register mock content
+        dockManager.registerContent('test-content', () => {
+            const div = document.createElement('div');
+            div.textContent = 'Test Content';
+            return div;
+        });
+
+        // Set a stack with children
+        dockStack.node = {
+            type: 'stack',
+            id: 'test-stack',
+            weight: 1,
+            activeId: 'pane-1',
+            children: [
+                {
+                    id: 'pane-1',
+                    title: 'Test Pane',
+                    contentId: 'test-content',
+                    closable: true
+                }
+            ]
+        };
+
+        // Verify tab is draggable
+        const tab = dockStack.shadowRoot!.querySelector('.tab') as HTMLElement;
+        expect(tab).toBeTruthy();
+        expect(tab.getAttribute('draggable')).toBe('true');
+    });
+
+    it('should call manager handleDragStart when tab drag starts', () => {
+        // Register mock content
+        dockManager.registerContent('test-content', () => {
+            const div = document.createElement('div');
+            div.textContent = 'Test Content';
+            return div;
+        });
+
+        // Spy on handleDragStart
+        const handleDragStartSpy = vi.spyOn(dockManager, 'handleDragStart');
+
+        // Set a stack with children
+        const node = {
+            type: 'stack' as const,
+            id: 'test-stack',
+            weight: 1,
+            activeId: 'pane-1',
+            children: [
+                {
+                    id: 'pane-1',
+                    title: 'Test Pane',
+                    contentId: 'test-content',
+                    closable: true
+                }
+            ]
+        };
+        dockStack.node = node;
+
+        // Trigger dragstart event using MouseEvent as fallback for jsdom
+        const tab = dockStack.shadowRoot!.querySelector('.tab') as HTMLElement;
+        const dragEvent = new MouseEvent('dragstart', { 
+            bubbles: true,
+            cancelable: true,
+        });
+        // Mock dataTransfer property
+        Object.defineProperty(dragEvent, 'dataTransfer', {
+            value: {
+                effectAllowed: '',
+                setData: vi.fn(),
+            },
+            writable: true
+        });
+        tab.dispatchEvent(dragEvent);
+
+        // Verify handleDragStart was called with correct arguments
+        expect(handleDragStartSpy).toHaveBeenCalledWith(node.children[0], node);
+    });
+
+    it('should add dragging class during drag', () => {
+        // Register mock content
+        dockManager.registerContent('test-content', () => {
+            const div = document.createElement('div');
+            div.textContent = 'Test Content';
+            return div;
+        });
+
+        // Set a stack with children
+        dockStack.node = {
+            type: 'stack',
+            id: 'test-stack',
+            weight: 1,
+            activeId: 'pane-1',
+            children: [
+                {
+                    id: 'pane-1',
+                    title: 'Test Pane',
+                    contentId: 'test-content',
+                    closable: true
+                }
+            ]
+        };
+
+        // Get tab element
+        const tab = dockStack.shadowRoot!.querySelector('.tab') as HTMLElement;
+
+        // Trigger dragstart event using MouseEvent as fallback for jsdom
+        const dragStartEvent = new MouseEvent('dragstart', { 
+            bubbles: true,
+            cancelable: true,
+        });
+        // Mock dataTransfer property
+        Object.defineProperty(dragStartEvent, 'dataTransfer', {
+            value: {
+                effectAllowed: '',
+                setData: vi.fn(),
+            },
+            writable: true
+        });
+        tab.dispatchEvent(dragStartEvent);
+
+        // Verify dragging class is added
+        expect(tab.classList.contains('dragging')).toBe(true);
+
+        // Trigger dragend event
+        const dragEndEvent = new MouseEvent('dragend', { 
+            bubbles: true,
+            cancelable: true
+        });
+        tab.dispatchEvent(dragEndEvent);
+
+        // Verify dragging class is removed
+        expect(tab.classList.contains('dragging')).toBe(false);
+    });
+});

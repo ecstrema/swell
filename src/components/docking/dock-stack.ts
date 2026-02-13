@@ -6,6 +6,9 @@ import dockStackCss from "./dock-stack.css?inline";
 export class DockStackComponent extends HTMLElement {
     private _node: DockStack | null = null;
     private _manager: DockManager | null = null;
+    private _dragOverHandler: ((e: DragEvent) => void) | null = null;
+    private _dragLeaveHandler: (() => void) | null = null;
+    private _dropHandler: ((e: DragEvent) => void) | null = null;
 
     set node(value: DockStack) {
         this._node = value;
@@ -20,6 +23,45 @@ export class DockStackComponent extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
         this.shadowRoot!.adoptedStyleSheets = [css(dockStackCss)];
+        
+        // Set up drag and drop handlers once
+        this._dragOverHandler = (e: DragEvent) => {
+            if (this._manager && this._node) {
+                this._manager.handleDragOver(e, this._node, this);
+            }
+        };
+        
+        this._dragLeaveHandler = () => {
+            if (this._manager) {
+                this._manager.handleDragLeave();
+            }
+        };
+        
+        this._dropHandler = (e: DragEvent) => {
+            if (this._manager && this._node) {
+                this._manager.handleDrop(e, this._node, this);
+            }
+        };
+    }
+
+    connectedCallback() {
+        // Add drop zone listeners once when component is connected
+        this.addEventListener('dragover', this._dragOverHandler!);
+        this.addEventListener('dragleave', this._dragLeaveHandler!);
+        this.addEventListener('drop', this._dropHandler!);
+    }
+
+    disconnectedCallback() {
+        // Clean up listeners when component is disconnected
+        if (this._dragOverHandler) {
+            this.removeEventListener('dragover', this._dragOverHandler);
+        }
+        if (this._dragLeaveHandler) {
+            this.removeEventListener('dragleave', this._dragLeaveHandler);
+        }
+        if (this._dropHandler) {
+            this.removeEventListener('drop', this._dropHandler);
+        }
     }
 
     private render() {
@@ -56,7 +98,7 @@ export class DockStackComponent extends HTMLElement {
         this.shadowRoot!.innerHTML = `
             <div class="tabs-header">
                 ${this._node.children.map(pane => `
-                    <div class="tab ${pane.id === activeId ? 'active' : ''}" data-id="${pane.id}">
+                    <div class="tab ${pane.id === activeId ? 'active' : ''}" data-id="${pane.id}" draggable="true">
                         ${pane.title}
                         ${pane.closable !== false ? '<span class="close-btn">×</span>' : ''}
                     </div>
@@ -76,6 +118,30 @@ export class DockStackComponent extends HTMLElement {
                     this.setActivePane(id);
                 }
             }
+        });
+
+        // Add drag and drop listeners for tabs
+        const tabs = this.shadowRoot!.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            const tabElement = tab as HTMLElement;
+            
+            tabElement.addEventListener('dragstart', (e) => {
+                const id = tabElement.dataset.id!;
+                const pane = this._node!.children.find(p => p.id === id);
+                if (pane && this._manager) {
+                    this._manager.handleDragStart(pane, this._node!);
+                    // Set drag data for browser compatibility
+                    if (e.dataTransfer) {
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', id);
+                    }
+                    tabElement.classList.add('dragging');
+                }
+            });
+
+            tabElement.addEventListener('dragend', () => {
+                tabElement.classList.remove('dragging');
+            });
         });
 
         const contentArea = this.shadowRoot!.querySelector('.content-area')!;

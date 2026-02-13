@@ -39,7 +39,8 @@ export class TreeView extends HTMLElement {
     private _data: TreeNode[] = [];
     private _config: TreeViewConfig = {};
     private container: HTMLDivElement;
-    private indentLoaded = false;
+    private indentLoadPromise: Promise<void> | null = null;
+    private boundSettingChangeHandler: (e: Event) => void;
 
     constructor() {
         super();
@@ -53,23 +54,30 @@ export class TreeView extends HTMLElement {
 
         this.container = this.shadowRoot!.querySelector('#tree-container') as HTMLDivElement;
         
-        // Listen for setting changes
-        this.addEventListener('setting-changed', (e: Event) => {
+        // Bind setting change handler
+        this.boundSettingChangeHandler = (e: Event) => {
             const customEvent = e as CustomEvent;
             const { path, value } = customEvent.detail;
             
             if (path === 'Interface/Tree Indent') {
                 this.updateIndent(value);
             }
-        });
+        };
     }
     
     connectedCallback() {
+        // Add event listener when connected
+        this.addEventListener('setting-changed', this.boundSettingChangeHandler);
+        
         // Load indent setting when component is connected to the DOM
-        if (!this.indentLoaded) {
-            this.loadIndentSetting();
-            this.indentLoaded = true;
+        if (!this.indentLoadPromise) {
+            this.indentLoadPromise = this.loadIndentSetting();
         }
+    }
+    
+    disconnectedCallback() {
+        // Remove event listener when disconnected to prevent memory leaks
+        this.removeEventListener('setting-changed', this.boundSettingChangeHandler);
     }
     
     private async loadIndentSetting() {

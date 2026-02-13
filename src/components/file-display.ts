@@ -10,7 +10,9 @@ import './timeline.js';
 interface SelectedSignal {
   name: string;
   ref: number;
-  canvas: HTMLCanvasElement;
+  canvas?: HTMLCanvasElement;
+  timeline?: Timeline;
+  isTimeline?: boolean;
 }
 
 export class FileDisplay extends HTMLElement {
@@ -18,13 +20,14 @@ export class FileDisplay extends HTMLElement {
   private selectedSignals: SelectedSignal[] = [];
   private signalsContainer: HTMLDivElement | null = null;
   private selectedSignalsTree: SelectedSignalsTree;
-  private timeline: Timeline;
   private boundHandleSignalSelect: (event: Event) => void;
   private boundHandleRangeChanged: (event: Event) => void;
   private boundHandleZoomCommand: (event: Event) => void;
+  private boundHandleAddTimeline: () => void;
   private visibleStart: number = 0;
   private visibleEnd: number = 1000000;
   private timeRangeInitialized: boolean = false;
+  private timelineCounter: number = 0;
 
   constructor() {
     super();
@@ -32,14 +35,15 @@ export class FileDisplay extends HTMLElement {
     this.boundHandleSignalSelect = this.handleSignalSelect.bind(this);
     this.boundHandleRangeChanged = this.handleRangeChanged.bind(this);
     this.boundHandleZoomCommand = this.handleZoomCommand.bind(this);
+    this.boundHandleAddTimeline = this.handleAddTimeline.bind(this);
 
     this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(fileDisplayCss)];
     
     // Create the selected signals tree
     this.selectedSignalsTree = new SelectedSignalsTree();
     
-    // Create the timeline
-    this.timeline = new Timeline();
+    // Add a default timeline as the first signal
+    this.addTimelineSignal();
     
     this.render();
   }
@@ -80,17 +84,50 @@ export class FileDisplay extends HTMLElement {
     const customEvent = event as CustomEvent;
     const { action } = customEvent.detail;
     
-    switch (action) {
-      case 'zoom-in':
-        this.timeline.zoomIn();
-        break;
-      case 'zoom-out':
-        this.timeline.zoomOut();
-        break;
-      case 'zoom-fit':
-        this.timeline.zoomToFit();
-        break;
+    // Apply zoom to all timeline signals
+    this.selectedSignals.forEach(signal => {
+      if (signal.isTimeline && signal.timeline) {
+        switch (action) {
+          case 'zoom-in':
+            signal.timeline.zoomIn();
+            break;
+          case 'zoom-out':
+            signal.timeline.zoomOut();
+            break;
+          case 'zoom-fit':
+            signal.timeline.zoomToFit();
+            break;
+        }
+      }
+    });
+  }
+
+  private addTimelineSignal() {
+    this.timelineCounter++;
+    const timeline = new Timeline();
+    const name = `Timeline ${this.timelineCounter}`;
+    
+    // Set up time range if already initialized
+    if (this.timeRangeInitialized) {
+      timeline.totalRange = { start: this.visibleStart, end: this.visibleEnd };
+      timeline.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
     }
+    
+    // Use negative refs for timelines to avoid conflicts with signal refs
+    // Signal refs are always positive integers from the waveform file
+    this.selectedSignals.push({
+      name,
+      ref: -this.timelineCounter,
+      isTimeline: true,
+      timeline
+    });
+    
+    this.updateSelectedSignalsTree();
+  }
+
+  private handleAddTimeline() {
+    this.addTimelineSignal();
+    this.render();
   }
 
   private handleSignalSelect(event: Event) {
@@ -113,7 +150,7 @@ export class FileDisplay extends HTMLElement {
     canvas.width = 800;
     canvas.height = 100;
 
-    this.selectedSignals.push({ name, ref, canvas });
+    this.selectedSignals.push({ name, ref, canvas, isTimeline: false });
     
     // Update the selected signals tree
     this.updateSelectedSignalsTree();
@@ -167,9 +204,13 @@ export class FileDisplay extends HTMLElement {
         this.visibleEnd = changes[changes.length - 1].time;
         this.timeRangeInitialized = true;
         
-        // Update timeline with total and visible ranges
-        this.timeline.totalRange = { start: this.visibleStart, end: this.visibleEnd };
-        this.timeline.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
+        // Update all timeline signals with total and visible ranges
+        this.selectedSignals.forEach(signal => {
+          if (signal.isTimeline && signal.timeline) {
+            signal.timeline.totalRange = { start: this.visibleStart, end: this.visibleEnd };
+            signal.timeline.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
+          }
+        });
       }
     } catch (error) {
       console.error('Error initializing time range:', error);
@@ -257,11 +298,11 @@ export class FileDisplay extends HTMLElement {
     this.visibleStart = start;
     this.visibleEnd = end;
     
-    // Repaint all signals with the new range, awaiting all operations
+    // Repaint all non-timeline signals with the new range, awaiting all operations
     await Promise.all(
-      this.selectedSignals.map(signal => 
-        this.paintSignal(signal.canvas, signal.ref)
-      )
+      this.selectedSignals
+        .filter(signal => !signal.isTimeline && signal.canvas)
+        .map(signal => this.paintSignal(signal.canvas!, signal.ref))
     );
   }
 
@@ -283,7 +324,6 @@ export class FileDisplay extends HTMLElement {
       <div class="file-header">
         Current File: <strong>${this._filename}</strong>
       </div>
-      <div id="timeline-container" class="timeline-container"></div>
       <div class="display-container">
         <div id="signals-tree-container" class="signals-tree-container"></div>
         <div class="waveforms-container" id="waveforms-container">
@@ -294,26 +334,31 @@ export class FileDisplay extends HTMLElement {
       </div>
     `;
 
-    // Insert the timeline
-    const timelineContainer = this.shadowRoot.querySelector('#timeline-container');
-    if (timelineContainer) {
-      timelineContainer.appendChild(this.timeline);
-    }
-
     // Insert the selected signals tree
     const treeContainer = this.shadowRoot.querySelector('#signals-tree-container');
     if (treeContainer) {
       treeContainer.appendChild(this.selectedSignalsTree);
+      
+      // Add "Add Timeline" button at the bottom of the tree
+      const addTimelineBtn = document.createElement('button');
+      addTimelineBtn.className = 'add-timeline-btn';
+      addTimelineBtn.textContent = '+ Add Timeline';
+      addTimelineBtn.addEventListener('click', this.boundHandleAddTimeline);
+      treeContainer.appendChild(addTimelineBtn);
     }
 
-    // Append canvases to the waveforms container
+    // Append timelines and canvases to the waveforms container
     this.signalsContainer = this.shadowRoot.querySelector('#waveforms-container');
     if (this.signalsContainer) {
       this.selectedSignals.forEach(signal => {
         const signalItem = document.createElement('div');
-        signalItem.className = 'signal-item';
+        signalItem.className = signal.isTimeline ? 'signal-item timeline-item' : 'signal-item';
 
-        signalItem.appendChild(signal.canvas);
+        if (signal.isTimeline && signal.timeline) {
+          signalItem.appendChild(signal.timeline);
+        } else if (signal.canvas) {
+          signalItem.appendChild(signal.canvas);
+        }
 
         this.signalsContainer!.appendChild(signalItem);
       });

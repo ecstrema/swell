@@ -13,10 +13,6 @@
     border-bottom: 1px solid var(--color-border);
 }
 
-.timeline-container {
-    border-bottom: 1px solid var(--color-border);
-}
-
 .display-container {
     display: flex;
     flex: 1;
@@ -29,6 +25,24 @@
     min-width: 200px;
     max-width: 400px;
     overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.add-timeline-btn {
+    margin: 1rem;
+    padding: 0.5rem 1rem;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.2s;
+}
+
+.add-timeline-btn:hover {
+    background-color: var(--color-bg-surface);
 }
 
 .waveforms-container {
@@ -45,6 +59,12 @@
     border-radius: 4px;
     padding: 1rem;
     background-color: var(--color-bg);
+}
+
+.timeline-item {
+    padding: 0;
+    border: none;
+    background-color: transparent;
 }
 
 canvas {

@@ -15,11 +15,17 @@ export class Timeline extends HTMLElement {
   private isDragging = false;
   private dragStartX = 0;
   private dragStartScrollLeft = 0;
+  private boundHandleResize: () => void;
+  private boundHandleScrollbarMouseMove: (e: MouseEvent) => void;
+  private boundHandleScrollbarMouseUp: () => void;
 
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
     this.shadowRoot!.adoptedStyleSheets = [css(timelineCss)];
+    this.boundHandleResize = this.handleResize.bind(this);
+    this.boundHandleScrollbarMouseMove = this.handleScrollbarMouseMove.bind(this);
+    this.boundHandleScrollbarMouseUp = this.handleScrollbarMouseUp.bind(this);
   }
 
   connectedCallback() {
@@ -229,7 +235,7 @@ export class Timeline extends HTMLElement {
   }
 
   private removeEventListeners() {
-    window.removeEventListener('resize', this.handleResize.bind(this));
+    window.removeEventListener('resize', this.boundHandleResize);
   }
 
   private handleScrollbarMouseDown(e: MouseEvent) {
@@ -269,8 +275,8 @@ export class Timeline extends HTMLElement {
 
   private handleScrollbarMouseUp() {
     this.isDragging = false;
-    document.removeEventListener('mousemove', this.handleScrollbarMouseMove.bind(this));
-    document.removeEventListener('mouseup', this.handleScrollbarMouseUp.bind(this));
+    document.removeEventListener('mousemove', this.boundHandleScrollbarMouseMove);
+    document.removeEventListener('mouseup', this.boundHandleScrollbarMouseUp);
   }
 
   private handleWheel(e: WheelEvent) {

@@ -85,9 +85,7 @@ export class TreeView extends HTMLElement {
     }
     
     private updateIndent(value: number) {
-        if (this.shadowRoot) {
-            this.shadowRoot.host.style.setProperty('--tree-indent', `${value}px`);
-        }
+        this.style.setProperty('--tree-indent', `${value}px`);
     }
 
     set data(data: TreeNode[]) {

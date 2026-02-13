@@ -78,6 +78,9 @@ export class TreeView extends HTMLElement {
     disconnectedCallback() {
         // Remove event listener when disconnected to prevent memory leaks
         this.removeEventListener('setting-changed', this.boundSettingChangeHandler);
+        
+        // Clear promise to allow reloading when reconnected
+        this.indentLoadPromise = null;
     }
     
     private async loadIndentSetting() {

@@ -2,6 +2,8 @@ import { css } from "../utils/css-utils.js";
 import aboutDialogCss from "./about-dialog.css?inline";
 
 export class AboutDialog extends HTMLElement {
+    private _escapeHandler?: (e: KeyboardEvent) => void;
+
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -66,21 +68,18 @@ export class AboutDialog extends HTMLElement {
         }
 
         // Close on Escape key
-        const escapeHandler = (e: KeyboardEvent) => {
+        this._escapeHandler = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && this.classList.contains('open')) {
                 this.close();
             }
         };
-        document.addEventListener('keydown', escapeHandler);
-        
-        // Store handler for cleanup
-        (this as any)._escapeHandler = escapeHandler;
+        document.addEventListener('keydown', this._escapeHandler);
     }
 
     disconnectedCallback() {
         // Clean up event listener
-        if ((this as any)._escapeHandler) {
-            document.removeEventListener('keydown', (this as any)._escapeHandler);
+        if (this._escapeHandler) {
+            document.removeEventListener('keydown', this._escapeHandler);
         }
     }
 

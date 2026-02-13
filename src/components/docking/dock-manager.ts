@@ -272,7 +272,7 @@ export class DockManager extends HTMLElement {
       const oldRoot = this._layout!.root;
       sourceStack.weight = 1;
       this._layout!.root = {
-        id: "box-" + Math.random().toString(36).substr(2, 9),
+        id: "box-" + Math.random().toString(36).substring(2, 11),
         type: "box",
         direction: dir,
         weight: 1,
@@ -290,7 +290,7 @@ export class DockManager extends HTMLElement {
       sourceStack.weight = targetStack.weight / 2;
       targetStack.weight /= 2;
       const newBox: DockBox = {
-        id: "box-" + Math.random().toString(36).substr(2, 9),
+        id: "box-" + Math.random().toString(36).substring(2, 11),
         type: "box",
         direction: dir,
         weight: targetStack.weight * 2,
@@ -318,7 +318,7 @@ export class DockManager extends HTMLElement {
       const isAfter = direction === "right" || direction === "bottom";
 
       const newStack: DockStack = {
-        id: "stack-" + Math.random().toString(36).substr(2, 9),
+        id: "stack-" + Math.random().toString(36).substring(2, 11),
         type: "stack",
         weight: 1,
         children: [pane],
@@ -340,7 +340,7 @@ export class DockManager extends HTMLElement {
     const isAfter = direction === "right" || direction === "bottom";
 
     const newStack: DockStack = {
-      id: "stack-" + Math.random().toString(36).substr(2, 9),
+      id: "stack-" + Math.random().toString(36).substring(2, 11),
       type: "stack",
       weight: targetStack.weight / 2,
       children: [pane],
@@ -355,7 +355,7 @@ export class DockManager extends HTMLElement {
       // Need to wrap targetStack in a new Box
       const index = parent.children.indexOf(targetStack);
       const newBox: DockBox = {
-        id: "box-" + Math.random().toString(36).substr(2, 9),
+        id: "box-" + Math.random().toString(36).substring(2, 11),
         type: "box",
         direction: dir,
         weight: targetStack.weight * 2,

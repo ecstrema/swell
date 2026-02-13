@@ -42,6 +42,7 @@ describe('Backend Interface', () => {
         });
 
         it('addFile should use WASM implementation for File objects', async () => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
             const file = new File(['dummy content'], 'test.vcd');
             const fileBytes = new Uint8Array(await file.arrayBuffer());
 
@@ -53,6 +54,7 @@ describe('Backend Interface', () => {
             expect(wasm.add_file_bytes).toHaveBeenCalledWith('test.vcd', expect.any(Uint8Array));
             expect(result).toBe('file-id-123');
             expect(invoke).not.toHaveBeenCalled();
+            consoleSpy.mockRestore();
         });
 
         it('getFiles should use WASM implementation', async () => {
@@ -66,8 +68,10 @@ describe('Backend Interface', () => {
         });
 
          it('removeFile should use WASM implementation', async () => {
+             const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
              await backend.removeFile('file1');
              expect(wasm.remove_file).toHaveBeenCalledWith('file1');
+             consoleSpy.mockRestore();
          });
     });
 });

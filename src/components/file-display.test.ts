@@ -49,7 +49,7 @@ describe('FileDisplay Component', () => {
   });
 
   it('should validate input ranges', async () => {
-    const consoleSpy = vi.spyOn(console, 'error');
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     
     // Test negative values
     await element.setVisibleRange(-100, 1000);

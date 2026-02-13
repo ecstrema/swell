@@ -21,8 +21,10 @@ describe('Shortcuts System', () => {
 
         it('should handle non-existent commands gracefully', async () => {
             const registry = new CommandRegistry();
+            const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
             const result = await registry.execute('fake-cmd');
             expect(result).toBe(false);
+            consoleSpy.mockRestore();
         });
     });
 

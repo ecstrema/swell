@@ -1,6 +1,7 @@
 import { css } from "../utils/css-utils.js";
 import { scrollbarSheet } from "../styles/shared-sheets.js";
 import treeViewCss from "./tree-view.css?inline";
+import { getSetting } from "../settings/settings-storage.js";
 
 export interface TreeNode {
     name: string;
@@ -50,6 +51,32 @@ export class TreeView extends HTMLElement {
         `;
 
         this.container = this.shadowRoot!.querySelector('#tree-container') as HTMLDivElement;
+        
+        // Load initial indent setting
+        this.loadIndentSetting();
+        
+        // Listen for setting changes
+        this.addEventListener('setting-changed', (e: Event) => {
+            const customEvent = e as CustomEvent;
+            const { path, value } = customEvent.detail;
+            
+            if (path === 'Interface/Tree Indent') {
+                this.updateIndent(value);
+            }
+        });
+    }
+    
+    private async loadIndentSetting() {
+        const indent = await getSetting('Interface/Tree Indent');
+        if (indent !== undefined) {
+            this.updateIndent(indent);
+        }
+    }
+    
+    private updateIndent(value: number) {
+        if (this.shadowRoot) {
+            this.shadowRoot.host.style.setProperty('--tree-indent', `${value}px`);
+        }
     }
 
     set data(data: TreeNode[]) {

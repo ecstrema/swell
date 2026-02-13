@@ -70,7 +70,21 @@ export class Timeline extends HTMLElement {
    */
   zoomIn(factor: number = 2): void {
     const currentRange = this._endTime - this._startTime;
+    
+    // Prevent zooming if range is invalid or too small
+    if (currentRange <= 0) {
+      console.warn('Cannot zoom: invalid time range');
+      return;
+    }
+    
     const newRange = currentRange / factor;
+    
+    // Set minimum zoom range to 1 nanosecond
+    if (newRange < 1) {
+      console.warn('Cannot zoom in further: minimum zoom reached');
+      return;
+    }
+    
     const center = (this._startTime + this._endTime) / 2;
     
     let newStart = center - newRange / 2;
@@ -84,6 +98,12 @@ export class Timeline extends HTMLElement {
     if (newEnd > this._totalEndTime) {
       newEnd = this._totalEndTime;
       newStart = newEnd - newRange;
+    }
+    
+    // Validate final range
+    if (newStart >= newEnd) {
+      console.warn('Cannot zoom: would create invalid range');
+      return;
     }
     
     this.setVisibleRange(newStart, newEnd);
@@ -94,7 +114,15 @@ export class Timeline extends HTMLElement {
    */
   zoomOut(factor: number = 2): void {
     const currentRange = this._endTime - this._startTime;
-    const newRange = Math.min(currentRange * factor, this._totalEndTime - this._totalStartTime);
+    
+    // Prevent zooming if range is invalid
+    if (currentRange <= 0) {
+      console.warn('Cannot zoom: invalid time range');
+      return;
+    }
+    
+    const totalRange = this._totalEndTime - this._totalStartTime;
+    const newRange = Math.min(currentRange * factor, totalRange);
     const center = (this._startTime + this._endTime) / 2;
     
     let newStart = center - newRange / 2;
@@ -108,6 +136,12 @@ export class Timeline extends HTMLElement {
     if (newEnd > this._totalEndTime) {
       newEnd = this._totalEndTime;
       newStart = newEnd - newRange;
+    }
+    
+    // Validate final range
+    if (newStart >= newEnd) {
+      console.warn('Cannot zoom: would create invalid range');
+      return;
     }
     
     this.setVisibleRange(newStart, newEnd);

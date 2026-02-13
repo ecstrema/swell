@@ -263,7 +263,7 @@ describe('DockStack - Tab Dragging', () => {
     });
 });
 
-describe('DockStack - Dock Handle Dragging', () => {
+describe('DockStack - Header Dragging', () => {
     let dockStack: DockStackComponent;
     let dockManager: DockManager;
 
@@ -280,7 +280,7 @@ describe('DockStack - Dock Handle Dragging', () => {
         }
     });
 
-    it('should render dock drag handle', () => {
+    it('should make tabs header draggable', () => {
         // Register mock content
         dockManager.registerContent('test-content', () => {
             const div = document.createElement('div');
@@ -304,13 +304,13 @@ describe('DockStack - Dock Handle Dragging', () => {
             ]
         };
 
-        // Verify dock drag handle exists
-        const dragHandle = dockStack.shadowRoot!.querySelector('.dock-drag-handle') as HTMLElement;
-        expect(dragHandle).toBeTruthy();
-        expect(dragHandle.getAttribute('draggable')).toBe('true');
+        // Verify tabs header is draggable
+        const header = dockStack.shadowRoot!.querySelector('.tabs-header') as HTMLElement;
+        expect(header).toBeTruthy();
+        expect(header.getAttribute('draggable')).toBe('true');
     });
 
-    it('should call manager handleStackDragStart when dock drag starts', () => {
+    it('should call manager handleStackDragStart when header drag starts', () => {
         // Register mock content
         dockManager.registerContent('test-content', () => {
             const div = document.createElement('div');
@@ -338,8 +338,8 @@ describe('DockStack - Dock Handle Dragging', () => {
         };
         dockStack.node = node;
 
-        // Trigger dragstart event on dock handle
-        const dragHandle = dockStack.shadowRoot!.querySelector('.dock-drag-handle') as HTMLElement;
+        // Trigger dragstart event on header (not on a tab)
+        const header = dockStack.shadowRoot!.querySelector('.tabs-header') as HTMLElement;
         const dragEvent = new MouseEvent('dragstart', { 
             bubbles: true,
             cancelable: true,
@@ -352,13 +352,18 @@ describe('DockStack - Dock Handle Dragging', () => {
             },
             writable: true
         });
-        dragHandle.dispatchEvent(dragEvent);
+        // Mock target as header itself (not a tab)
+        Object.defineProperty(dragEvent, 'target', {
+            value: header,
+            writable: false
+        });
+        header.dispatchEvent(dragEvent);
 
         // Verify handleStackDragStart was called with correct arguments
         expect(handleStackDragStartSpy).toHaveBeenCalledWith(node);
     });
 
-    it('should add dragging class to dock handle during drag', () => {
+    it('should add dragging class to header during drag', () => {
         // Register mock content
         dockManager.registerContent('test-content', () => {
             const div = document.createElement('div');
@@ -382,10 +387,10 @@ describe('DockStack - Dock Handle Dragging', () => {
             ]
         };
 
-        // Get dock drag handle
-        const dragHandle = dockStack.shadowRoot!.querySelector('.dock-drag-handle') as HTMLElement;
+        // Get tabs header
+        const header = dockStack.shadowRoot!.querySelector('.tabs-header') as HTMLElement;
 
-        // Trigger dragstart event
+        // Trigger dragstart event on header (not on a tab)
         const dragStartEvent = new MouseEvent('dragstart', { 
             bubbles: true,
             cancelable: true,
@@ -398,20 +403,25 @@ describe('DockStack - Dock Handle Dragging', () => {
             },
             writable: true
         });
-        dragHandle.dispatchEvent(dragStartEvent);
+        // Mock target as header itself (not a tab)
+        Object.defineProperty(dragStartEvent, 'target', {
+            value: header,
+            writable: false
+        });
+        header.dispatchEvent(dragStartEvent);
 
-        // Verify dragging class is added
-        expect(dragHandle.classList.contains('dragging')).toBe(true);
+        // Verify dragging class is added to header
+        expect(header.classList.contains('dragging')).toBe(true);
 
         // Trigger dragend event
         const dragEndEvent = new MouseEvent('dragend', { 
             bubbles: true,
             cancelable: true
         });
-        dragHandle.dispatchEvent(dragEndEvent);
+        header.dispatchEvent(dragEndEvent);
 
-        // Verify dragging class is removed
-        expect(dragHandle.classList.contains('dragging')).toBe(false);
+        // Verify dragging class is removed from header
+        expect(header.classList.contains('dragging')).toBe(false);
     });
 });
 

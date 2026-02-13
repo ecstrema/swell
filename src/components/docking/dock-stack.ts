@@ -96,15 +96,7 @@ export class DockStackComponent extends HTMLElement {
         }
 
         this.shadowRoot!.innerHTML = `
-            <div class="tabs-header">
-                <div class="dock-drag-handle" draggable="true" title="Drag to move entire dock">
-                    <svg width="12" height="12" viewBox="0 0 12 12">
-                        <circle cx="3" cy="3" r="1.5" fill="currentColor"/>
-                        <circle cx="9" cy="3" r="1.5" fill="currentColor"/>
-                        <circle cx="3" cy="9" r="1.5" fill="currentColor"/>
-                        <circle cx="9" cy="9" r="1.5" fill="currentColor"/>
-                    </svg>
-                </div>
+            <div class="tabs-header" draggable="true" title="Drag to move entire dock">
                 ${this._node.children.map(pane => `
                     <div class="tab ${pane.id === activeId ? 'active' : ''}" data-id="${pane.id}" draggable="true">
                         ${pane.title}
@@ -128,24 +120,28 @@ export class DockStackComponent extends HTMLElement {
             }
         });
 
-        // Handle dock drag
-        const dockDragHandle = this.shadowRoot!.querySelector('.dock-drag-handle') as HTMLElement;
-        if (dockDragHandle) {
-            dockDragHandle.addEventListener('dragstart', (e) => {
+        // Handle dock drag from header (empty space)
+        header.addEventListener('dragstart', (e) => {
+            // Only initiate dock drag if not dragging from a tab
+            const target = e.target as HTMLElement;
+            if (!target.classList.contains('tab') && !target.closest('.tab')) {
                 if (this._manager && this._node) {
                     this._manager.handleStackDragStart(this._node);
                     if (e.dataTransfer) {
                         e.dataTransfer.effectAllowed = 'move';
                         e.dataTransfer.setData('text/plain', this._node.id);
                     }
-                    dockDragHandle.classList.add('dragging');
+                    header.classList.add('dragging');
                 }
-            });
+            } else {
+                // Cancel the header drag if we're on a tab (tab will handle its own drag)
+                e.stopPropagation();
+            }
+        });
 
-            dockDragHandle.addEventListener('dragend', () => {
-                dockDragHandle.classList.remove('dragging');
-            });
-        }
+        header.addEventListener('dragend', () => {
+            header.classList.remove('dragging');
+        });
 
         // Add drag and drop listeners for tabs
         const tabs = this.shadowRoot!.querySelectorAll('.tab');

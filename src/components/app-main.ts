@@ -2,11 +2,13 @@ import { addFile, openFileDialog, getHierarchy, getFiles, removeFile, restoreSes
 import "./menu/menu-bar.ts";
 import "./files-tree.ts";
 import "./settings-page.ts";
+import "./about-dialog.ts";
 import { FileDisplay } from "./file-display.ts";
 import { FilesTree, HierarchyRoot } from "./files-tree.ts";
 import { CommandPalette } from "./command-palette.js";
 import { CommandRegistry, ShortcutManager, defaultShortcuts } from "../shortcuts/index.js";
 import { SettingsPage } from "./settings-page.js";
+import { AboutDialog } from "./about-dialog.js";
 import { themeManager } from "../theme-manager.js";
 import { DockManager } from "./docking/dock-manager.js";
 import { DockLayout, DockStack } from "./docking/types.js";
@@ -35,6 +37,7 @@ export class AppMain extends HTMLElement {
     private commandRegistry: CommandRegistry;
     private shortcutManager: ShortcutManager;
     private commandPalette: CommandPalette | null = null;
+    private aboutDialog: AboutDialog | null = null;
 
     constructor() {
         super();
@@ -129,6 +132,9 @@ export class AppMain extends HTMLElement {
         // Initialize command palette
         this.initializeCommandPalette();
 
+        // Initialize about dialog
+        this.initializeAboutDialog();
+
         // Listeners
         this.addEventListener('file-open-request', () => this.handleFileOpen());
 
@@ -141,6 +147,13 @@ export class AppMain extends HTMLElement {
         // Listen for settings open request - activate the settings tab
         this.addEventListener('settings-open-request', () => {
             this.activateSettingsPane();
+        });
+
+        // Listen for about open request
+        this.addEventListener('about-open-request', () => {
+            if (this.aboutDialog) {
+                this.aboutDialog.open();
+            }
         });
 
         // Listen for setting changes to update theme
@@ -200,6 +213,11 @@ export class AppMain extends HTMLElement {
         // Clean up command palette
         if (this.commandPalette && this.commandPalette.parentNode) {
             this.commandPalette.parentNode.removeChild(this.commandPalette);
+        }
+
+        // Clean up about dialog
+        if (this.aboutDialog && this.aboutDialog.parentNode) {
+            this.aboutDialog.parentNode.removeChild(this.aboutDialog);
         }
     }
 
@@ -293,6 +311,14 @@ export class AppMain extends HTMLElement {
     private initializeCommandPalette() {
         this.commandPalette = new CommandPalette(this.commandRegistry);
         document.body.appendChild(this.commandPalette);
+    }
+
+    /**
+     * Initialize the about dialog
+     */
+    private initializeAboutDialog() {
+        this.aboutDialog = new AboutDialog();
+        document.body.appendChild(this.aboutDialog);
     }
 
     async refreshFiles() {

@@ -86,7 +86,7 @@ fn build_scope(hierarchy: &wellen::Hierarchy, scope_ref: wellen::ScopeRef) -> Hi
         let var = &hierarchy[var_ref];
         scope_vars.push(HierarchyVar {
             name: var.name(hierarchy).to_string(),
-            ref_: var_ref.index(),
+            ref_: var.signal_ref().index(),
         });
     }
 
@@ -135,6 +135,45 @@ mod tests {
         remove_file("test.vcd".to_string());
         assert_eq!(get_files().len(), 0);
     }
+
+    #[test]
+    fn test_signal_changes_with_real_file() {
+        // Clear files first
+        {
+            let mut files = OPENED_FILES.lock().unwrap();
+            files.clear();
+        }
+
+        // Load a real VCD file from examples
+        let vcd_content = std::fs::read("../examples/simple.vcd").expect("Failed to read simple.vcd");
+        let res = add_file_bytes("simple.vcd".to_string(), vcd_content);
+        assert!(res.is_ok(), "Failed to load VCD file");
+
+        // Get hierarchy to find signal refs
+        let hierarchy = get_hierarchy("simple.vcd".to_string()).expect("Failed to get hierarchy");
+        
+        // Find the first variable with a signal
+        let mut test_signal_ref: Option<usize> = None;
+        for scope in &hierarchy.scopes {
+            if !scope.vars.is_empty() {
+                test_signal_ref = Some(scope.vars[0].ref_);
+                break;
+            }
+        }
+
+        assert!(test_signal_ref.is_some(), "No variables found in hierarchy");
+        let signal_ref = test_signal_ref.unwrap();
+
+        // Try to get signal changes - this should work with proper signal reference
+        let result = get_signal_changes("simple.vcd".to_string(), signal_ref, 0, 1000);
+        assert!(result.is_ok(), "Failed to get signal changes: {:?}", result.err());
+        
+        let changes = result.unwrap();
+        assert!(changes.len() > 0, "Expected at least one signal change");
+
+        // Cleanup
+        remove_file("simple.vcd".to_string());
+    }
 }
 
 pub fn get_hierarchy(filename: String) -> Result<HierarchyRoot, String> {
@@ -170,21 +209,16 @@ pub fn get_hierarchy_wasm(filename: String) -> Result<JsValue, String> {
 use wellen::SignalRef;
 
 pub fn get_signal_changes(filename: String, signal_id: usize, start: u64, end: u64) -> Result<Vec<SignalChange>, String> {
-    let files = OPENED_FILES.lock().unwrap();
-    let file = files.iter().find(|f| f.path.ends_with(&filename) || f.path == filename)
+    let mut files = OPENED_FILES.lock().unwrap();
+    let file = files.iter_mut().find(|f| f.path.ends_with(&filename) || f.path == filename)
         .ok_or_else(|| format!("File not found: {}", filename))?;
 
-    let waveform = &file.wave;
+    let waveform = &mut file.wave;
 
-    // In wellen 0.14, SignalRef::from_index might not be public or existing.
-    // Usually we construct it or cast.
-    // If SignalRef(usize), we just use it.
-    // Let's assume we can cast or construct.
-    // Actually wellen::SignalRef is a generational index often.
-    // But let's check lib_.rs usage: SignalRef::from_index(signal_ref as usize)
-
-    // If that fails to compile, we will fix.
     let signal_ref = SignalRef::from_index(signal_id).ok_or("Invalid signal ID")?;
+    
+    // Load the signal data if not already loaded (required for lazy-loaded backends)
+    waveform.load_signals(&[signal_ref]);
 
     let signal = waveform.get_signal(signal_ref).ok_or("Signal not found")?;
     let time_table = waveform.time_table();

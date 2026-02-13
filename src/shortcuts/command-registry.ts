@@ -27,7 +27,8 @@ export class CommandRegistry {
     async execute(commandId: string): Promise<boolean> {
         const command = this.commands.get(commandId);
         if (!command) {
-            console.warn(`Command not found: ${commandId}`);
+            // Command not found - return false without logging in production
+            // to avoid noise in logs. Callers can check the return value.
             return false;
         }
 

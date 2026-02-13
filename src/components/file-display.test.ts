@@ -122,4 +122,50 @@ describe('FileDisplay Component', () => {
       expect(canvas.width).toBeGreaterThan(0);
     }
   });
+
+  it('should synchronize all timelines when one timeline changes range', async () => {
+    element.filename = 'test.vcd';
+    
+    // Add a second timeline by clicking the add timeline button
+    const shadowRoot = element.shadowRoot;
+    expect(shadowRoot).toBeTruthy();
+    
+    const addButton = shadowRoot?.querySelector('.add-timeline-btn') as HTMLButtonElement;
+    expect(addButton).toBeTruthy();
+    addButton.click();
+    
+    // Wait for render to complete
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
+    // Get all timeline elements
+    const timelines = shadowRoot?.querySelectorAll('timeline-view');
+    expect(timelines?.length).toBe(2);
+    
+    // Get the actual Timeline component instances
+    const timeline1 = timelines![0] as any;
+    const timeline2 = timelines![1] as any;
+    
+    // Set initial ranges
+    timeline1.totalRange = { start: 0, end: 10000 };
+    timeline1.visibleRange = { start: 0, end: 10000 };
+    timeline2.totalRange = { start: 0, end: 10000 };
+    timeline2.visibleRange = { start: 0, end: 10000 };
+    
+    // Zoom in on the first timeline
+    timeline1.zoomIn(2);
+    
+    // Wait for event propagation
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
+    // Both timelines should now have the same visible range
+    const range1 = timeline1.visibleRange;
+    const range2 = timeline2.visibleRange;
+    
+    expect(range2.start).toBe(range1.start);
+    expect(range2.end).toBe(range1.end);
+    
+    // The visible range should be half the original (zoomed in by factor of 2)
+    const rangeSize = range1.end - range1.start;
+    expect(rangeSize).toBe(5000);
+  });
 });

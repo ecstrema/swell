@@ -78,6 +78,13 @@ export class FileDisplay extends HTMLElement {
     const customEvent = event as CustomEvent;
     const { start, end } = customEvent.detail;
     this.setVisibleRange(start, end);
+    
+    // Synchronize all other timelines in the same file
+    this.selectedSignals.forEach(signal => {
+      if (signal.isTimeline && signal.timeline && signal.timeline !== event.target) {
+        signal.timeline.visibleRange = { start, end };
+      }
+    });
   }
 
   private handleZoomCommand(event: Event) {

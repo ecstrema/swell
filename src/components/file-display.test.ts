@@ -70,6 +70,25 @@ describe('FileDisplay Component', () => {
     expect(element.filename).toBe('test.vcd');
   });
 
+  it('should have a default timeline signal', () => {
+    const shadowRoot = element.shadowRoot;
+    expect(shadowRoot).toBeTruthy();
+    
+    // Check that a timeline element exists in the waveforms container
+    const timeline = shadowRoot?.querySelector('timeline-view');
+    expect(timeline).toBeTruthy();
+  });
+
+  it('should have an "Add Timeline" button', () => {
+    const shadowRoot = element.shadowRoot;
+    expect(shadowRoot).toBeTruthy();
+    
+    // Check that the add timeline button exists
+    const addButton = shadowRoot?.querySelector('.add-timeline-btn');
+    expect(addButton).toBeTruthy();
+    expect(addButton?.textContent).toContain('Add Timeline');
+  });
+
   it('should properly size canvas when signal is selected', async () => {
     element.filename = 'test.vcd';
     

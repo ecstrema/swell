@@ -19,7 +19,7 @@ export class FileDisplay extends HTMLElement {
   private timeRangeInitialized: boolean = false;
   private fullRangeStart: number = 0;
   private fullRangeEnd: number = 1000000;
-  private rangeDisplay: HTMLDivElement | null = null;
+  private timelineCanvas: HTMLCanvasElement | null = null;
   private scrollbar: HTMLInputElement | null = null;
   private scrollbarContainer: HTMLDivElement | null = null;
 
@@ -114,7 +114,7 @@ export class FileDisplay extends HTMLElement {
         this.visibleStart = this.fullRangeStart;
         this.visibleEnd = this.fullRangeEnd;
         this.timeRangeInitialized = true;
-        this.updateRangeDisplay();
+        this.drawTimeline();
         this.updateScrollbar();
       }
     } catch (error) {
@@ -204,7 +204,7 @@ export class FileDisplay extends HTMLElement {
     this.visibleEnd = end;
     
     // Update UI elements
-    this.updateRangeDisplay();
+    this.drawTimeline();
     this.updateScrollbar();
     
     // Repaint all signals with the new range, awaiting all operations
@@ -305,16 +305,134 @@ export class FileDisplay extends HTMLElement {
   }
 
   /**
-   * Update the range display to show current visible range.
+   * Calculate nice tick intervals for the timeline.
    */
-  private updateRangeDisplay(): void {
-    if (!this.rangeDisplay) return;
-    
-    const startTime = this.formatTime(this.visibleStart);
-    const endTime = this.formatTime(this.visibleEnd);
-    const duration = this.formatTime(this.visibleEnd - this.visibleStart);
-    
-    this.rangeDisplay.textContent = `Range: ${startTime} - ${endTime} (Duration: ${duration})`;
+  private calculateTickInterval(range: number): { interval: number; unit: string; divisor: number } {
+    // Define nice intervals in nanoseconds with their units
+    const intervals = [
+      { value: 1, unit: 'ns', divisor: 1 },
+      { value: 2, unit: 'ns', divisor: 1 },
+      { value: 5, unit: 'ns', divisor: 1 },
+      { value: 10, unit: 'ns', divisor: 1 },
+      { value: 20, unit: 'ns', divisor: 1 },
+      { value: 50, unit: 'ns', divisor: 1 },
+      { value: 100, unit: 'ns', divisor: 1 },
+      { value: 200, unit: 'ns', divisor: 1 },
+      { value: 500, unit: 'ns', divisor: 1 },
+      { value: 1000, unit: 'µs', divisor: 1000 },
+      { value: 2000, unit: 'µs', divisor: 1000 },
+      { value: 5000, unit: 'µs', divisor: 1000 },
+      { value: 10000, unit: 'µs', divisor: 1000 },
+      { value: 20000, unit: 'µs', divisor: 1000 },
+      { value: 50000, unit: 'µs', divisor: 1000 },
+      { value: 100000, unit: 'µs', divisor: 1000 },
+      { value: 200000, unit: 'µs', divisor: 1000 },
+      { value: 500000, unit: 'µs', divisor: 1000 },
+      { value: 1000000, unit: 'ms', divisor: 1000000 },
+      { value: 2000000, unit: 'ms', divisor: 1000000 },
+      { value: 5000000, unit: 'ms', divisor: 1000000 },
+      { value: 10000000, unit: 'ms', divisor: 1000000 },
+      { value: 20000000, unit: 'ms', divisor: 1000000 },
+      { value: 50000000, unit: 'ms', divisor: 1000000 },
+      { value: 100000000, unit: 'ms', divisor: 1000000 },
+      { value: 200000000, unit: 'ms', divisor: 1000000 },
+      { value: 500000000, unit: 'ms', divisor: 1000000 },
+      { value: 1000000000, unit: 's', divisor: 1000000000 },
+      { value: 2000000000, unit: 's', divisor: 1000000000 },
+      { value: 5000000000, unit: 's', divisor: 1000000000 },
+      { value: 10000000000, unit: 's', divisor: 1000000000 },
+    ];
+
+    // Aim for roughly 5-10 major ticks
+    const targetTicks = 7;
+    const targetInterval = range / targetTicks;
+
+    // Find the closest nice interval
+    for (let i = 0; i < intervals.length; i++) {
+      if (intervals[i].value >= targetInterval) {
+        return { interval: intervals[i].value, unit: intervals[i].unit, divisor: intervals[i].divisor };
+      }
+    }
+
+    // Fallback to largest interval
+    return intervals[intervals.length - 1];
+  }
+
+  /**
+   * Draw the timeline with ticks and labels.
+   */
+  private drawTimeline(): void {
+    if (!this.timelineCanvas) return;
+
+    const canvas = this.timelineCanvas;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set canvas size to match display size
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+
+    const width = rect.width;
+    const height = rect.height;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, width, height);
+
+    // Set styles
+    ctx.fillStyle = getComputedStyle(canvas).color || '#000';
+    ctx.strokeStyle = getComputedStyle(canvas).color || '#000';
+    ctx.font = '11px monospace';
+
+    const range = this.visibleEnd - this.visibleStart;
+    const { interval, unit, divisor } = this.calculateTickInterval(range);
+
+    // Draw horizontal line
+    const lineY = height - 20;
+    ctx.beginPath();
+    ctx.moveTo(0, lineY);
+    ctx.lineTo(width, lineY);
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Calculate first tick position
+    const firstTick = Math.ceil(this.visibleStart / interval) * interval;
+
+    // Draw ticks and labels
+    for (let time = firstTick; time <= this.visibleEnd; time += interval) {
+      const x = ((time - this.visibleStart) / range) * width;
+
+      // Draw tick
+      ctx.beginPath();
+      ctx.moveTo(x, lineY);
+      ctx.lineTo(x, lineY + 5);
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Draw label
+      const label = (time / divisor).toFixed(divisor >= 1000 ? 2 : 0);
+      const text = `${label} ${unit}`;
+      const textWidth = ctx.measureText(text).width;
+      ctx.fillText(text, x - textWidth / 2, lineY - 5);
+    }
+
+    // Draw minor ticks (5 subdivisions between major ticks)
+    const minorInterval = interval / 5;
+    for (let time = Math.ceil(this.visibleStart / minorInterval) * minorInterval; time <= this.visibleEnd; time += minorInterval) {
+      // Skip major ticks
+      if (Math.abs(time % interval) < 0.1) continue;
+
+      const x = ((time - this.visibleStart) / range) * width;
+
+      // Draw smaller tick
+      ctx.beginPath();
+      ctx.moveTo(x, lineY);
+      ctx.lineTo(x, lineY + 3);
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
   }
 
   /**
@@ -365,7 +483,6 @@ export class FileDisplay extends HTMLElement {
       <div class="file-header">
         Current File: <strong>${this._filename}</strong>
       </div>
-      <div class="range-display" id="range-display"></div>
       <div class="scrollbar-container" id="scrollbar-container">
         <input type="range" class="scrollbar" id="scrollbar" min="0" max="100" step="0.1" value="0" />
       </div>
@@ -376,8 +493,7 @@ export class FileDisplay extends HTMLElement {
       </div>
     `;
 
-    // Get references to new elements
-    this.rangeDisplay = this.shadowRoot.querySelector('#range-display');
+    // Get references to elements
     this.scrollbarContainer = this.shadowRoot.querySelector('#scrollbar-container');
     this.scrollbar = this.shadowRoot.querySelector('#scrollbar');
     
@@ -386,13 +502,34 @@ export class FileDisplay extends HTMLElement {
       this.scrollbar.addEventListener('input', this.handleScrollbarInput);
     }
     
-    // Update initial display
-    this.updateRangeDisplay();
+    // Update scrollbar
     this.updateScrollbar();
 
-    // Append canvases to the container
+    // Append signals to the container
     this.signalsContainer = this.shadowRoot.querySelector('#signals-container');
     if (this.signalsContainer) {
+      // Add timeline as first item if there are signals
+      if (this.selectedSignals.length > 0) {
+        const timelineItem = document.createElement('div');
+        timelineItem.className = 'signal-item timeline-item';
+
+        const timelineName = document.createElement('div');
+        timelineName.className = 'signal-name';
+        timelineName.textContent = 'Timeline';
+
+        this.timelineCanvas = document.createElement('canvas');
+        this.timelineCanvas.className = 'timeline-canvas';
+
+        timelineItem.appendChild(timelineName);
+        timelineItem.appendChild(this.timelineCanvas);
+
+        this.signalsContainer.appendChild(timelineItem);
+
+        // Draw timeline
+        this.drawTimeline();
+      }
+
+      // Append signal canvases
       this.selectedSignals.forEach(signal => {
         const signalItem = document.createElement('div');
         signalItem.className = 'signal-item';

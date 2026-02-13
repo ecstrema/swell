@@ -89,18 +89,20 @@ describe('FileDisplay Component', () => {
       requestAnimationFrame(() => resolve(undefined));
     }));
     
-    // Check that a canvas was created and has dimensions set
+    // Check that canvases were created
     const shadowRoot = element.shadowRoot;
     expect(shadowRoot).toBeTruthy();
     
-    const canvas = shadowRoot?.querySelector('canvas');
-    expect(canvas).toBeTruthy();
+    const canvases = shadowRoot?.querySelectorAll('canvas');
+    expect(canvases).toBeTruthy();
+    expect(canvases?.length).toBeGreaterThanOrEqual(2); // Timeline + signal canvas
     
-    // Canvas should have dimensions set
-    if (canvas) {
-      expect(canvas.height).toBe(100);
+    // Signal canvas should have dimensions set (not the timeline canvas)
+    const signalCanvas = canvases?.[1]; // Second canvas is the signal
+    if (signalCanvas) {
+      expect(signalCanvas.height).toBe(100);
       // Width should be set (either to clientWidth or fallback to 800)
-      expect(canvas.width).toBeGreaterThan(0);
+      expect(signalCanvas.width).toBeGreaterThan(0);
     }
   });
 });

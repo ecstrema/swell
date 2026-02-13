@@ -36,6 +36,8 @@ export interface TreeViewConfig {
  * This component renders a hierarchical tree structure with expandable/collapsible nodes.
  */
 export class TreeView extends HTMLElement {
+    private static readonly INDENT_SETTING_PATH = 'Interface/Tree Indent';
+    
     private _data: TreeNode[] = [];
     private _config: TreeViewConfig = {};
     private container: HTMLDivElement;
@@ -59,7 +61,7 @@ export class TreeView extends HTMLElement {
             const customEvent = e as CustomEvent;
             const { path, value } = customEvent.detail;
             
-            if (path === 'Interface/Tree Indent') {
+            if (path === TreeView.INDENT_SETTING_PATH) {
                 this.updateIndent(value);
             }
         };
@@ -85,7 +87,7 @@ export class TreeView extends HTMLElement {
     
     private async loadIndentSetting() {
         try {
-            const indent = await getSetting('Interface/Tree Indent');
+            const indent = await getSetting(TreeView.INDENT_SETTING_PATH);
             if (indent !== undefined) {
                 this.updateIndent(indent);
             }

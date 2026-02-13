@@ -239,8 +239,8 @@ export class AppMain extends HTMLElement {
             id: 'view-zoom-in',
             label: 'Zoom In',
             handler: () => {
-                console.log('Zoom in action triggered');
-                // Zoom in logic could be added here
+                // Dispatch zoom-in event for the active file display
+                this.dispatchZoomCommand('zoom-in');
             }
         });
 
@@ -248,8 +248,17 @@ export class AppMain extends HTMLElement {
             id: 'view-zoom-out',
             label: 'Zoom Out',
             handler: () => {
-                console.log('Zoom out action triggered');
-                // Zoom out logic could be added here
+                // Dispatch zoom-out event for the active file display
+                this.dispatchZoomCommand('zoom-out');
+            }
+        });
+
+        this.commandRegistry.register({
+            id: 'view-zoom-fit',
+            label: 'Zoom to Fit',
+            handler: () => {
+                // Dispatch zoom-fit event for the active file display
+                this.dispatchZoomCommand('zoom-fit');
             }
         });
 
@@ -557,6 +566,24 @@ export class AppMain extends HTMLElement {
                 this.dockManager.render();
             }
         }
+    }
+
+    /**
+     * Dispatch zoom command to the active file display
+     */
+    private dispatchZoomCommand(action: 'zoom-in' | 'zoom-out' | 'zoom-fit') {
+        if (!this.state.activeFileId) return;
+        
+        const activeRes = this.fileResources.get(this.state.activeFileId);
+        if (!activeRes) return;
+        
+        const event = new CustomEvent('zoom-command', {
+            detail: { action },
+            bubbles: false,
+            composed: false
+        });
+        
+        activeRes.element.dispatchEvent(event);
     }
 }
 

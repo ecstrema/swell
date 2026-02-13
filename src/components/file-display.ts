@@ -3,7 +3,9 @@ import { css } from '../utils/css-utils.js';
 import { scrollbarSheet } from '../styles/shared-sheets.js';
 import fileDisplayCss from './file-display.css?inline';
 import { SelectedSignalsTree } from './selected-signals-tree.js';
+import { Timeline } from './timeline.js';
 import './selected-signals-tree.js';
+import './timeline.js';
 
 interface SelectedSignal {
   name: string;
@@ -16,7 +18,10 @@ export class FileDisplay extends HTMLElement {
   private selectedSignals: SelectedSignal[] = [];
   private signalsContainer: HTMLDivElement | null = null;
   private selectedSignalsTree: SelectedSignalsTree;
+  private timeline: Timeline;
   private boundHandleSignalSelect: (event: Event) => void;
+  private boundHandleRangeChanged: (event: Event) => void;
+  private boundHandleZoomCommand: (event: Event) => void;
   private visibleStart: number = 0;
   private visibleEnd: number = 1000000;
   private timeRangeInitialized: boolean = false;
@@ -25,11 +30,16 @@ export class FileDisplay extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this.boundHandleSignalSelect = this.handleSignalSelect.bind(this);
+    this.boundHandleRangeChanged = this.handleRangeChanged.bind(this);
+    this.boundHandleZoomCommand = this.handleZoomCommand.bind(this);
 
     this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(fileDisplayCss)];
     
     // Create the selected signals tree
     this.selectedSignalsTree = new SelectedSignalsTree();
+    
+    // Create the timeline
+    this.timeline = new Timeline();
     
     this.render();
   }
@@ -46,10 +56,41 @@ export class FileDisplay extends HTMLElement {
   connectedCallback() {
     // Listen for signal selection events
     document.addEventListener('signal-select', this.boundHandleSignalSelect);
+    
+    // Listen for timeline range changes
+    this.addEventListener('range-changed', this.boundHandleRangeChanged);
+    
+    // Listen for zoom commands
+    this.addEventListener('zoom-command', this.boundHandleZoomCommand);
   }
 
   disconnectedCallback() {
     document.removeEventListener('signal-select', this.boundHandleSignalSelect);
+    this.removeEventListener('range-changed', this.boundHandleRangeChanged);
+    this.removeEventListener('zoom-command', this.boundHandleZoomCommand);
+  }
+
+  private handleRangeChanged(event: Event) {
+    const customEvent = event as CustomEvent;
+    const { start, end } = customEvent.detail;
+    this.setVisibleRange(start, end);
+  }
+
+  private handleZoomCommand(event: Event) {
+    const customEvent = event as CustomEvent;
+    const { action } = customEvent.detail;
+    
+    switch (action) {
+      case 'zoom-in':
+        this.timeline.zoomIn();
+        break;
+      case 'zoom-out':
+        this.timeline.zoomOut();
+        break;
+      case 'zoom-fit':
+        this.timeline.zoomToFit();
+        break;
+    }
   }
 
   private handleSignalSelect(event: Event) {
@@ -125,6 +166,10 @@ export class FileDisplay extends HTMLElement {
         this.visibleStart = changes[0].time;
         this.visibleEnd = changes[changes.length - 1].time;
         this.timeRangeInitialized = true;
+        
+        // Update timeline with total and visible ranges
+        this.timeline.totalRange = { start: this.visibleStart, end: this.visibleEnd };
+        this.timeline.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
       }
     } catch (error) {
       console.error('Error initializing time range:', error);
@@ -238,6 +283,7 @@ export class FileDisplay extends HTMLElement {
       <div class="file-header">
         Current File: <strong>${this._filename}</strong>
       </div>
+      <div id="timeline-container" class="timeline-container"></div>
       <div class="display-container">
         <div id="signals-tree-container" class="signals-tree-container"></div>
         <div class="waveforms-container" id="waveforms-container">
@@ -247,6 +293,12 @@ export class FileDisplay extends HTMLElement {
         </div>
       </div>
     `;
+
+    // Insert the timeline
+    const timelineContainer = this.shadowRoot.querySelector('#timeline-container');
+    if (timelineContainer) {
+      timelineContainer.appendChild(this.timeline);
+    }
 
     // Insert the selected signals tree
     const treeContainer = this.shadowRoot.querySelector('#signals-tree-container');

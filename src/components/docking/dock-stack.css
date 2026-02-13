@@ -16,27 +16,14 @@
     overflow-y: hidden;
     flex: 0 0 30px;
     scrollbar-width: none;
+    cursor: move;
+    user-select: none;
 }
 .tabs-header::-webkit-scrollbar {
     display: none;
 }
-.dock-drag-handle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 8px;
-    cursor: move;
-    color: var(--dock-tab-text);
+.tabs-header.dragging {
     opacity: 0.5;
-    transition: opacity 0.2s;
-    user-select: none;
-    flex-shrink: 0;
-}
-.dock-drag-handle:hover {
-    opacity: 1;
-}
-.dock-drag-handle.dragging {
-    opacity: 0.3;
     cursor: grabbing !important;
 }
 .tab {

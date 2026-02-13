@@ -49,20 +49,13 @@ describe('FileDisplay Component', () => {
   });
 
   it('should validate input ranges', async () => {
-    const consoleSpy = vi.spyOn(console, 'error');
-    
     // Test negative values
-    await element.setVisibleRange(-100, 1000);
-    expect(consoleSpy).toHaveBeenCalledWith('Invalid time range: values must be non-negative');
+    await expect(element.setVisibleRange(-100, 1000)).rejects.toThrow('Invalid time range: start (-100) and end (1000) must be non-negative');
     
     // Test start >= end
-    await element.setVisibleRange(1000, 1000);
-    expect(consoleSpy).toHaveBeenCalledWith('Invalid time range: start must be less than end');
+    await expect(element.setVisibleRange(1000, 1000)).rejects.toThrow('Invalid time range: start (1000) must be less than end (1000)');
     
-    await element.setVisibleRange(2000, 1000);
-    expect(consoleSpy).toHaveBeenCalledWith('Invalid time range: start must be less than end');
-    
-    consoleSpy.mockRestore();
+    await expect(element.setVisibleRange(2000, 1000)).rejects.toThrow('Invalid time range: start (2000) must be less than end (1000)');
   });
 
   it('should render without errors', () => {

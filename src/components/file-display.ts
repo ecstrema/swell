@@ -287,12 +287,10 @@ export class FileDisplay extends HTMLElement {
   public async setVisibleRange(start: number, end: number): Promise<void> {
     // Validate input
     if (start < 0 || end < 0) {
-      console.error('Invalid time range: values must be non-negative');
-      return;
+      throw new Error(`Invalid time range: start (${start}) and end (${end}) must be non-negative`);
     }
     if (start >= end) {
-      console.error('Invalid time range: start must be less than end');
-      return;
+      throw new Error(`Invalid time range: start (${start}) must be less than end (${end})`);
     }
 
     this.visibleStart = start;

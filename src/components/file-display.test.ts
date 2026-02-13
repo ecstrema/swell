@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import './file-display.js';
 import { FileDisplay } from './file-display.js';
+import { Timeline } from './timeline.js';
 
 // Mock the backend module
 vi.mock('../backend.js', () => ({
@@ -142,8 +143,8 @@ describe('FileDisplay Component', () => {
     expect(timelines?.length).toBe(2);
     
     // Get the actual Timeline component instances
-    const timeline1 = timelines![0] as any;
-    const timeline2 = timelines![1] as any;
+    const timeline1 = timelines![0] as Timeline;
+    const timeline2 = timelines![1] as Timeline;
     
     // Set initial ranges
     timeline1.totalRange = { start: 0, end: 10000 };

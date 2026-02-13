@@ -56,7 +56,7 @@ export class DockStackComponent extends HTMLElement {
         this.shadowRoot!.innerHTML = `
             <div class="tabs-header">
                 ${this._node.children.map(pane => `
-                    <div class="tab ${pane.id === activeId ? 'active' : ''}" data-id="${pane.id}">
+                    <div class="tab ${pane.id === activeId ? 'active' : ''}" data-id="${pane.id}" draggable="true">
                         ${pane.title}
                         ${pane.closable !== false ? '<span class="close-btn">×</span>' : ''}
                     </div>
@@ -78,6 +78,30 @@ export class DockStackComponent extends HTMLElement {
             }
         });
 
+        // Add drag and drop listeners for tabs
+        const tabs = this.shadowRoot!.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            const tabElement = tab as HTMLElement;
+            
+            tabElement.addEventListener('dragstart', (e) => {
+                const id = tabElement.dataset.id!;
+                const pane = this._node!.children.find(p => p.id === id);
+                if (pane && this._manager) {
+                    this._manager.handleDragStart(pane, this._node!);
+                    // Set drag data for browser compatibility
+                    if (e.dataTransfer) {
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', id);
+                    }
+                    tabElement.classList.add('dragging');
+                }
+            });
+
+            tabElement.addEventListener('dragend', () => {
+                tabElement.classList.remove('dragging');
+            });
+        });
+
         const contentArea = this.shadowRoot!.querySelector('.content-area')!;
         this._node.children.forEach(pane => {
             const paneWrapper = document.createElement('div');
@@ -87,6 +111,25 @@ export class DockStackComponent extends HTMLElement {
             const content = this._manager!.getContent(pane.contentId, pane.id);
             paneWrapper.appendChild(content);
             contentArea.appendChild(paneWrapper);
+        });
+
+        // Add drop zone listeners to the entire stack
+        this.addEventListener('dragover', (e) => {
+            if (this._manager && this._node) {
+                this._manager.handleDragOver(e, this._node, this);
+            }
+        });
+
+        this.addEventListener('dragleave', () => {
+            if (this._manager) {
+                this._manager.handleDragLeave();
+            }
+        });
+
+        this.addEventListener('drop', (e) => {
+            if (this._manager && this._node) {
+                this._manager.handleDrop(e, this._node, this);
+            }
         });
     }
 

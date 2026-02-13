@@ -41,6 +41,13 @@
 .tab:hover:not(.active) {
     background: rgba(255, 255, 255, 0.05);
 }
+.tab.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+.tab[draggable="true"] {
+    cursor: grab;
+}
 .content-area {
     flex: 1;
     position: relative;

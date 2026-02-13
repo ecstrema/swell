@@ -412,7 +412,8 @@ export class FileDisplay extends HTMLElement {
       ctx.stroke();
 
       // Draw label
-      const label = (time / divisor).toFixed(divisor >= 1000 ? 2 : 0);
+      const decimalPlaces = unit === 'ns' ? 0 : 2; // Use 2 decimals for µs, ms, s; no decimals for ns
+      const label = (time / divisor).toFixed(decimalPlaces);
       const text = `${label} ${unit}`;
       const textWidth = ctx.measureText(text).width;
       ctx.fillText(text, x - textWidth / 2, lineY - 5);
@@ -420,9 +421,10 @@ export class FileDisplay extends HTMLElement {
 
     // Draw minor ticks (5 subdivisions between major ticks)
     const minorInterval = interval / 5;
+    const relativeEpsilon = interval * 0.01; // Use 1% of interval as epsilon for floating-point comparison
     for (let time = Math.ceil(this.visibleStart / minorInterval) * minorInterval; time <= this.visibleEnd; time += minorInterval) {
-      // Skip major ticks
-      if (Math.abs(time % interval) < 0.1) continue;
+      // Skip major ticks using relative epsilon
+      if (Math.abs(time % interval) < relativeEpsilon) continue;
 
       const x = ((time - this.visibleStart) / range) * width;
 

@@ -93,3 +93,13 @@ settingsRegister.register({
         { value: 'system', label: 'System' }
     ]
 });
+
+settingsRegister.register({
+    path: 'Interface/Tree Indent',
+    description: 'Indentation in pixels for tree hierarchy levels',
+    type: 'number',
+    defaultValue: 20,
+    min: 0,
+    max: 60,
+    step: 1
+});

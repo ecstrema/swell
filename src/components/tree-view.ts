@@ -1,6 +1,7 @@
 import { css } from "../utils/css-utils.js";
 import { scrollbarSheet } from "../styles/shared-sheets.js";
 import treeViewCss from "./tree-view.css?inline";
+import { getSetting } from "../settings/settings-storage.js";
 
 export interface TreeNode {
     name: string;
@@ -35,9 +36,13 @@ export interface TreeViewConfig {
  * This component renders a hierarchical tree structure with expandable/collapsible nodes.
  */
 export class TreeView extends HTMLElement {
+    private static readonly INDENT_SETTING_PATH = 'Interface/Tree Indent';
+    
     private _data: TreeNode[] = [];
     private _config: TreeViewConfig = {};
     private container: HTMLDivElement;
+    private indentLoadPromise: Promise<void> | null = null;
+    private boundSettingChangeHandler: (e: Event) => void;
 
     constructor() {
         super();
@@ -50,6 +55,50 @@ export class TreeView extends HTMLElement {
         `;
 
         this.container = this.shadowRoot!.querySelector('#tree-container') as HTMLDivElement;
+        
+        // Bind setting change handler
+        this.boundSettingChangeHandler = (e: Event) => {
+            const customEvent = e as CustomEvent;
+            const { path, value } = customEvent.detail;
+            
+            if (path === TreeView.INDENT_SETTING_PATH) {
+                this.updateIndent(value);
+            }
+        };
+    }
+    
+    connectedCallback() {
+        // Add event listener when connected
+        this.addEventListener('setting-changed', this.boundSettingChangeHandler);
+        
+        // Load indent setting when component is connected to the DOM
+        if (!this.indentLoadPromise) {
+            this.indentLoadPromise = this.loadIndentSetting();
+        }
+    }
+    
+    disconnectedCallback() {
+        // Remove event listener when disconnected to prevent memory leaks
+        this.removeEventListener('setting-changed', this.boundSettingChangeHandler);
+        
+        // Clear promise to allow reloading when reconnected
+        this.indentLoadPromise = null;
+    }
+    
+    private async loadIndentSetting() {
+        try {
+            const indent = await getSetting(TreeView.INDENT_SETTING_PATH);
+            if (indent !== undefined) {
+                this.updateIndent(indent);
+            }
+        } catch (e) {
+            // Silently fail in test environments or when settings aren't available
+            // The default CSS value will be used
+        }
+    }
+    
+    private updateIndent(value: number) {
+        this.style.setProperty('--tree-indent', `${value}px`);
     }
 
     set data(data: TreeNode[]) {

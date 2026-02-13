@@ -124,7 +124,7 @@ export class DockStackComponent extends HTMLElement {
         header.addEventListener('dragstart', (e) => {
             // Only initiate dock drag if not dragging from a tab
             const target = e.target as HTMLElement;
-            if (!target.classList.contains('tab') && !target.closest('.tab')) {
+            if (!target.closest('.tab')) {
                 if (this._manager && this._node) {
                     this._manager.handleStackDragStart(this._node);
                     if (e.dataTransfer) {
@@ -134,8 +134,8 @@ export class DockStackComponent extends HTMLElement {
                     header.classList.add('dragging');
                 }
             } else {
-                // Cancel the header drag if we're on a tab (tab will handle its own drag)
-                e.stopPropagation();
+                // Prevent header drag when dragging from a tab (tab will handle its own drag)
+                e.preventDefault();
             }
         });
 

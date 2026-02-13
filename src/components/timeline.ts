@@ -12,20 +12,33 @@ export class Timeline extends HTMLElement {
   private _totalEndTime: number = 1000000;
   private canvas: HTMLCanvasElement | null = null;
   private scrollbarThumb: HTMLElement | null = null;
+  private zoomInBtn: HTMLElement | null = null;
+  private zoomOutBtn: HTMLElement | null = null;
+  private zoomFitBtn: HTMLElement | null = null;
   private isDragging = false;
   private dragStartX = 0;
   private dragStartScrollLeft = 0;
   private boundHandleResize: () => void;
+  private boundHandleScrollbarMouseDown: (e: MouseEvent) => void;
   private boundHandleScrollbarMouseMove: (e: MouseEvent) => void;
   private boundHandleScrollbarMouseUp: () => void;
+  private boundHandleWheel: (e: WheelEvent) => void;
+  private boundZoomIn: () => void;
+  private boundZoomOut: () => void;
+  private boundZoomToFit: () => void;
 
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
     this.shadowRoot!.adoptedStyleSheets = [css(timelineCss)];
     this.boundHandleResize = this.handleResize.bind(this);
+    this.boundHandleScrollbarMouseDown = this.handleScrollbarMouseDown.bind(this);
     this.boundHandleScrollbarMouseMove = this.handleScrollbarMouseMove.bind(this);
     this.boundHandleScrollbarMouseUp = this.handleScrollbarMouseUp.bind(this);
+    this.boundHandleWheel = this.handleWheel.bind(this);
+    this.boundZoomIn = () => this.zoomIn();
+    this.boundZoomOut = () => this.zoomOut();
+    this.boundZoomToFit = () => this.zoomToFit();
   }
 
   connectedCallback() {
@@ -212,22 +225,22 @@ export class Timeline extends HTMLElement {
 
   private setupEventListeners() {
     // Zoom buttons
-    const zoomInBtn = this.shadowRoot!.querySelector('#zoom-in-btn');
-    const zoomOutBtn = this.shadowRoot!.querySelector('#zoom-out-btn');
-    const zoomFitBtn = this.shadowRoot!.querySelector('#zoom-fit-btn');
+    this.zoomInBtn = this.shadowRoot!.querySelector('#zoom-in-btn');
+    this.zoomOutBtn = this.shadowRoot!.querySelector('#zoom-out-btn');
+    this.zoomFitBtn = this.shadowRoot!.querySelector('#zoom-fit-btn');
     
-    zoomInBtn?.addEventListener('click', () => this.zoomIn());
-    zoomOutBtn?.addEventListener('click', () => this.zoomOut());
-    zoomFitBtn?.addEventListener('click', () => this.zoomToFit());
+    this.zoomInBtn?.addEventListener('click', this.boundZoomIn);
+    this.zoomOutBtn?.addEventListener('click', this.boundZoomOut);
+    this.zoomFitBtn?.addEventListener('click', this.boundZoomToFit);
     
     // Scrollbar dragging
     if (this.scrollbarThumb) {
-      this.scrollbarThumb.addEventListener('mousedown', this.handleScrollbarMouseDown.bind(this));
+      this.scrollbarThumb.addEventListener('mousedown', this.boundHandleScrollbarMouseDown);
     }
     
     // Canvas wheel zoom
     if (this.canvas) {
-      this.canvas.addEventListener('wheel', this.handleWheel.bind(this));
+      this.canvas.addEventListener('wheel', this.boundHandleWheel);
     }
     
     // Window resize
@@ -235,6 +248,22 @@ export class Timeline extends HTMLElement {
   }
 
   private removeEventListeners() {
+    // Remove zoom button listeners
+    this.zoomInBtn?.removeEventListener('click', this.boundZoomIn);
+    this.zoomOutBtn?.removeEventListener('click', this.boundZoomOut);
+    this.zoomFitBtn?.removeEventListener('click', this.boundZoomToFit);
+    
+    // Remove scrollbar listeners
+    if (this.scrollbarThumb) {
+      this.scrollbarThumb.removeEventListener('mousedown', this.boundHandleScrollbarMouseDown);
+    }
+    
+    // Remove canvas listeners
+    if (this.canvas) {
+      this.canvas.removeEventListener('wheel', this.boundHandleWheel);
+    }
+    
+    // Remove window listeners
     window.removeEventListener('resize', this.boundHandleResize);
   }
 

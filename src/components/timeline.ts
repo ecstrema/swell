@@ -26,6 +26,7 @@ export class Timeline extends HTMLElement {
   private boundZoomIn: () => void;
   private boundZoomOut: () => void;
   private boundZoomToFit: () => void;
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor() {
     super();
@@ -48,6 +49,12 @@ export class Timeline extends HTMLElement {
 
   disconnectedCallback() {
     this.removeEventListeners();
+    
+    // Clean up ResizeObserver
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
     
     // Clean up document-level listeners in case they're still active
     if (this.isDragging) {
@@ -252,6 +259,15 @@ export class Timeline extends HTMLElement {
     
     // Window resize
     window.addEventListener('resize', this.boundHandleResize);
+    
+    // Set up ResizeObserver to watch for container size changes
+    // This handles dock resizing and other layout changes
+    this.resizeObserver = new ResizeObserver(() => {
+      this.handleResize();
+    });
+    
+    // Observe the timeline element itself for size changes
+    this.resizeObserver.observe(this);
   }
 
   private removeEventListeners() {

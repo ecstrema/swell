@@ -28,6 +28,7 @@ export class FileDisplay extends HTMLElement {
   private visibleEnd: number = 1000000;
   private timeRangeInitialized: boolean = false;
   private timelineCounter: number = 0;
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor() {
     super();
@@ -66,12 +67,27 @@ export class FileDisplay extends HTMLElement {
     
     // Listen for zoom commands
     this.addEventListener('zoom-command', this.boundHandleZoomCommand);
+    
+    // Set up ResizeObserver to watch for container size changes
+    // This handles dock resizing and other layout changes
+    this.resizeObserver = new ResizeObserver(() => {
+      this.handleContainerResize();
+    });
+    
+    // Observe the file display element itself for size changes
+    this.resizeObserver.observe(this);
   }
 
   disconnectedCallback() {
     document.removeEventListener('signal-select', this.boundHandleSignalSelect);
     this.removeEventListener('range-changed', this.boundHandleRangeChanged);
     this.removeEventListener('zoom-command', this.boundHandleZoomCommand);
+    
+    // Clean up ResizeObserver
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
   }
 
   private handleRangeChanged(event: Event) {
@@ -184,6 +200,19 @@ export class FileDisplay extends HTMLElement {
       
       // Now paint with the correct dimensions
       this.paintSignal(canvas, ref);
+    });
+  }
+
+  private handleContainerResize() {
+    // When the container is resized (e.g., dock resize), update all canvas elements
+    this.selectedSignals.forEach(signal => {
+      if (signal.canvas) {
+        const displayWidth = signal.canvas.clientWidth || 800;
+        if (signal.canvas.width !== displayWidth) {
+          signal.canvas.width = displayWidth;
+          this.paintSignal(signal.canvas, signal.ref);
+        }
+      }
     });
   }
 

@@ -6,6 +6,13 @@ import 'fake-indexeddb/auto';
 // Polyfill File API with Node.js native File which has arrayBuffer() method
 global.File = NodeFile as typeof File;
 
+// Mock ResizeObserver for jsdom environment
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 // Mock the backend module for all tests  
 vi.mock('../backend/pkg/backend', () => ({
     default: vi.fn(),

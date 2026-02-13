@@ -231,7 +231,7 @@ export class Timeline extends HTMLElement {
     }
     
     // Window resize
-    window.addEventListener('resize', this.handleResize.bind(this));
+    window.addEventListener('resize', this.boundHandleResize);
   }
 
   private removeEventListeners() {
@@ -245,8 +245,8 @@ export class Timeline extends HTMLElement {
     const thumbRect = this.scrollbarThumb!.getBoundingClientRect();
     this.dragStartScrollLeft = thumbRect.left;
     
-    document.addEventListener('mousemove', this.handleScrollbarMouseMove.bind(this));
-    document.addEventListener('mouseup', this.handleScrollbarMouseUp.bind(this));
+    document.addEventListener('mousemove', this.boundHandleScrollbarMouseMove);
+    document.addEventListener('mouseup', this.boundHandleScrollbarMouseUp);
   }
 
   private handleScrollbarMouseMove(e: MouseEvent) {

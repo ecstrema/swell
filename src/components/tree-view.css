@@ -8,14 +8,15 @@
     color: var(--color-text);
 }
 
-.tree-node {
-    margin-left: 10px;
+details {
+    padding-left: 20px;
 }
 
 details > summary {
     cursor: pointer;
     list-style: none;
     padding: 2px 4px;
+    margin-left: -20px;
     user-select: none;
 }
 
@@ -40,7 +41,6 @@ details[open] > summary::before {
 }
 
 .leaf-node {
-    margin-left: 20px;
     padding: 2px 4px;
     cursor: pointer;
     color: var(--color-text-muted);

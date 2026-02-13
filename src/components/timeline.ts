@@ -48,6 +48,13 @@ export class Timeline extends HTMLElement {
 
   disconnectedCallback() {
     this.removeEventListeners();
+    
+    // Clean up document-level listeners in case they're still active
+    if (this.isDragging) {
+      document.removeEventListener('mousemove', this.boundHandleScrollbarMouseMove);
+      document.removeEventListener('mouseup', this.boundHandleScrollbarMouseUp);
+      this.isDragging = false;
+    }
   }
 
   /**

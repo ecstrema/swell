@@ -105,7 +105,7 @@ export class FileDisplay extends HTMLElement {
   private addTimelineSignal() {
     this.timelineCounter++;
     const timeline = new Timeline();
-    const name = this.timelineCounter === 1 ? 'Timeline' : `Timeline ${this.timelineCounter}`;
+    const name = `Timeline ${this.timelineCounter}`;
     
     // Set up time range if already initialized
     if (this.timeRangeInitialized) {
@@ -113,9 +113,11 @@ export class FileDisplay extends HTMLElement {
       timeline.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
     }
     
+    // Use negative refs for timelines to avoid conflicts with signal refs
+    // Signal refs are always positive integers from the waveform file
     this.selectedSignals.push({
       name,
-      ref: -this.timelineCounter, // Use negative refs for timelines to avoid conflicts
+      ref: -this.timelineCounter,
       isTimeline: true,
       timeline
     });

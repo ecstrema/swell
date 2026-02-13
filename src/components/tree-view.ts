@@ -39,6 +39,7 @@ export class TreeView extends HTMLElement {
     private _data: TreeNode[] = [];
     private _config: TreeViewConfig = {};
     private container: HTMLDivElement;
+    private indentLoaded = false;
 
     constructor() {
         super();
@@ -52,9 +53,6 @@ export class TreeView extends HTMLElement {
 
         this.container = this.shadowRoot!.querySelector('#tree-container') as HTMLDivElement;
         
-        // Load initial indent setting
-        this.loadIndentSetting();
-        
         // Listen for setting changes
         this.addEventListener('setting-changed', (e: Event) => {
             const customEvent = e as CustomEvent;
@@ -66,10 +64,23 @@ export class TreeView extends HTMLElement {
         });
     }
     
+    connectedCallback() {
+        // Load indent setting when component is connected to the DOM
+        if (!this.indentLoaded) {
+            this.loadIndentSetting();
+            this.indentLoaded = true;
+        }
+    }
+    
     private async loadIndentSetting() {
-        const indent = await getSetting('Interface/Tree Indent');
-        if (indent !== undefined) {
-            this.updateIndent(indent);
+        try {
+            const indent = await getSetting('Interface/Tree Indent');
+            if (indent !== undefined) {
+                this.updateIndent(indent);
+            }
+        } catch (e) {
+            // Silently fail in test environments or when settings aren't available
+            // The default CSS value will be used
         }
     }
     

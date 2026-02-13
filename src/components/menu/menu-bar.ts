@@ -122,6 +122,21 @@ export class MenuBar extends HTMLElement {
                             ]
                         }
                     ]
+                },
+                {
+                    text: 'Help',
+                    items: [
+                        {
+                            id: 'about',
+                            text: 'About',
+                            action: () => {
+                                this.dispatchEvent(new CustomEvent('about-open-request', {
+                                    bubbles: true,
+                                    composed: true
+                                }));
+                            }
+                        }
+                    ]
                 }
             ]
         };

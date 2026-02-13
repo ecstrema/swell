@@ -6,6 +6,7 @@ function getGitCommit() {
   try {
     return execSync('git rev-parse HEAD').toString().trim()
   } catch (e) {
+    console.warn('Failed to get git commit hash:', e instanceof Error ? e.message : e)
     return 'unknown'
   }
 }

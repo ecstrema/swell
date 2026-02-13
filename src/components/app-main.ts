@@ -11,6 +11,7 @@ import { themeManager } from "../theme-manager.js";
 import { DockManager } from "./docking/dock-manager.js";
 import { DockLayout, DockStack } from "./docking/types.js";
 import { css } from "../utils/css-utils.js";
+import { updateDocumentTitle } from "../utils/title-utils.js";
 import appMainCss from "./app-main.css?inline";
 import "./docking/index.js";
 
@@ -346,6 +347,9 @@ export class AppMain extends HTMLElement {
                 this.setActiveFile(fileIds[fileIds.length - 1]);
             } else if (this.state.activeFileId) {
                 this.setActiveFile(this.state.activeFileId);
+            } else {
+                // No active file - reset title to default
+                updateDocumentTitle(null);
             }
 
             // Update layout to show/hide sidebar based on file count
@@ -380,6 +384,9 @@ export class AppMain extends HTMLElement {
             this.hierarchyTree.filename = id;
             this.hierarchyTree.data = activeRes ? activeRes.hierarchy : null;
         }
+
+        // Update document title
+        updateDocumentTitle(id);
 
         // Set the active pane in the dock stack
         const mainStack = this.findMainStack();

@@ -9,6 +9,7 @@ export class DockManager extends HTMLElement {
     new Map();
   private _draggedPane: { pane: DockPane; sourceStack: DockStack } | null =
     null;
+  private _draggedStack: DockStack | null = null;
   private _dropOverlay: HTMLElement | null = null;
 
   constructor() {
@@ -84,12 +85,42 @@ export class DockManager extends HTMLElement {
     this._draggedPane = { pane, sourceStack };
   }
 
+  handleStackDragStart(stack: DockStack) {
+    this._draggedStack = stack;
+  }
+
+  handleTabReorder(
+    pane: DockPane,
+    stack: DockStack,
+    targetIndex: number
+  ) {
+    const currentIndex = stack.children.findIndex(p => p.id === pane.id);
+    if (currentIndex === -1 || currentIndex === targetIndex) return;
+
+    // Remove from current position
+    stack.children.splice(currentIndex, 1);
+    
+    // Insert at new position
+    const insertIndex = currentIndex < targetIndex ? targetIndex - 1 : targetIndex;
+    stack.children.splice(insertIndex, 0, pane);
+    
+    this.render();
+  }
+
+  getDraggedPane() {
+    return this._draggedPane;
+  }
+
+  getDraggedStack() {
+    return this._draggedStack;
+  }
+
   handleDragOver(
     e: DragEvent,
     targetStack: DockStack,
     targetElement: HTMLElement,
   ) {
-    if (!this._draggedPane) return;
+    if (!this._draggedPane && !this._draggedStack) return;
     e.preventDefault();
 
     const rect = targetElement.getBoundingClientRect();
@@ -106,7 +137,7 @@ export class DockManager extends HTMLElement {
   }
 
   handleDrop(e: DragEvent, targetStack: DockStack, targetElement: HTMLElement) {
-    if (!this._draggedPane) return;
+    if (!this._draggedPane && !this._draggedStack) return;
     this.handleDragLeave();
 
     const rect = targetElement.getBoundingClientRect();
@@ -114,13 +145,23 @@ export class DockManager extends HTMLElement {
     const y = e.clientY - rect.top;
     const zone = this.getDropZone(x, y, rect.width, rect.height);
 
-    this.movePane(
-      this._draggedPane.pane,
-      this._draggedPane.sourceStack,
-      targetStack,
-      zone,
-    );
-    this._draggedPane = null;
+    if (this._draggedStack) {
+      // Handle stack drop
+      if (this._draggedStack.id !== targetStack.id) {
+        this.moveStack(this._draggedStack, targetStack, zone);
+      }
+      this._draggedStack = null;
+    } else if (this._draggedPane) {
+      // Handle pane drop
+      this.movePane(
+        this._draggedPane.pane,
+        this._draggedPane.sourceStack,
+        targetStack,
+        zone,
+      );
+      this._draggedPane = null;
+    }
+    
     this.render();
   }
 
@@ -187,8 +228,76 @@ export class DockManager extends HTMLElement {
       this.splitStack(targetStack, pane, zone as any);
     }
 
-    // 3. Clean up empty stacks if necessary
-    this.cleanupEmptyNodes(this._layout!.root);
+    // 3. Clean up empty stacks if there are multiple stacks
+    if (this.shouldCleanupEmptyStacks()) {
+      this.cleanupEmptyNodes(this._layout!.root);
+    }
+  }
+
+  private moveStack(
+    sourceStack: DockStack,
+    targetStack: DockStack,
+    zone: string,
+  ) {
+    // Can't drop center when dragging a whole stack
+    if (zone === "center") return;
+
+    const parent = this.findParent(this._layout!.root, sourceStack.id) as DockBox;
+    if (!parent) return; // Can't move root
+
+    // Remove the source stack from its parent
+    const sourceIndex = parent.children.indexOf(sourceStack);
+    if (sourceIndex === -1) return;
+    parent.children.splice(sourceIndex, 1);
+
+    // If parent now has only one child, collapse it
+    if (parent.children.length === 1) {
+      const grandParent = this.findParent(this._layout!.root, parent.id) as DockBox;
+      if (grandParent) {
+        const parentIndex = grandParent.children.indexOf(parent);
+        const remainingChild = parent.children[0];
+        remainingChild.weight = parent.weight;
+        grandParent.children[parentIndex] = remainingChild;
+      }
+    }
+
+    // Insert the source stack next to the target stack
+    const targetParent = this.findParent(this._layout!.root, targetStack.id) as DockBox;
+    const dir: "row" | "column" =
+      zone === "left" || zone === "right" ? "row" : "column";
+    const isAfter = zone === "right" || zone === "bottom";
+
+    if (!targetParent) {
+      // Target is root - wrap both in a new box
+      const oldRoot = this._layout!.root;
+      sourceStack.weight = 1;
+      this._layout!.root = {
+        id: "box-" + Math.random().toString(36).substring(2, 11),
+        type: "box",
+        direction: dir,
+        weight: 1,
+        children: isAfter ? [oldRoot, sourceStack] : [sourceStack, oldRoot],
+      };
+    } else if (targetParent.direction === dir) {
+      // Same direction - just insert
+      const targetIndex = targetParent.children.indexOf(targetStack);
+      sourceStack.weight = targetStack.weight / 2;
+      targetStack.weight /= 2;
+      targetParent.children.splice(isAfter ? targetIndex + 1 : targetIndex, 0, sourceStack);
+    } else {
+      // Different direction - need to wrap target and source in a new box
+      const targetIndex = targetParent.children.indexOf(targetStack);
+      sourceStack.weight = targetStack.weight / 2;
+      targetStack.weight /= 2;
+      const newBox: DockBox = {
+        id: "box-" + Math.random().toString(36).substring(2, 11),
+        type: "box",
+        direction: dir,
+        weight: targetStack.weight * 2,
+        children: isAfter ? [targetStack, sourceStack] : [sourceStack, targetStack],
+      };
+      targetParent.children[targetIndex] = newBox;
+    }
   }
 
   private splitStack(
@@ -209,7 +318,7 @@ export class DockManager extends HTMLElement {
       const isAfter = direction === "right" || direction === "bottom";
 
       const newStack: DockStack = {
-        id: "stack-" + Math.random().toString(36).substr(2, 9),
+        id: "stack-" + Math.random().toString(36).substring(2, 11),
         type: "stack",
         weight: 1,
         children: [pane],
@@ -231,7 +340,7 @@ export class DockManager extends HTMLElement {
     const isAfter = direction === "right" || direction === "bottom";
 
     const newStack: DockStack = {
-      id: "stack-" + Math.random().toString(36).substr(2, 9),
+      id: "stack-" + Math.random().toString(36).substring(2, 11),
       type: "stack",
       weight: targetStack.weight / 2,
       children: [pane],
@@ -246,7 +355,7 @@ export class DockManager extends HTMLElement {
       // Need to wrap targetStack in a new Box
       const index = parent.children.indexOf(targetStack);
       const newBox: DockBox = {
-        id: "box-" + Math.random().toString(36).substr(2, 9),
+        id: "box-" + Math.random().toString(36).substring(2, 11),
         type: "box",
         direction: dir,
         weight: targetStack.weight * 2,
@@ -277,6 +386,22 @@ export class DockManager extends HTMLElement {
       return node.children.length === 0;
     }
     return false;
+  }
+
+  private countStacks(node: DockNode): number {
+    if (node.type === "stack") {
+      return 1;
+    }
+    let count = 0;
+    for (const child of node.children) {
+      count += this.countStacks(child);
+    }
+    return count;
+  }
+
+  private shouldCleanupEmptyStacks(): boolean {
+    if (!this._layout) return false;
+    return this.countStacks(this._layout.root) > 1;
   }
 }
 customElements.define("dock-manager", DockManager);

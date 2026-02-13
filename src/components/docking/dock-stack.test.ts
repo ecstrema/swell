@@ -262,3 +262,234 @@ describe('DockStack - Tab Dragging', () => {
         expect(tab.classList.contains('dragging')).toBe(false);
     });
 });
+
+describe('DockStack - Dock Handle Dragging', () => {
+    let dockStack: DockStackComponent;
+    let dockManager: DockManager;
+
+    beforeEach(() => {
+        dockStack = new DockStackComponent();
+        dockManager = new DockManager();
+        dockStack.manager = dockManager;
+        document.body.appendChild(dockStack);
+    });
+
+    afterEach(() => {
+        if (dockStack.parentNode) {
+            dockStack.parentNode.removeChild(dockStack);
+        }
+    });
+
+    it('should render dock drag handle', () => {
+        // Register mock content
+        dockManager.registerContent('test-content', () => {
+            const div = document.createElement('div');
+            div.textContent = 'Test Content';
+            return div;
+        });
+
+        // Set a stack with children
+        dockStack.node = {
+            type: 'stack',
+            id: 'test-stack',
+            weight: 1,
+            activeId: 'pane-1',
+            children: [
+                {
+                    id: 'pane-1',
+                    title: 'Test Pane',
+                    contentId: 'test-content',
+                    closable: true
+                }
+            ]
+        };
+
+        // Verify dock drag handle exists
+        const dragHandle = dockStack.shadowRoot!.querySelector('.dock-drag-handle') as HTMLElement;
+        expect(dragHandle).toBeTruthy();
+        expect(dragHandle.getAttribute('draggable')).toBe('true');
+    });
+
+    it('should call manager handleStackDragStart when dock drag starts', () => {
+        // Register mock content
+        dockManager.registerContent('test-content', () => {
+            const div = document.createElement('div');
+            div.textContent = 'Test Content';
+            return div;
+        });
+
+        // Spy on handleStackDragStart
+        const handleStackDragStartSpy = vi.spyOn(dockManager, 'handleStackDragStart');
+
+        // Set a stack with children
+        const node = {
+            type: 'stack' as const,
+            id: 'test-stack',
+            weight: 1,
+            activeId: 'pane-1',
+            children: [
+                {
+                    id: 'pane-1',
+                    title: 'Test Pane',
+                    contentId: 'test-content',
+                    closable: true
+                }
+            ]
+        };
+        dockStack.node = node;
+
+        // Trigger dragstart event on dock handle
+        const dragHandle = dockStack.shadowRoot!.querySelector('.dock-drag-handle') as HTMLElement;
+        const dragEvent = new MouseEvent('dragstart', { 
+            bubbles: true,
+            cancelable: true,
+        });
+        // Mock dataTransfer property
+        Object.defineProperty(dragEvent, 'dataTransfer', {
+            value: {
+                effectAllowed: '',
+                setData: vi.fn(),
+            },
+            writable: true
+        });
+        dragHandle.dispatchEvent(dragEvent);
+
+        // Verify handleStackDragStart was called with correct arguments
+        expect(handleStackDragStartSpy).toHaveBeenCalledWith(node);
+    });
+
+    it('should add dragging class to dock handle during drag', () => {
+        // Register mock content
+        dockManager.registerContent('test-content', () => {
+            const div = document.createElement('div');
+            div.textContent = 'Test Content';
+            return div;
+        });
+
+        // Set a stack with children
+        dockStack.node = {
+            type: 'stack',
+            id: 'test-stack',
+            weight: 1,
+            activeId: 'pane-1',
+            children: [
+                {
+                    id: 'pane-1',
+                    title: 'Test Pane',
+                    contentId: 'test-content',
+                    closable: true
+                }
+            ]
+        };
+
+        // Get dock drag handle
+        const dragHandle = dockStack.shadowRoot!.querySelector('.dock-drag-handle') as HTMLElement;
+
+        // Trigger dragstart event
+        const dragStartEvent = new MouseEvent('dragstart', { 
+            bubbles: true,
+            cancelable: true,
+        });
+        // Mock dataTransfer property
+        Object.defineProperty(dragStartEvent, 'dataTransfer', {
+            value: {
+                effectAllowed: '',
+                setData: vi.fn(),
+            },
+            writable: true
+        });
+        dragHandle.dispatchEvent(dragStartEvent);
+
+        // Verify dragging class is added
+        expect(dragHandle.classList.contains('dragging')).toBe(true);
+
+        // Trigger dragend event
+        const dragEndEvent = new MouseEvent('dragend', { 
+            bubbles: true,
+            cancelable: true
+        });
+        dragHandle.dispatchEvent(dragEndEvent);
+
+        // Verify dragging class is removed
+        expect(dragHandle.classList.contains('dragging')).toBe(false);
+    });
+});
+
+describe('DockStack - Tab Reordering', () => {
+    let dockStack: DockStackComponent;
+    let dockManager: DockManager;
+
+    beforeEach(() => {
+        dockStack = new DockStackComponent();
+        dockManager = new DockManager();
+        dockStack.manager = dockManager;
+        document.body.appendChild(dockStack);
+    });
+
+    afterEach(() => {
+        if (dockStack.parentNode) {
+            dockStack.parentNode.removeChild(dockStack);
+        }
+    });
+
+    it('should call handleTabReorder when dropping tab on same stack', () => {
+        // Register mock content
+        dockManager.registerContent('test-content', () => {
+            const div = document.createElement('div');
+            div.textContent = 'Test Content';
+            return div;
+        });
+
+        // Spy on handleTabReorder
+        const handleTabReorderSpy = vi.spyOn(dockManager, 'handleTabReorder');
+
+        // Set a stack with multiple children
+        const node = {
+            type: 'stack' as const,
+            id: 'test-stack',
+            weight: 1,
+            activeId: 'pane-1',
+            children: [
+                {
+                    id: 'pane-1',
+                    title: 'Tab 1',
+                    contentId: 'test-content',
+                    closable: true
+                },
+                {
+                    id: 'pane-2',
+                    title: 'Tab 2',
+                    contentId: 'test-content',
+                    closable: true
+                }
+            ]
+        };
+        dockStack.node = node;
+
+        // Simulate dragging pane-1
+        dockManager.handleDragStart(node.children[0], node);
+
+        // Get tabs
+        const tabs = dockStack.shadowRoot!.querySelectorAll('.tab');
+        const tab2 = tabs[1] as HTMLElement;
+
+        // Create drop event on tab2
+        const dropEvent = new MouseEvent('drop', { 
+            bubbles: true,
+            cancelable: true,
+            clientX: tab2.getBoundingClientRect().left + 5, // left side
+        });
+        Object.defineProperty(dropEvent, 'dataTransfer', {
+            value: {
+                effectAllowed: '',
+                getData: vi.fn(),
+            },
+            writable: true
+        });
+        
+        tab2.dispatchEvent(dropEvent);
+
+        // Verify handleTabReorder was called
+        expect(handleTabReorderSpy).toHaveBeenCalled();
+    });
+});

@@ -20,6 +20,25 @@
 .tabs-header::-webkit-scrollbar {
     display: none;
 }
+.dock-drag-handle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    cursor: move;
+    color: var(--dock-tab-text);
+    opacity: 0.5;
+    transition: opacity 0.2s;
+    user-select: none;
+    flex-shrink: 0;
+}
+.dock-drag-handle:hover {
+    opacity: 1;
+}
+.dock-drag-handle.dragging {
+    opacity: 0.3;
+    cursor: grabbing !important;
+}
 .tab {
     padding: 0 12px;
     height: 30px;
@@ -43,10 +62,13 @@
 }
 .tab.dragging {
     opacity: 0.5;
-    cursor: grabbing;
+    cursor: grabbing !important;
 }
-.tab[draggable="true"] {
-    cursor: grab;
+.tab.drag-over-left {
+    border-left: 2px solid var(--dock-accent, #007acc);
+}
+.tab.drag-over-right {
+    border-right: 2px solid var(--dock-accent, #007acc);
 }
 .content-area {
     flex: 1;

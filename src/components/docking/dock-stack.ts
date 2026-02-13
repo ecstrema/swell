@@ -97,6 +97,14 @@ export class DockStackComponent extends HTMLElement {
 
         this.shadowRoot!.innerHTML = `
             <div class="tabs-header">
+                <div class="dock-drag-handle" draggable="true" title="Drag to move entire dock">
+                    <svg width="12" height="12" viewBox="0 0 12 12">
+                        <circle cx="3" cy="3" r="1.5" fill="currentColor"/>
+                        <circle cx="9" cy="3" r="1.5" fill="currentColor"/>
+                        <circle cx="3" cy="9" r="1.5" fill="currentColor"/>
+                        <circle cx="9" cy="9" r="1.5" fill="currentColor"/>
+                    </svg>
+                </div>
                 ${this._node.children.map(pane => `
                     <div class="tab ${pane.id === activeId ? 'active' : ''}" data-id="${pane.id}" draggable="true">
                         ${pane.title}
@@ -120,6 +128,25 @@ export class DockStackComponent extends HTMLElement {
             }
         });
 
+        // Handle dock drag
+        const dockDragHandle = this.shadowRoot!.querySelector('.dock-drag-handle') as HTMLElement;
+        if (dockDragHandle) {
+            dockDragHandle.addEventListener('dragstart', (e) => {
+                if (this._manager && this._node) {
+                    this._manager.handleStackDragStart(this._node);
+                    if (e.dataTransfer) {
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', this._node.id);
+                    }
+                    dockDragHandle.classList.add('dragging');
+                }
+            });
+
+            dockDragHandle.addEventListener('dragend', () => {
+                dockDragHandle.classList.remove('dragging');
+            });
+        }
+
         // Add drag and drop listeners for tabs
         const tabs = this.shadowRoot!.querySelectorAll('.tab');
         tabs.forEach(tab => {
@@ -141,6 +168,68 @@ export class DockStackComponent extends HTMLElement {
 
             tabElement.addEventListener('dragend', () => {
                 tabElement.classList.remove('dragging');
+                // Remove any drag-over indicators
+                tabs.forEach(t => (t as HTMLElement).classList.remove('drag-over-left', 'drag-over-right'));
+            });
+
+            // Handle dragover for tab reordering within same stack
+            tabElement.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (!this._manager) return;
+                const draggedPane = this._manager.getDraggedPane();
+                if (!draggedPane) return;
+
+                // Check if we're dragging within the same stack
+                if (draggedPane.sourceStack.id === this._node!.id) {
+                    const rect = tabElement.getBoundingClientRect();
+                    const midpoint = rect.left + rect.width / 2;
+                    const isLeftSide = e.clientX < midpoint;
+
+                    // Remove previous indicators
+                    tabs.forEach(t => (t as HTMLElement).classList.remove('drag-over-left', 'drag-over-right'));
+                    
+                    // Add indicator
+                    if (isLeftSide) {
+                        tabElement.classList.add('drag-over-left');
+                    } else {
+                        tabElement.classList.add('drag-over-right');
+                    }
+                }
+            });
+
+            tabElement.addEventListener('dragleave', () => {
+                tabElement.classList.remove('drag-over-left', 'drag-over-right');
+            });
+
+            // Handle drop for tab reordering
+            tabElement.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (!this._manager) return;
+                const draggedPane = this._manager.getDraggedPane();
+                if (!draggedPane) return;
+
+                // Check if we're dragging within the same stack
+                if (draggedPane.sourceStack.id === this._node!.id) {
+                    const targetId = tabElement.dataset.id!;
+                    const targetIndex = this._node!.children.findIndex(p => p.id === targetId);
+                    
+                    if (targetIndex !== -1) {
+                        const rect = tabElement.getBoundingClientRect();
+                        const midpoint = rect.left + rect.width / 2;
+                        const isLeftSide = e.clientX < midpoint;
+                        
+                        // Calculate insert index based on which side of the tab we're on
+                        const insertIndex = isLeftSide ? targetIndex : targetIndex + 1;
+                        this._manager.handleTabReorder(draggedPane.pane, this._node!, insertIndex);
+                    }
+
+                    // Remove indicators
+                    tabs.forEach(t => (t as HTMLElement).classList.remove('drag-over-left', 'drag-over-right'));
+                }
             });
         });
 

@@ -2,16 +2,16 @@ import { addFile, openFileDialog, getHierarchy, getFiles, removeFile, restoreSes
 import "./menu/menu-bar.ts";
 import "./files-tree.ts";
 import "./settings-page.ts";
-import "./about-dialog.ts";
+import "./about-pane.ts";
 import { FileDisplay } from "./file-display.ts";
 import { FilesTree, HierarchyRoot } from "./files-tree.ts";
 import { CommandPalette } from "./command-palette.js";
 import { CommandRegistry, ShortcutManager, defaultShortcuts } from "../shortcuts/index.js";
 import { SettingsPage } from "./settings-page.js";
-import { AboutDialog } from "./about-dialog.js";
+import { AboutPane } from "./about-pane.js";
 import { themeManager } from "../theme-manager.js";
 import { DockManager } from "./docking/dock-manager.js";
-import { DockLayout, DockStack } from "./docking/types.js";
+import { DockLayout, DockStack, DockNode } from "./docking/types.js";
 import { css } from "../utils/css-utils.js";
 import { updateDocumentTitle } from "../utils/title-utils.js";
 import appMainCss from "./app-main.css?inline";
@@ -32,12 +32,12 @@ export class AppMain extends HTMLElement {
     private hierarchyTree: FilesTree;
     private fileViewContainer: HTMLElement;
     private settingsPage!: SettingsPage;
+    private aboutPane!: AboutPane;
 
     // Shortcut system
     private commandRegistry: CommandRegistry;
     private shortcutManager: ShortcutManager;
     private commandPalette: CommandPalette | null = null;
-    private aboutDialog: AboutDialog | null = null;
 
     constructor() {
         super();
@@ -87,6 +87,7 @@ export class AppMain extends HTMLElement {
         this.dockManager.registerContent('signal-selection', () => this.hierarchyTree);
         this.dockManager.registerContent('file-view', () => this.fileViewContainer);
         this.dockManager.registerContent('settings', () => this.settingsPage);
+        this.dockManager.registerContent('about', () => this.aboutPane);
 
         // Set initial layout
         this.dockManager.layout = {
@@ -132,8 +133,8 @@ export class AppMain extends HTMLElement {
         // Initialize command palette
         this.initializeCommandPalette();
 
-        // Initialize about dialog
-        this.initializeAboutDialog();
+        // Initialize about pane
+        this.initializeAboutPane();
 
         // Listeners
         this.addEventListener('file-open-request', () => this.handleFileOpen());
@@ -151,9 +152,7 @@ export class AppMain extends HTMLElement {
 
         // Listen for about open request
         this.addEventListener('about-open-request', () => {
-            if (this.aboutDialog) {
-                this.aboutDialog.open();
-            }
+            this.activateAboutPane();
         });
 
         // Listen for setting changes to update theme
@@ -186,6 +185,12 @@ export class AppMain extends HTMLElement {
                 return;
             }
             
+            // Handle about pane close
+            if (paneId === 'about-pane') {
+                this.closeAboutPane();
+                return;
+            }
+            
             // Extract file ID from pane ID (format: "file-pane-{fileId}")
             if (paneId.startsWith('file-pane-')) {
                 const fileId = paneId.substring('file-pane-'.length);
@@ -213,11 +218,6 @@ export class AppMain extends HTMLElement {
         // Clean up command palette
         if (this.commandPalette && this.commandPalette.parentNode) {
             this.commandPalette.parentNode.removeChild(this.commandPalette);
-        }
-
-        // Clean up about dialog
-        if (this.aboutDialog && this.aboutDialog.parentNode) {
-            this.aboutDialog.parentNode.removeChild(this.aboutDialog);
         }
     }
 
@@ -314,11 +314,10 @@ export class AppMain extends HTMLElement {
     }
 
     /**
-     * Initialize the about dialog
+     * Initialize the about pane
      */
-    private initializeAboutDialog() {
-        this.aboutDialog = new AboutDialog();
-        document.body.appendChild(this.aboutDialog);
+    private initializeAboutPane() {
+        this.aboutPane = new AboutPane();
     }
 
     async refreshFiles() {
@@ -469,6 +468,38 @@ export class AppMain extends HTMLElement {
         this.dockManager.layout = layout; // Trigger re-render
     }
 
+    activateAboutPane() {
+        // Find the biggest stack and open about there
+        const layout = this.dockManager.layout;
+        if (!layout) {
+            console.warn('No layout available to activate about pane');
+            return;
+        }
+
+        const biggestStack = this.findBiggestStack(layout.root);
+        if (!biggestStack) {
+            console.warn('Could not find any stack to activate about pane');
+            return;
+        }
+
+        // Check if about pane already exists in this stack
+        const aboutPaneExists = biggestStack.children.some(p => p.id === 'about-pane');
+        
+        if (!aboutPaneExists) {
+            // Add about pane to the biggest stack
+            biggestStack.children.push({
+                id: 'about-pane',
+                title: 'About',
+                contentId: 'about',
+                closable: true
+            });
+        }
+
+        // Activate the about pane
+        biggestStack.activeId = 'about-pane';
+        this.dockManager.layout = layout; // Trigger re-render
+    }
+
     private findBiggestStack(node: DockNode): DockStack | null {
         if (node.type === 'stack') {
             return node;
@@ -510,6 +541,28 @@ export class AppMain extends HTMLElement {
         } else if (node.type === 'box') {
             for (const child of node.children) {
                 this.removeSettingsPaneFromNode(child);
+            }
+        }
+    }
+
+    private closeAboutPane() {
+        const layout = this.dockManager.layout;
+        if (!layout) return;
+
+        // Find and remove about pane from all stacks
+        this.removeAboutPaneFromNode(layout.root);
+        this.dockManager.layout = layout; // Trigger re-render
+    }
+
+    private removeAboutPaneFromNode(node: DockNode): void {
+        if (node.type === 'stack') {
+            node.children = node.children.filter(p => p.id !== 'about-pane');
+            if (node.activeId === 'about-pane') {
+                node.activeId = node.children.length > 0 ? node.children[0].id : null;
+            }
+        } else if (node.type === 'box') {
+            for (const child of node.children) {
+                this.removeAboutPaneFromNode(child);
             }
         }
     }

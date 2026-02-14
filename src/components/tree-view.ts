@@ -175,7 +175,10 @@ export class TreeView extends HTMLElement {
 
     private createLeafElement(node: TreeNode): HTMLElement {
         const div = document.createElement('div');
-        div.className = this._config.leafNodeClass || 'leaf-node';
+        // Always apply base leaf-node class, then add custom class if specified
+        div.className = this._config.leafNodeClass 
+            ? `leaf-node ${this._config.leafNodeClass}`
+            : 'leaf-node';
         div.dataset.id = String(node.id);
 
         // Add checkbox if enabled

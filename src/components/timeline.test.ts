@@ -143,4 +143,18 @@ describe('Timeline Component', () => {
     const canvas = timeline.shadowRoot!.querySelector('.timeline-canvas');
     expect(canvas).not.toBeNull();
   });
+
+  it('should render scrollbar inside timeline wrapper', () => {
+    const shadowRoot = timeline.shadowRoot;
+    expect(shadowRoot).not.toBeNull();
+
+    const wrapper = shadowRoot!.querySelector('.timeline-wrapper');
+    expect(wrapper).not.toBeNull();
+
+    const canvas = wrapper!.querySelector('.timeline-canvas');
+    const scrollbar = wrapper!.querySelector('.scrollbar');
+    
+    expect(canvas).not.toBeNull();
+    expect(scrollbar).not.toBeNull();
+  });
 });

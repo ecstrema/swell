@@ -27,3 +27,5 @@ package-lock.json
 # Demo files
 demo-*.html
 test-*.html
+timeline-demo.html
+visual-demo.html

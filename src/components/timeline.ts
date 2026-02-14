@@ -212,10 +212,12 @@ export class Timeline extends HTMLElement {
           <button id="zoom-out-btn" title="Zoom Out">−</button>
           <button id="zoom-fit-btn" title="Zoom to Fit">⟷</button>
         </div>
-        <canvas class="timeline-canvas"></canvas>
-        <div class="scrollbar">
-          <div class="scrollbar-track">
-            <div class="scrollbar-thumb"></div>
+        <div class="timeline-wrapper">
+          <canvas class="timeline-canvas"></canvas>
+          <div class="scrollbar">
+            <div class="scrollbar-track">
+              <div class="scrollbar-thumb"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -444,9 +446,12 @@ export class Timeline extends HTMLElement {
     } else if (time >= 1e3) {
       // Microseconds
       return (time / 1e3).toFixed(2) + 'μs';
-    } else {
+    } else if (time >= 1) {
       // Nanoseconds
       return time.toFixed(0) + 'ns';
+    } else {
+      // Picoseconds (values less than 1 nanosecond)
+      return (time * 1000).toFixed(2) + 'ps';
     }
   }
 }

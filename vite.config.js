@@ -1,5 +1,7 @@
 import { defineConfig } from 'vite'
 import { execSync } from 'child_process'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
 // Get git commit hash for build info
 function getGitCommit() {
@@ -8,6 +10,18 @@ function getGitCommit() {
   } catch (e) {
     console.warn('Failed to get git commit hash:', e instanceof Error ? e.message : e)
     return 'unknown'
+  }
+}
+
+// Get version from tauri.conf.json
+function getVersion() {
+  try {
+    const tauriConfPath = join(process.cwd(), 'src-tauri', 'tauri.conf.json')
+    const tauriConf = JSON.parse(readFileSync(tauriConfPath, 'utf-8'))
+    return tauriConf.version
+  } catch (e) {
+    console.warn('Failed to read version from tauri.conf.json:', e instanceof Error ? e.message : e)
+    return process.env.npm_package_version || '0.1.0'
   }
 }
 
@@ -25,7 +39,7 @@ export default defineConfig({
   },
   define: {
     'import.meta.env.VITE_BUILD_COMMIT': JSON.stringify(getGitCommit()),
-    'import.meta.env.VITE_VERSION': JSON.stringify(process.env.npm_package_version || '0.1.0'),
+    'import.meta.env.VITE_VERSION': JSON.stringify(getVersion()),
   },
   test: {
     globals: true,

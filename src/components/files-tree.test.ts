@@ -151,4 +151,66 @@ describe('FilesTree Component', () => {
     const refs = element.selectedSignalRefs;
     expect(refs).toEqual([1, 2, 3]);
   });
+
+  it('should support filtering when enabled in config', () => {
+    // First, enable filtering by updating the config
+    element.config = {
+      ...element.config,
+      showFilter: true
+    };
+
+    const hierarchy: HierarchyRoot = {
+      name: 'top',
+      ref: 0,
+      vars: [
+        { name: 'clk', ref: 1 },
+        { name: 'reset', ref: 2 }
+      ],
+      scopes: [
+        {
+          name: 'module1',
+          ref: 3,
+          vars: [
+            { name: 'data_out', ref: 4 },
+            { name: 'data_in', ref: 5 }
+          ],
+          scopes: []
+        }
+      ]
+    };
+    
+    element.hierarchyData = hierarchy;
+    
+    const shadowRoot = element.shadowRoot;
+    
+    // Check filter input is visible
+    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
+    expect(filterInput).toBeTruthy();
+    
+    // Initially all signals visible
+    expect(shadowRoot?.textContent).toContain('clk');
+    expect(shadowRoot?.textContent).toContain('reset');
+    expect(shadowRoot?.textContent).toContain('data_out');
+    expect(shadowRoot?.textContent).toContain('data_in');
+    
+    // Filter for "data"
+    filterInput.value = 'data';
+    filterInput.dispatchEvent(new Event('input'));
+    
+    // Only data signals should be visible
+    expect(shadowRoot?.textContent).not.toContain('clk');
+    expect(shadowRoot?.textContent).not.toContain('reset');
+    expect(shadowRoot?.textContent).toContain('module1');
+    expect(shadowRoot?.textContent).toContain('data_out');
+    expect(shadowRoot?.textContent).toContain('data_in');
+    
+    // Filter for "clk"
+    filterInput.value = 'clk';
+    filterInput.dispatchEvent(new Event('input'));
+    
+    // Only clk should be visible
+    expect(shadowRoot?.textContent).toContain('clk');
+    expect(shadowRoot?.textContent).not.toContain('reset');
+    expect(shadowRoot?.textContent).not.toContain('data_out');
+  });
 });

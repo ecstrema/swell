@@ -64,4 +64,52 @@ describe('SelectedSignalsTree Component', () => {
     expect(signalNode).toBeTruthy();
     expect(signalNode?.textContent).toBe('test_signal');
   });
+
+  it('should support filtering when enabled in config', () => {
+    // Enable filtering
+    element.config = {
+      ...element.config,
+      showFilter: true
+    };
+
+    const signals: SelectedSignal[] = [
+      { name: 'clk', ref: 1 },
+      { name: 'reset', ref: 2 },
+      { name: 'data_out', ref: 3 },
+      { name: 'data_in', ref: 4 }
+    ];
+    
+    element.signals = signals;
+    
+    const shadowRoot = element.shadowRoot;
+    
+    // Check filter input is visible
+    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
+    expect(filterInput).toBeTruthy();
+    
+    // Initially all signals visible
+    expect(shadowRoot?.textContent).toContain('clk');
+    expect(shadowRoot?.textContent).toContain('reset');
+    expect(shadowRoot?.textContent).toContain('data_out');
+    expect(shadowRoot?.textContent).toContain('data_in');
+    
+    // Filter for "data"
+    filterInput.value = 'data';
+    filterInput.dispatchEvent(new Event('input'));
+    
+    // Only data signals should be visible
+    expect(shadowRoot?.textContent).not.toContain('clk');
+    expect(shadowRoot?.textContent).not.toContain('reset');
+    expect(shadowRoot?.textContent).toContain('data_out');
+    expect(shadowRoot?.textContent).toContain('data_in');
+    
+    // Filter for "clk"
+    filterInput.value = 'clk';
+    filterInput.dispatchEvent(new Event('input'));
+    
+    // Only clk should be visible
+    expect(shadowRoot?.textContent).toContain('clk');
+    expect(shadowRoot?.textContent).not.toContain('reset');
+    expect(shadowRoot?.textContent).not.toContain('data_out');
+  });
 });

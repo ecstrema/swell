@@ -1,13 +1,10 @@
 import { css } from "../utils/css-utils.js";
 import contextMenuCss from "./context-menu.css?inline";
+import { MenuItemConfig } from "../menu-api.js";
+import { renderMenuItems, findAndExecuteAction, ContextMenuItem, convertContextMenuItems } from "./menu/menu-item-renderer.js";
 
-export interface ContextMenuItem {
-    id: string;
-    label: string;
-    disabled?: boolean;
-    separator?: boolean;
-    handler?: () => void;
-}
+// Re-export for backward compatibility
+export type { ContextMenuItem };
 
 /**
  * Context Menu - A reusable right-click context menu component
@@ -44,10 +41,12 @@ export class ContextMenu extends HTMLElement {
             const target = e.target as HTMLElement;
             if (target.classList.contains('menu-item') && !target.classList.contains('disabled')) {
                 const itemId = target.dataset.id;
-                const item = this._items.find(i => i.id === itemId);
-                if (item?.handler) {
-                    item.handler();
-                    this.close();
+                if (itemId) {
+                    // Convert to MenuItemConfig format for findAndExecuteAction
+                    const menuItems = convertContextMenuItems(this._items);
+                    if (findAndExecuteAction(itemId, menuItems)) {
+                        this.close();
+                    }
                 }
             }
         };
@@ -97,26 +96,24 @@ export class ContextMenu extends HTMLElement {
         this.menuContainer.innerHTML = '';
 
         if (this._items.length === 0) {
-            this.menuContainer.innerHTML = '<div class="empty-state">No items</div>';
+            const emptyState = document.createElement('div');
+            emptyState.className = 'empty-state';
+            emptyState.textContent = 'No items';
+            this.menuContainer.appendChild(emptyState);
             return;
         }
 
-        this._items.forEach((item) => {
-            if (item.separator) {
-                const separator = document.createElement('div');
-                separator.className = 'menu-separator';
-                this.menuContainer!.appendChild(separator);
-            } else {
-                const menuItem = document.createElement('div');
-                menuItem.className = 'menu-item';
-                if (item.disabled) {
-                    menuItem.classList.add('disabled');
-                }
-                menuItem.textContent = item.label;
-                menuItem.dataset.id = item.id;
+        // Convert ContextMenuItem format to MenuItemConfig format and use shared renderer
+        const menuItems = convertContextMenuItems(this._items);
+        const renderedItems = renderMenuItems(menuItems, { isSubmenu: true });
 
-                this.menuContainer!.appendChild(menuItem);
+        renderedItems.forEach(({ element, id, action }) => {
+            // Apply disabled state if applicable
+            const originalItem = this._items.find(i => i.id === id);
+            if (originalItem?.disabled) {
+                element.classList.add('disabled');
             }
+            this.menuContainer!.appendChild(element);
         });
     }
 

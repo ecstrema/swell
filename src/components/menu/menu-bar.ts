@@ -3,6 +3,7 @@ import { themeManager } from "../../theme-manager.js";
 import { createMenu, MenuConfig, MenuItemConfig, SubmenuConfig } from "../../menu-api.js";
 import { css } from "../../utils/css-utils.js";
 import menuBarCss from "./menu-bar.css?inline";
+import { renderMenuItems, findAndExecuteAction } from "./menu-item-renderer.js";
 
 export class MenuBar extends HTMLElement {
   private menuConfig: MenuConfig | null = null;
@@ -148,60 +149,39 @@ export class MenuBar extends HTMLElement {
     }
   }
 
-  private renderMenuItems(items: (MenuItemConfig | SubmenuConfig)[]): string {
-      return items.map(item => {
-          if ('items' in item) {
-              // Nested submenu
-              const submenu = item as SubmenuConfig;
-              return `
-                  <div class="menu-submenu">
-                      <div class="submenu-title">${submenu.text}<span class="submenu-arrow">▶</span></div>
-                      <div class="submenu-dropdown">
-                          ${this.renderMenuItems(submenu.items)}
-                      </div>
-                  </div>
-              `;
-          }
-          if (item.type === 'separator') {
-              return '<div class="separator"></div>';
-          }
-          return `<div class="menu-item" data-id="${item.id}">${item.text}</div>`;
-      }).join('');
-  }
 
-  private findAndExecuteAction(itemId: string, items: (MenuItemConfig | SubmenuConfig)[]): boolean {
-      for (const item of items) {
-          if ('items' in item) {
-              // Recursively search in nested submenu
-              const submenu = item as SubmenuConfig;
-              if (this.findAndExecuteAction(itemId, submenu.items)) {
-                  return true;
-              }
-          } else {
-              const menuItem = item as MenuItemConfig;
-              if (menuItem.id === itemId && menuItem.action) {
-                  menuItem.action();
-                  return true;
-              }
-          }
-      }
-      return false;
-  }
 
   render() {
       if (this.shadowRoot && this.menuConfig) {
-          this.shadowRoot.innerHTML = `
-              <div class="menu-bar">
-                  ${this.menuConfig.items.map(submenu => `
-                      <div class="menu-group">
-                          <div class="menu-title">${submenu.text}</div>
-                          <div class="dropdown">
-                              ${this.renderMenuItems(submenu.items)}
-                          </div>
-                      </div>
-                  `).join('')}
-              </div>
-          `;
+          const menuBar = document.createElement('div');
+          menuBar.className = 'menu-bar';
+
+          // Render each top-level submenu
+          this.menuConfig.items.forEach(submenu => {
+              const menuGroup = document.createElement('div');
+              menuGroup.className = 'menu-group';
+
+              const menuTitle = document.createElement('div');
+              menuTitle.className = 'menu-title';
+              menuTitle.textContent = submenu.text;
+
+              const dropdown = document.createElement('div');
+              dropdown.className = 'dropdown';
+
+              // Use shared renderer for menu items
+              const menuItems = renderMenuItems(submenu.items);
+              menuItems.forEach(({ element }) => {
+                  dropdown.appendChild(element);
+              });
+
+              menuGroup.appendChild(menuTitle);
+              menuGroup.appendChild(dropdown);
+              menuBar.appendChild(menuGroup);
+          });
+
+          // Clear and append to shadow root
+          this.shadowRoot.innerHTML = '';
+          this.shadowRoot.appendChild(menuBar);
 
           // Attach event listeners
           this.shadowRoot.querySelectorAll('.menu-item').forEach(item => {
@@ -212,7 +192,7 @@ export class MenuBar extends HTMLElement {
                   if (itemId && this.menuConfig) {
                       // Find and execute the action recursively
                       for (const submenu of this.menuConfig.items) {
-                          if (this.findAndExecuteAction(itemId, submenu.items)) {
+                          if (findAndExecuteAction(itemId, submenu.items)) {
                               break;
                           }
                       }

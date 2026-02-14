@@ -47,6 +47,7 @@ details[open] > summary::before {
     display: flex;
     align-items: center;
     gap: 6px;
+    user-select: none;
 }
 
 .leaf-node:hover {

@@ -8,10 +8,8 @@
 .signal-node {
     margin-left: 10px;
     padding: 4px 8px;
-    cursor: pointer;
     color: var(--color-text);
     font-weight: 500;
-    user-select: none;
 }
 
 .signal-node:hover {

@@ -72,6 +72,22 @@ export class FileManager {
     }
 
     /**
+     * Open an example file from the public/examples directory
+     * @param filename - The name of the example file
+     * @returns The file ID if successful, null otherwise
+     */
+    async handleOpenExample(filename: string): Promise<string | null> {
+        try {
+            const { loadExampleFile } = await import("../backend.js");
+            const result = await loadExampleFile(filename);
+            return result;
+        } catch (err) {
+            console.error("Error loading example file:", err);
+            return null;
+        }
+    }
+
+    /**
      * Refresh files from backend and update file resources
      * @param onFileAdded Callback when a new file is added
      * @param onFileRemoved Callback when a file is removed

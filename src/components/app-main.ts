@@ -139,6 +139,12 @@ export class AppMain extends HTMLElement {
         // Listeners
         this.addEventListener('file-open-request', () => this.handleFileOpen());
 
+        // Listen for open example request
+        this.addEventListener('open-example-request', (e: Event) => {
+            const customEvent = e as CustomEvent<string>;
+            this.handleOpenExample(customEvent.detail);
+        });
+
         // Listen for file picker button click in empty state
         const filePickerBtn = this.fileViewContainer.querySelector('#file-picker-btn');
         if (filePickerBtn) {
@@ -296,6 +302,14 @@ export class AppMain extends HTMLElement {
 
     async handleFileOpen() {
         const fileId = await this.fileManager.handleFileOpen();
+        if (fileId) {
+            await this.refreshFiles();
+            this.setActiveFile(fileId);
+        }
+    }
+
+    async handleOpenExample(filename: string) {
+        const fileId = await this.fileManager.handleOpenExample(filename);
         if (fileId) {
             await this.refreshFiles();
             this.setActiveFile(fileId);

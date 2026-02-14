@@ -38,6 +38,66 @@ export class MenuBar extends HTMLElement {
                 }
             },
             {
+                text: 'Open Example',
+                items: [
+                    {
+                        id: 'open-example-simple-vcd',
+                        text: 'simple.vcd',
+                        action: () => {
+                            this.dispatchEvent(new CustomEvent('open-example-request', {
+                                bubbles: true,
+                                composed: true,
+                                detail: 'simple.vcd'
+                            }));
+                        }
+                    },
+                    {
+                        id: 'open-example-simple-ghw',
+                        text: 'simple.ghw',
+                        action: () => {
+                            this.dispatchEvent(new CustomEvent('open-example-request', {
+                                bubbles: true,
+                                composed: true,
+                                detail: 'simple.ghw'
+                            }));
+                        }
+                    },
+                    {
+                        id: 'open-example-counter-vcd',
+                        text: 'counter.vcd',
+                        action: () => {
+                            this.dispatchEvent(new CustomEvent('open-example-request', {
+                                bubbles: true,
+                                composed: true,
+                                detail: 'counter.vcd'
+                            }));
+                        }
+                    },
+                    {
+                        id: 'open-example-example-fst',
+                        text: 'example.fst',
+                        action: () => {
+                            this.dispatchEvent(new CustomEvent('open-example-request', {
+                                bubbles: true,
+                                composed: true,
+                                detail: 'example.fst'
+                            }));
+                        }
+                    },
+                    {
+                        id: 'open-example-time-test-ghw',
+                        text: 'time_test.ghw',
+                        action: () => {
+                            this.dispatchEvent(new CustomEvent('open-example-request', {
+                                bubbles: true,
+                                composed: true,
+                                detail: 'time_test.ghw'
+                            }));
+                        }
+                    }
+                ]
+            },
+            {
                 type: 'separator' as const
             },
             {

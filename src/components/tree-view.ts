@@ -39,6 +39,11 @@ export interface TreeViewConfig {
      * Whether to show checkboxes for leaf nodes
      */
     showCheckboxes?: boolean;
+    
+    /**
+     * Whether to show a filter input field above the tree
+     */
+    showFilter?: boolean;
 }
 
 /**
@@ -51,6 +56,8 @@ export class TreeView extends HTMLElement {
     private _data: TreeNode[] = [];
     private _config: TreeViewConfig = {};
     private container: HTMLDivElement;
+    private filterInput: HTMLInputElement | null = null;
+    private filterQuery: string = '';
     private indentLoadPromise: Promise<void> | null = null;
     private boundSettingChangeHandler: (e: Event) => void;
 
@@ -61,10 +68,20 @@ export class TreeView extends HTMLElement {
         this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(treeViewCss)];
 
         this.shadowRoot!.innerHTML = `
+        <div id="filter-container" class="filter-container" style="display: none;">
+            <input type="text" id="filter-input" class="filter-input" placeholder="Filter..." />
+        </div>
         <div id="tree-container"></div>
         `;
 
         this.container = this.shadowRoot!.querySelector('#tree-container') as HTMLDivElement;
+        this.filterInput = this.shadowRoot!.querySelector('#filter-input') as HTMLInputElement;
+        
+        // Setup filter input event listener
+        this.filterInput.addEventListener('input', () => {
+            this.filterQuery = this.filterInput?.value.toLowerCase() || '';
+            this.render();
+        });
         
         // Bind setting change handler
         this.boundSettingChangeHandler = (e: Event) => {
@@ -122,6 +139,19 @@ export class TreeView extends HTMLElement {
 
     set config(config: TreeViewConfig) {
         this._config = config;
+        
+        // Update filter visibility
+        const filterContainer = this.shadowRoot!.querySelector('#filter-container') as HTMLDivElement;
+        if (filterContainer) {
+            filterContainer.style.display = this._config.showFilter ? 'block' : 'none';
+        }
+        
+        // Reset filter when config changes
+        if (this.filterInput) {
+            this.filterInput.value = '';
+            this.filterQuery = '';
+        }
+        
         this.render();
     }
 
@@ -137,9 +167,50 @@ export class TreeView extends HTMLElement {
             return;
         }
 
-        this._data.forEach(node => {
+        // Apply filtering if query exists
+        const nodesToRender = this.filterQuery ? this.filterNodes(this._data) : this._data;
+
+        if (nodesToRender.length === 0) {
+            this.container.innerHTML = '<div class="empty-msg">No matching items</div>';
+            return;
+        }
+
+        nodesToRender.forEach(node => {
             this.container.appendChild(this.createNodeElement(node));
         });
+    }
+
+    /**
+     * Filter nodes recursively based on the query
+     * Returns nodes that match or have matching descendants
+     */
+    private filterNodes(nodes: TreeNode[]): TreeNode[] {
+        const filtered: TreeNode[] = [];
+
+        for (const node of nodes) {
+            const nameMatches = node.name.toLowerCase().includes(this.filterQuery);
+            const hasChildren = this._config.hasChildren 
+                ? this._config.hasChildren(node)
+                : (node.children && node.children.length > 0);
+
+            if (hasChildren && node.children) {
+                // Filter children recursively
+                const filteredChildren = this.filterNodes(node.children);
+                
+                // Include node if it matches or has matching children
+                if (nameMatches || filteredChildren.length > 0) {
+                    filtered.push({
+                        ...node,
+                        children: filteredChildren.length > 0 ? filteredChildren : node.children
+                    });
+                }
+            } else if (nameMatches) {
+                // Leaf node matches
+                filtered.push(node);
+            }
+        }
+
+        return filtered;
     }
 
     private createNodeElement(node: TreeNode): HTMLElement {

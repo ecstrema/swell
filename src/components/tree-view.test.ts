@@ -104,4 +104,202 @@ describe('TreeView Component', () => {
     expect(shadowRoot?.querySelector('.custom-scope')).toBeTruthy();
     expect(shadowRoot?.querySelector('.custom-leaf')).toBeTruthy();
   });
+
+  it('should show filter input when showFilter is enabled', () => {
+    element.config = {
+      showFilter: true
+    };
+    
+    const shadowRoot = element.shadowRoot;
+    const filterContainer = shadowRoot?.querySelector('.filter-container') as HTMLElement;
+    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
+    
+    expect(filterContainer).toBeTruthy();
+    expect(filterContainer.style.display).not.toBe('none');
+    expect(filterInput).toBeTruthy();
+  });
+
+  it('should hide filter input when showFilter is disabled', () => {
+    element.config = {
+      showFilter: false
+    };
+    
+    const shadowRoot = element.shadowRoot;
+    const filterContainer = shadowRoot?.querySelector('.filter-container') as HTMLElement;
+    
+    expect(filterContainer).toBeTruthy();
+    expect(filterContainer.style.display).toBe('none');
+  });
+
+  it('should filter flat list of nodes by name', () => {
+    element.config = {
+      showFilter: true
+    };
+    
+    const nodes: TreeNode[] = [
+      { name: 'Apple', id: 1 },
+      { name: 'Banana', id: 2 },
+      { name: 'Cherry', id: 3 }
+    ];
+    
+    element.data = nodes;
+    
+    const shadowRoot = element.shadowRoot;
+    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
+    
+    // Initially all nodes should be visible
+    expect(shadowRoot?.textContent).toContain('Apple');
+    expect(shadowRoot?.textContent).toContain('Banana');
+    expect(shadowRoot?.textContent).toContain('Cherry');
+    
+    // Filter for "an"
+    filterInput.value = 'an';
+    filterInput.dispatchEvent(new Event('input'));
+    
+    // Only Banana should be visible
+    expect(shadowRoot?.textContent).not.toContain('Apple');
+    expect(shadowRoot?.textContent).toContain('Banana');
+    expect(shadowRoot?.textContent).not.toContain('Cherry');
+    
+    // Filter for "e"
+    filterInput.value = 'e';
+    filterInput.dispatchEvent(new Event('input'));
+    
+    // Apple and Cherry should be visible
+    expect(shadowRoot?.textContent).toContain('Apple');
+    expect(shadowRoot?.textContent).not.toContain('Banana');
+    expect(shadowRoot?.textContent).toContain('Cherry');
+  });
+
+  it('should filter hierarchical nodes and show matching children', () => {
+    element.config = {
+      showFilter: true
+    };
+    
+    const nodes: TreeNode[] = [
+      {
+        name: 'Fruits',
+        id: 1,
+        children: [
+          { name: 'Apple', id: 2 },
+          { name: 'Banana', id: 3 }
+        ]
+      },
+      {
+        name: 'Vegetables',
+        id: 4,
+        children: [
+          { name: 'Carrot', id: 5 },
+          { name: 'Broccoli', id: 6 }
+        ]
+      }
+    ];
+    
+    element.data = nodes;
+    
+    const shadowRoot = element.shadowRoot;
+    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
+    
+    // Filter for "apple"
+    filterInput.value = 'apple';
+    filterInput.dispatchEvent(new Event('input'));
+    
+    // Should show Fruits parent and Apple child
+    expect(shadowRoot?.textContent).toContain('Fruits');
+    expect(shadowRoot?.textContent).toContain('Apple');
+    expect(shadowRoot?.textContent).not.toContain('Banana');
+    expect(shadowRoot?.textContent).not.toContain('Vegetables');
+    
+    // Filter for "carr"
+    filterInput.value = 'carr';
+    filterInput.dispatchEvent(new Event('input'));
+    
+    // Should show Vegetables parent and Carrot child
+    expect(shadowRoot?.textContent).not.toContain('Fruits');
+    expect(shadowRoot?.textContent).toContain('Vegetables');
+    expect(shadowRoot?.textContent).toContain('Carrot');
+    expect(shadowRoot?.textContent).not.toContain('Broccoli');
+  });
+
+  it('should show parent when parent name matches filter', () => {
+    element.config = {
+      showFilter: true
+    };
+    
+    const nodes: TreeNode[] = [
+      {
+        name: 'Category A',
+        id: 1,
+        children: [
+          { name: 'Item 1', id: 2 },
+          { name: 'Item 2', id: 3 }
+        ]
+      }
+    ];
+    
+    element.data = nodes;
+    
+    const shadowRoot = element.shadowRoot;
+    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
+    
+    // Filter for "category"
+    filterInput.value = 'category';
+    filterInput.dispatchEvent(new Event('input'));
+    
+    // Should show parent and all children
+    expect(shadowRoot?.textContent).toContain('Category A');
+    expect(shadowRoot?.textContent).toContain('Item 1');
+    expect(shadowRoot?.textContent).toContain('Item 2');
+  });
+
+  it('should show "No matching items" when filter has no results', () => {
+    element.config = {
+      showFilter: true
+    };
+    
+    const nodes: TreeNode[] = [
+      { name: 'Apple', id: 1 },
+      { name: 'Banana', id: 2 }
+    ];
+    
+    element.data = nodes;
+    
+    const shadowRoot = element.shadowRoot;
+    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
+    
+    // Filter for something that doesn't exist
+    filterInput.value = 'xyz';
+    filterInput.dispatchEvent(new Event('input'));
+    
+    expect(shadowRoot?.textContent).toContain('No matching items');
+  });
+
+  it('should filter case-insensitively', () => {
+    element.config = {
+      showFilter: true
+    };
+    
+    const nodes: TreeNode[] = [
+      { name: 'Apple', id: 1 },
+      { name: 'BANANA', id: 2 },
+      { name: 'CheRRy', id: 3 }
+    ];
+    
+    element.data = nodes;
+    
+    const shadowRoot = element.shadowRoot;
+    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
+    
+    // Filter with lowercase
+    filterInput.value = 'banana';
+    filterInput.dispatchEvent(new Event('input'));
+    
+    expect(shadowRoot?.textContent).toContain('BANANA');
+    
+    // Filter with mixed case
+    filterInput.value = 'ChErRy';
+    filterInput.dispatchEvent(new Event('input'));
+    
+    expect(shadowRoot?.textContent).toContain('CheRRy');
+  });
 });

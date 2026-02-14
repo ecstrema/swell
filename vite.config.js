@@ -18,7 +18,7 @@ function getVersion() {
   try {
     const tauriConfPath = join(process.cwd(), 'src-tauri', 'tauri.conf.json')
     const tauriConf = JSON.parse(readFileSync(tauriConfPath, 'utf-8'))
-    return tauriConf.version
+    return tauriConf.version || process.env.npm_package_version || '0.1.0'
   } catch (e) {
     console.warn('Failed to read version from tauri.conf.json:', e instanceof Error ? e.message : e)
     return process.env.npm_package_version || '0.1.0'

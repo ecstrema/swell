@@ -12,6 +12,8 @@ export type { ContextMenuItem };
  */
 export class ContextMenu extends HTMLElement {
     private _items: ContextMenuItem[] = [];
+    private _menuItems: MenuItemConfig[] = [];
+    private _disabledIds: Set<string> = new Set();
     private menuContainer: HTMLDivElement | null = null;
     private boundCloseHandler: () => void;
     private boundKeydownHandler: (e: KeyboardEvent) => void;
@@ -42,9 +44,8 @@ export class ContextMenu extends HTMLElement {
             if (target.classList.contains('menu-item') && !target.classList.contains('disabled')) {
                 const itemId = target.dataset.id;
                 if (itemId) {
-                    // Convert to MenuItemConfig format for findAndExecuteAction
-                    const { menuItems } = convertContextMenuItems(this._items);
-                    if (findAndExecuteAction(itemId, menuItems)) {
+                    // Use cached converted menu items
+                    if (findAndExecuteAction(itemId, this._menuItems)) {
                         this.close();
                     }
                 }
@@ -87,6 +88,10 @@ export class ContextMenu extends HTMLElement {
 
     set items(value: ContextMenuItem[]) {
         this._items = value;
+        // Convert and cache menu items for efficient access
+        const converted = convertContextMenuItems(this._items);
+        this._menuItems = converted.menuItems;
+        this._disabledIds = converted.disabledIds;
         this.render();
     }
 
@@ -103,13 +108,12 @@ export class ContextMenu extends HTMLElement {
             return;
         }
 
-        // Convert ContextMenuItem format to MenuItemConfig format and use shared renderer
-        const { menuItems, disabledIds } = convertContextMenuItems(this._items);
-        const renderedItems = renderMenuItems(menuItems, { isSubmenu: true });
+        // Use cached converted menu items
+        const renderedItems = renderMenuItems(this._menuItems, { isSubmenu: true });
 
         renderedItems.forEach(({ element, id }) => {
-            // Apply disabled state if applicable
-            if (id && disabledIds.has(id)) {
+            // Apply disabled state using cached Set
+            if (id && this._disabledIds.has(id)) {
                 element.classList.add('disabled');
             }
             this.menuContainer!.appendChild(element);

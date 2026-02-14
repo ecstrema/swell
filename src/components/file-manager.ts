@@ -1,6 +1,6 @@
 import { addFile, openFileDialog, getHierarchy, getFiles, removeFile } from "../backend.js";
-import { FileDisplay } from "./file-display.ts";
-import { HierarchyRoot } from "./files-tree.ts";
+import { FileDisplay } from "./file-display.js";
+import { HierarchyRoot } from "./files-tree.js";
 import { updateDocumentTitle } from "../utils/title-utils.js";
 
 /**

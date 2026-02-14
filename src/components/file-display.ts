@@ -168,6 +168,26 @@ export class FileDisplay extends HTMLElement {
       return;
     }
 
+    this.addSignal(name, ref);
+  }
+
+  private handleCheckboxToggle(event: Event) {
+    const customEvent = event as CustomEvent;
+    const { name, ref, filename, checked } = customEvent.detail;
+
+    // Only handle events for this file - signals are independent per file
+    if (filename !== this._filename) {
+      return;
+    }
+
+    if (checked) {
+      this.addSignal(name, ref);
+    } else {
+      this.removeSignal(ref);
+    }
+  }
+
+  private addSignal(name: string, ref: number) {
     // Check if signal is already selected
     if (this.selectedSignals.some(s => s.ref === ref)) {
       return;
@@ -188,43 +208,6 @@ export class FileDisplay extends HTMLElement {
 
     // Paint the signal after the canvas is properly sized in the DOM
     this.setupAndPaintCanvas(canvas, ref);
-  }
-
-  private handleCheckboxToggle(event: Event) {
-    const customEvent = event as CustomEvent;
-    const { name, ref, filename, checked } = customEvent.detail;
-
-    // Only handle events for this file - signals are independent per file
-    if (filename !== this._filename) {
-      return;
-    }
-
-    if (checked) {
-      // Add signal if checked
-      // Check if signal is already selected
-      if (this.selectedSignals.some(s => s.ref === ref)) {
-        return;
-      }
-
-      // Create a new canvas for this signal
-      const canvas = document.createElement('canvas');
-      // Set a reasonable default width - will be updated after render
-      canvas.width = 800;
-      canvas.height = 40;
-
-      this.selectedSignals.push({ name, ref, canvas, isTimeline: false });
-      
-      // Update the selected signals tree
-      this.updateSelectedSignalsTree();
-      
-      this.render();
-
-      // Paint the signal after the canvas is properly sized in the DOM
-      this.setupAndPaintCanvas(canvas, ref);
-    } else {
-      // Remove signal if unchecked
-      this.removeSignal(ref);
-    }
   }
 
   private removeSignal(ref: number) {

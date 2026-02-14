@@ -44,11 +44,24 @@ details[open] > summary::before {
     padding: 2px 4px;
     cursor: pointer;
     color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .leaf-node:hover {
     background-color: var(--color-bg-hover);
     color: var(--color-text);
+}
+
+.leaf-checkbox {
+    cursor: pointer;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.leaf-checkbox:disabled {
+    cursor: not-allowed;
 }
 
 .empty-msg {

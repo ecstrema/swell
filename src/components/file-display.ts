@@ -189,6 +189,16 @@ export class FileDisplay extends HTMLElement {
       name: s.name,
       ref: s.ref
     }));
+    
+    // Dispatch event to notify that selected signals have changed
+    this.dispatchEvent(new CustomEvent('selected-signals-changed', {
+      detail: {
+        filename: this._filename,
+        signalRefs: this.selectedSignals.filter(s => !s.isTimeline).map(s => s.ref)
+      },
+      bubbles: true,
+      composed: true
+    }));
   }
 
   private setupAndPaintCanvas(canvas: HTMLCanvasElement, ref: number) {
@@ -349,6 +359,16 @@ export class FileDisplay extends HTMLElement {
       start: this.visibleStart,
       end: this.visibleEnd
     };
+  }
+
+  /**
+   * Gets the refs of currently selected signals (excluding timelines).
+   * @returns Array of signal refs
+   */
+  public getSelectedSignalRefs(): number[] {
+    return this.selectedSignals
+      .filter(signal => !signal.isTimeline)
+      .map(signal => signal.ref);
   }
 
   private render() {

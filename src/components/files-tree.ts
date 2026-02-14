@@ -29,6 +29,7 @@ export interface HierarchyRoot {
 export class FilesTree extends TreeView {
     private _hierarchyData: HierarchyRoot | null = null;
     private _filename: string | null = null;
+    private _selectedSignalRefs: Set<number> = new Set();
 
     constructor() {
         super();
@@ -40,6 +41,10 @@ export class FilesTree extends TreeView {
         }
         
         // Configure the tree view for file hierarchy display
+        this.updateConfig();
+    }
+
+    private updateConfig() {
         this.config = {
             onLeafClick: (node: TreeNode) => {
                 this.dispatchEvent(new CustomEvent('signal-select', {
@@ -49,7 +54,11 @@ export class FilesTree extends TreeView {
                 }));
             },
             leafNodeClass: 'var-node',
-            scopeNodeClass: 'tree-node'
+            scopeNodeClass: 'tree-node',
+            showCheckboxes: true,
+            isChecked: (node: TreeNode) => {
+                return this._selectedSignalRefs.has(node.id as number);
+            }
         };
     }
 
@@ -79,6 +88,18 @@ export class FilesTree extends TreeView {
 
     get filename() {
         return this._filename;
+    }
+
+    set selectedSignalRefs(refs: number[]) {
+        this._selectedSignalRefs = new Set(refs);
+        // Update config to trigger re-render with new checked state
+        this.updateConfig();
+        // Re-render the tree to show updated checkboxes
+        this.updateTreeData();
+    }
+
+    get selectedSignalRefs() {
+        return Array.from(this._selectedSignalRefs);
     }
 
     private updateTreeData() {

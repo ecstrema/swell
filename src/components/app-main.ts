@@ -208,6 +208,15 @@ export class AppMain extends HTMLElement {
             }
         });
 
+        // Listen for selected signals changes to update hierarchy tree checkboxes
+        this.addEventListener('selected-signals-changed', (e: any) => {
+            const { filename, signalRefs } = e.detail;
+            // Only update if this is for the active file
+            if (filename === this.fileManager.getActiveFileId()) {
+                this.hierarchyTree.selectedSignalRefs = signalRefs;
+            }
+        });
+
         await this.refreshFiles();
     }
 
@@ -303,6 +312,12 @@ export class AppMain extends HTMLElement {
         if (this.hierarchyTree) {
             this.hierarchyTree.filename = id;
             this.hierarchyTree.data = activeRes ? activeRes.hierarchy : null;
+            
+            // Update selected signals checkboxes
+            if (activeRes) {
+                const selectedRefs = activeRes.element.getSelectedSignalRefs();
+                this.hierarchyTree.selectedSignalRefs = selectedRefs;
+            }
         }
 
         // Update document title

@@ -29,6 +29,16 @@ export interface TreeViewConfig {
      * Custom CSS class for scope/branch nodes
      */
     scopeNodeClass?: string;
+    
+    /**
+     * Function to determine if a leaf node should show a checkbox as checked
+     */
+    isChecked?: (node: TreeNode) => boolean;
+    
+    /**
+     * Whether to show checkboxes for leaf nodes
+     */
+    showCheckboxes?: boolean;
 }
 
 /**
@@ -166,8 +176,24 @@ export class TreeView extends HTMLElement {
     private createLeafElement(node: TreeNode): HTMLElement {
         const div = document.createElement('div');
         div.className = this._config.leafNodeClass || 'leaf-node';
-        div.textContent = node.name;
         div.dataset.id = String(node.id);
+
+        // Add checkbox if enabled
+        if (this._config.showCheckboxes) {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'leaf-checkbox';
+            checkbox.checked = this._config.isChecked ? this._config.isChecked(node) : false;
+            // Prevent checkbox click from triggering leaf click
+            checkbox.addEventListener('click', (e) => {
+                e.stopPropagation();
+            });
+            div.appendChild(checkbox);
+        }
+
+        const textSpan = document.createElement('span');
+        textSpan.textContent = node.name;
+        div.appendChild(textSpan);
 
         if (this._config.onLeafClick) {
             div.addEventListener('click', () => {

@@ -63,6 +63,34 @@ export const addFile = async (fileOrPath: string | File): Promise<string> => {
   throw new Error("Expected File object in Web mode");
 }
 
+/**
+ * Load an example file from the public/examples directory
+ * @param filename - The name of the example file (e.g., "simple.vcd")
+ * @returns The file ID
+ */
+export const loadExampleFile = async (filename: string): Promise<string> => {
+  if (isTauri) {
+    // In Tauri, load from the examples directory
+    const examplesPath = `examples/${filename}`;
+    return await invoke("add_file_command", { path: examplesPath });
+  }
+
+  // In web mode, fetch from public/examples
+  const response = await fetch(`/examples/${filename}`);
+  if (!response.ok) {
+    throw new Error(`Failed to load example file: ${filename}`);
+  }
+  
+  const buffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  const result = wasm.add_file_bytes(filename, bytes);
+  
+  // Save to IndexedDB for session persistence
+  await saveFileToSession(filename, bytes);
+  
+  return result;
+}
+
 export const getFiles = async (): Promise<string[]> => {
   if (isTauri) {
     return await invoke("get_files");

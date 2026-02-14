@@ -60,6 +60,7 @@ export class TreeView extends HTMLElement {
     private filterQuery: string = '';
     private indentLoadPromise: Promise<void> | null = null;
     private boundSettingChangeHandler: (e: Event) => void;
+    private boundFilterInputHandler: () => void;
 
     constructor() {
         super();
@@ -77,11 +78,11 @@ export class TreeView extends HTMLElement {
         this.container = this.shadowRoot!.querySelector('#tree-container') as HTMLDivElement;
         this.filterInput = this.shadowRoot!.querySelector('#filter-input') as HTMLInputElement;
         
-        // Setup filter input event listener
-        this.filterInput.addEventListener('input', () => {
+        // Bind filter input handler
+        this.boundFilterInputHandler = () => {
             this.filterQuery = this.filterInput?.value.toLowerCase() || '';
             this.render();
-        });
+        };
         
         // Bind setting change handler
         this.boundSettingChangeHandler = (e: Event) => {
@@ -95,8 +96,9 @@ export class TreeView extends HTMLElement {
     }
     
     connectedCallback() {
-        // Add event listener when connected
+        // Add event listeners when connected
         this.addEventListener('setting-changed', this.boundSettingChangeHandler);
+        this.filterInput?.addEventListener('input', this.boundFilterInputHandler);
         
         // Load indent setting when component is connected to the DOM
         if (!this.indentLoadPromise) {
@@ -105,8 +107,9 @@ export class TreeView extends HTMLElement {
     }
     
     disconnectedCallback() {
-        // Remove event listener when disconnected to prevent memory leaks
+        // Remove event listeners when disconnected to prevent memory leaks
         this.removeEventListener('setting-changed', this.boundSettingChangeHandler);
+        this.filterInput?.removeEventListener('input', this.boundFilterInputHandler);
         
         // Clear promise to allow reloading when reconnected
         this.indentLoadPromise = null;
@@ -201,7 +204,7 @@ export class TreeView extends HTMLElement {
                 if (nameMatches || filteredChildren.length > 0) {
                     filtered.push({
                         ...node,
-                        children: filteredChildren.length > 0 ? filteredChildren : node.children
+                        children: nameMatches ? node.children : filteredChildren
                     });
                 }
             } else if (nameMatches) {

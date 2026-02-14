@@ -1,13 +1,10 @@
 import { css } from "../utils/css-utils.js";
 import contextMenuCss from "./context-menu.css?inline";
+import { MenuItemConfig } from "../menu-api.js";
+import { renderMenuItems, findAndExecuteAction, ContextMenuItem, convertContextMenuItems } from "./menu/menu-item-renderer.js";
 
-export interface ContextMenuItem {
-    id: string;
-    label: string;
-    disabled?: boolean;
-    separator?: boolean;
-    handler?: () => void;
-}
+// Re-export for backward compatibility
+export type { ContextMenuItem };
 
 /**
  * Context Menu - A reusable right-click context menu component
@@ -15,6 +12,8 @@ export interface ContextMenuItem {
  */
 export class ContextMenu extends HTMLElement {
     private _items: ContextMenuItem[] = [];
+    private _menuItems: MenuItemConfig[] = [];
+    private _disabledIds: Set<string> = new Set();
     private menuContainer: HTMLDivElement | null = null;
     private boundCloseHandler: () => void;
     private boundKeydownHandler: (e: KeyboardEvent) => void;
@@ -44,10 +43,11 @@ export class ContextMenu extends HTMLElement {
             const target = e.target as HTMLElement;
             if (target.classList.contains('menu-item') && !target.classList.contains('disabled')) {
                 const itemId = target.dataset.id;
-                const item = this._items.find(i => i.id === itemId);
-                if (item?.handler) {
-                    item.handler();
-                    this.close();
+                if (itemId) {
+                    // Use cached converted menu items
+                    if (findAndExecuteAction(itemId, this._menuItems)) {
+                        this.close();
+                    }
                 }
             }
         };
@@ -88,6 +88,10 @@ export class ContextMenu extends HTMLElement {
 
     set items(value: ContextMenuItem[]) {
         this._items = value;
+        // Convert and cache menu items for efficient access
+        const converted = convertContextMenuItems(this._items);
+        this._menuItems = converted.menuItems;
+        this._disabledIds = converted.disabledIds;
         this.render();
     }
 
@@ -97,26 +101,22 @@ export class ContextMenu extends HTMLElement {
         this.menuContainer.innerHTML = '';
 
         if (this._items.length === 0) {
-            this.menuContainer.innerHTML = '<div class="empty-state">No items</div>';
+            const emptyState = document.createElement('div');
+            emptyState.className = 'empty-state';
+            emptyState.textContent = 'No items';
+            this.menuContainer.appendChild(emptyState);
             return;
         }
 
-        this._items.forEach((item) => {
-            if (item.separator) {
-                const separator = document.createElement('div');
-                separator.className = 'menu-separator';
-                this.menuContainer!.appendChild(separator);
-            } else {
-                const menuItem = document.createElement('div');
-                menuItem.className = 'menu-item';
-                if (item.disabled) {
-                    menuItem.classList.add('disabled');
-                }
-                menuItem.textContent = item.label;
-                menuItem.dataset.id = item.id;
+        // Use cached converted menu items
+        const renderedItems = renderMenuItems(this._menuItems, { isSubmenu: true });
 
-                this.menuContainer!.appendChild(menuItem);
+        renderedItems.forEach(({ element, id }) => {
+            // Apply disabled state using cached Set
+            if (id && this._disabledIds.has(id)) {
+                element.classList.add('disabled');
             }
+            this.menuContainer!.appendChild(element);
         });
     }
 

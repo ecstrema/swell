@@ -8,7 +8,7 @@ Swell is a modern waveform viewer application for digital design verification. I
 - Hierarchical signal browser
 - Signal value inspection
 - Cross-platform support (Desktop via Tauri, Web via WebAssembly)
-- **Iconify integration** - Access to thousands of icons from 150+ icon sets
+- **Iconify integration (unplugin-icons)** - Build-time icon imports with tree-shaking from 150+ icon sets
 
 ## Example Files
 
@@ -27,7 +27,7 @@ See [examples/README.md](examples/README.md) for details about each file.
 
 ## Icons
 
-Swell uses [Iconify](https://iconify.design/) for icons, providing access to thousands of icons from over 150 icon sets including Material Design Icons, Font Awesome, Bootstrap Icons, and more.
+Swell uses [Iconify](https://iconify.design/) via [unplugin-icons](https://github.com/unplugin/unplugin-icons), providing access to thousands of icons from over 150 icon sets including Material Design Icons, Font Awesome, Bootstrap Icons, and more. Icons are imported at build time with automatic tree-shaking - only the icons you use are bundled.
 
 - **Demo**: Open `src/iconify-demo.html` in development mode to see examples
 - **Documentation**: See [docs/ICONIFY.md](docs/ICONIFY.md) for usage instructions

@@ -12,75 +12,102 @@ describe('Iconify Integration', () => {
     document.body.removeChild(container);
   });
 
-  it('should be able to create iconify-icon elements', () => {
-    const icon = document.createElement('iconify-icon');
-    icon.setAttribute('icon', 'mdi:home');
-    container.appendChild(icon);
-
-    expect(icon.tagName.toLowerCase()).toBe('iconify-icon');
-    expect(icon.getAttribute('icon')).toBe('mdi:home');
+  it('should be able to import icons as SVG strings', async () => {
+    // Icons are imported at build time as strings
+    const { default: HomeIcon } = await import('~icons/mdi/home?raw');
+    
+    expect(typeof HomeIcon).toBe('string');
+    expect(HomeIcon).toContain('<svg');
+    expect(HomeIcon).toContain('</svg>');
   });
 
-  it('should allow styling iconify-icon elements', () => {
-    const icon = document.createElement('iconify-icon');
-    icon.setAttribute('icon', 'mdi:heart');
-    icon.style.color = 'red';
-    icon.style.fontSize = '24px';
-    container.appendChild(icon);
+  it('should allow using icons as innerHTML', async () => {
+    const { default: HeartIcon } = await import('~icons/mdi/heart?raw');
+    
+    const span = document.createElement('span');
+    span.innerHTML = HeartIcon;
+    container.appendChild(span);
 
-    expect(icon.style.color).toBe('red');
-    expect(icon.style.fontSize).toBe('24px');
+    const svg = span.querySelector('svg');
+    expect(svg).not.toBeNull();
+    expect(svg?.tagName.toLowerCase()).toBe('svg');
   });
 
-  it('should support multiple icon sets', () => {
-    const icons = [
-      { set: 'mdi', name: 'home' },
-      { set: 'fa-solid', name: 'user' },
-      { set: 'bi', name: 'heart' },
-      { set: 'lucide', name: 'settings' }
-    ];
+  it('should allow styling icons with CSS', async () => {
+    const { default: CheckIcon } = await import('~icons/mdi/check-circle?raw');
+    
+    const wrapper = document.createElement('span');
+    wrapper.innerHTML = CheckIcon;
+    container.appendChild(wrapper);
 
-    icons.forEach(({ set, name }) => {
-      const icon = document.createElement('iconify-icon');
-      const iconName = `${set}:${name}`;
-      icon.setAttribute('icon', iconName);
-      container.appendChild(icon);
+    const svg = wrapper.querySelector('svg');
+    if (svg) {
+      svg.style.color = 'green';
+      svg.style.width = '32px';
+      svg.style.height = '32px';
+    }
 
-      expect(icon.getAttribute('icon')).toBe(iconName);
+    expect(svg?.style.color).toBe('green');
+    expect(svg?.style.width).toBe('32px');
+    expect(svg?.style.height).toBe('32px');
+  });
+
+  it('should support multiple icon sets', async () => {
+    const icons = await Promise.all([
+      import('~icons/mdi/home?raw'),
+      import('~icons/fa-solid/user?raw'),
+      import('~icons/bi/heart?raw'),
+      import('~icons/lucide/settings?raw')
+    ]);
+
+    icons.forEach(({ default: iconSvg }) => {
+      const span = document.createElement('span');
+      span.innerHTML = iconSvg;
+      container.appendChild(span);
+
+      const svg = span.querySelector('svg');
+      expect(svg).not.toBeNull();
     });
 
     expect(container.children.length).toBe(icons.length);
   });
 
-  it('should work in button elements', () => {
-    const button = document.createElement('button');
-    const icon = document.createElement('iconify-icon');
-    icon.setAttribute('icon', 'mdi:plus');
+  it('should work in button elements', async () => {
+    const { default: PlusIcon } = await import('~icons/mdi/plus?raw');
     
-    button.appendChild(icon);
-    button.appendChild(document.createTextNode(' Add Item'));
+    const button = document.createElement('button');
+    button.innerHTML = `${PlusIcon} <span>Add Item</span>`;
     container.appendChild(button);
 
-    const iconInButton = button.querySelector('iconify-icon');
-    expect(iconInButton).not.toBeNull();
-    expect(iconInButton?.getAttribute('icon')).toBe('mdi:plus');
+    const svg = button.querySelector('svg');
+    expect(svg).not.toBeNull();
+    expect(button.textContent).toContain('Add Item');
   });
 
-  it('should allow creating icons programmatically', () => {
-    // Simulate creating an icon in TypeScript
-    const createIcon = (iconName: string, color: string, size: string): HTMLElement => {
-      const icon = document.createElement('iconify-icon');
-      icon.setAttribute('icon', iconName);
-      icon.style.color = color;
-      icon.style.fontSize = size;
-      return icon;
+  it('should allow creating icons programmatically', async () => {
+    const { default: SettingsIcon } = await import('~icons/mdi/settings?raw');
+    
+    // Simulate creating an icon utility
+    const createIcon = (iconSvg: string, color: string, size: string): HTMLElement => {
+      const wrapper = document.createElement('span');
+      wrapper.innerHTML = iconSvg;
+      
+      const svg = wrapper.querySelector('svg');
+      if (svg) {
+        svg.style.color = color;
+        svg.style.width = size;
+        svg.style.height = size;
+      }
+      
+      return wrapper;
     };
 
-    const checkIcon = createIcon('mdi:check-circle', 'green', '32px');
-    container.appendChild(checkIcon);
+    const icon = createIcon(SettingsIcon, 'blue', '24px');
+    container.appendChild(icon);
 
-    expect(checkIcon.getAttribute('icon')).toBe('mdi:check-circle');
-    expect(checkIcon.style.color).toBe('green');
-    expect(checkIcon.style.fontSize).toBe('32px');
+    const svg = icon.querySelector('svg');
+    expect(svg?.style.color).toBe('blue');
+    expect(svg?.style.width).toBe('24px');
+    expect(svg?.style.height).toBe('24px');
   });
 });

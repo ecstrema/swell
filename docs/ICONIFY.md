@@ -1,154 +1,209 @@
 # Iconify Integration
 
-Swell now includes [Iconify](https://iconify.design/), a unified icon framework that provides access to thousands of icons from over 150 icon sets.
+Swell now includes [Iconify](https://iconify.design/) via [unplugin-icons](https://github.com/unplugin/unplugin-icons), which provides access to thousands of icons from over 150 icon sets with automatic tree-shaking - only the icons you use are bundled.
 
 ## What is Iconify?
 
-Iconify is a modern icon framework that allows you to use icons from multiple icon sets (Material Design Icons, Font Awesome, Bootstrap Icons, etc.) with a single, simple API. Icons are loaded on-demand, so only the icons you actually use are downloaded.
+Iconify is a unified icon framework that allows you to use icons from multiple icon sets (Material Design Icons, Font Awesome, Bootstrap Icons, etc.) with a single, simple API. With unplugin-icons, icons are imported as ES modules and bundled at build time, ensuring optimal performance.
 
 ## Installation
 
-Iconify is already installed and configured in the project. The `iconify-icon` web component is imported in `src/main.ts`.
+Iconify is already installed and configured in the project. The `unplugin-icons` Vite plugin is configured in `vite.config.js`.
 
 ## Usage
 
-You can use Iconify icons anywhere in your HTML or TypeScript components using the `<iconify-icon>` custom element.
+You can use Iconify icons by importing them from the virtual `~icons` module. Icons are imported using the pattern `~icons/{collection}/{icon-name}`.
 
-### Basic Usage
+### Basic Usage in TypeScript/JavaScript
 
-```html
-<!-- Material Design Icons -->
-<iconify-icon icon="mdi:home"></iconify-icon>
+```typescript
+// Import icons as SVG strings
+import HomeIcon from '~icons/mdi/home?raw';
+import UserIcon from '~icons/fa-solid/user?raw';
+import HeartIcon from '~icons/bi/heart?raw';
 
-<!-- Font Awesome -->
-<iconify-icon icon="fa-solid:user"></iconify-icon>
+// Use in your code
+const icon = document.createElement('span');
+icon.innerHTML = HomeIcon;
+icon.style.color = 'blue';
+container.appendChild(icon);
+```
 
-<!-- Bootstrap Icons -->
-<iconify-icon icon="bi:heart"></iconify-icon>
+### Using Icons as Inline SVG
+
+```typescript
+import CheckIcon from '~icons/mdi/check-circle?raw';
+
+// Create a helper function for easy icon usage
+function createIcon(iconSvg: string, className?: string): HTMLElement {
+  const span = document.createElement('span');
+  span.innerHTML = iconSvg;
+  span.className = className || 'icon';
+  return span;
+}
+
+// Use it
+const checkIcon = createIcon(CheckIcon, 'success-icon');
+container.appendChild(checkIcon);
 ```
 
 ### Styling Icons
 
-You can style icons using CSS just like regular elements:
-
-```html
-<iconify-icon icon="mdi:heart" style="color: red; font-size: 24px;"></iconify-icon>
-```
-
-Or with classes:
+Icons are imported as inline SVG, so you can style them with CSS:
 
 ```css
-.my-icon {
-    color: var(--color-primary);
-    font-size: 20px;
-    cursor: pointer;
+.icon {
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+  color: currentColor;
 }
-```
 
-```html
-<iconify-icon icon="mdi:settings" class="my-icon"></iconify-icon>
-```
+.icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
 
-### Using in TypeScript Components
-
-```typescript
-// In your component's render method or template
-const icon = document.createElement('iconify-icon');
-icon.setAttribute('icon', 'mdi:check-circle');
-icon.style.color = 'green';
-icon.style.fontSize = '24px';
-container.appendChild(icon);
+.icon.success-icon {
+  color: green;
+}
 ```
 
 ### Common Icon Sets
 
 Here are some popular icon sets you can use:
 
-- **Material Design Icons**: `mdi:icon-name` (e.g., `mdi:home`, `mdi:search`, `mdi:settings`)
-- **Font Awesome**: `fa-solid:icon-name` or `fa-brands:icon-name` (e.g., `fa-solid:user`, `fa-brands:github`)
-- **Bootstrap Icons**: `bi:icon-name` (e.g., `bi:heart`, `bi:check-circle`)
-- **Heroicons**: `heroicons:icon-name` (e.g., `heroicons:home`, `heroicons:user`)
-- **Tabler Icons**: `tabler:icon-name` (e.g., `tabler:home`, `tabler:user`)
-- **Lucide**: `lucide:icon-name` (e.g., `lucide:home`, `lucide:user`)
+- **Material Design Icons**: `~icons/mdi/{icon-name}` (e.g., `~icons/mdi/home`, `~icons/mdi/search`, `~icons/mdi/settings`)
+- **Font Awesome**: `~icons/fa-solid/{icon-name}` or `~icons/fa-brands/{icon-name}` (e.g., `~icons/fa-solid/user`, `~icons/fa-brands/github`)
+- **Bootstrap Icons**: `~icons/bi/{icon-name}` (e.g., `~icons/bi/heart`, `~icons/bi/check-circle`)
+- **Heroicons**: `~icons/heroicons/{icon-name}` (e.g., `~icons/heroicons/home`, `~icons/heroicons/user`)
+- **Tabler Icons**: `~icons/tabler/{icon-name}` (e.g., `~icons/tabler/home`, `~icons/tabler/user`)
+- **Lucide**: `~icons/lucide/{icon-name}` (e.g., `~icons/lucide/home`, `~icons/lucide/user`)
 
 ### Finding Icons
 
 You can search for icons on the [Iconify website](https://icon-sets.iconify.design/). The site provides:
 - A searchable catalog of all available icons
 - Preview of each icon
-- The exact icon name to use
+- The exact icon name to use (convert the format: `mdi:home` becomes `~icons/mdi/home`)
 - Multiple icon sets to choose from
 
 ## Examples
 
 ### Button with Icon
 
-```html
-<button>
-    <iconify-icon icon="mdi:plus"></iconify-icon>
-    Add Timeline
-</button>
+```typescript
+import PlusIcon from '~icons/mdi/plus?raw';
+
+const button = document.createElement('button');
+button.innerHTML = `${PlusIcon} <span>Add Timeline</span>`;
+container.appendChild(button);
 ```
 
-### Icon Button
+### Icon Utility Function
 
-```html
-<button class="icon-button" aria-label="Settings">
-    <iconify-icon icon="mdi:settings"></iconify-icon>
-</button>
+```typescript
+// Create a reusable icon utility
+export function createSvgIcon(iconSvg: string, options?: {
+  size?: string;
+  color?: string;
+  className?: string;
+}): HTMLElement {
+  const wrapper = document.createElement('span');
+  wrapper.innerHTML = iconSvg;
+  wrapper.classList.add('icon-wrapper');
+  
+  if (options?.className) {
+    wrapper.classList.add(options.className);
+  }
+  
+  const svg = wrapper.querySelector('svg');
+  if (svg) {
+    if (options?.size) {
+      svg.style.width = options.size;
+      svg.style.height = options.size;
+    }
+    if (options?.color) {
+      svg.style.color = options.color;
+    }
+  }
+  
+  return wrapper;
+}
+
+// Usage
+import SettingsIcon from '~icons/mdi/settings?raw';
+const icon = createSvgIcon(SettingsIcon, { size: '24px', color: 'blue' });
 ```
 
 ### Menu Item with Icon
 
-```html
-<div class="menu-item">
-    <iconify-icon icon="mdi:folder-open"></iconify-icon>
-    <span>Open File</span>
-</div>
+```typescript
+import FolderOpenIcon from '~icons/mdi/folder-open?raw';
+
+const menuItem = document.createElement('div');
+menuItem.className = 'menu-item';
+menuItem.innerHTML = `
+  <span class="icon">${FolderOpenIcon}</span>
+  <span>Open File</span>
+`;
 ```
 
 ### Status Indicator
 
-```html
-<span class="status">
-    <iconify-icon icon="mdi:check-circle" style="color: green;"></iconify-icon>
-    Connected
-</span>
+```typescript
+import CheckCircleIcon from '~icons/mdi/check-circle?raw';
+
+const status = document.createElement('span');
+status.className = 'status';
+status.innerHTML = `
+  <span class="icon success">${CheckCircleIcon}</span>
+  <span>Connected</span>
+`;
 ```
 
 ## Accessibility
 
 Always provide appropriate ARIA labels when using icons without accompanying text:
 
-```html
-<button aria-label="Close dialog">
-    <iconify-icon icon="mdi:close"></iconify-icon>
-</button>
+```typescript
+import CloseIcon from '~icons/mdi/close?raw';
+
+const button = document.createElement('button');
+button.setAttribute('aria-label', 'Close dialog');
+button.innerHTML = CloseIcon;
 ```
 
 ## Performance
 
-- Icons are loaded on-demand from Iconify's CDN
-- Only icons you actually use are downloaded
-- Icons are cached by the browser
-- The web component is lightweight (~10KB gzipped)
+- Icons are imported at build time and bundled with your code
+- Only icons you actually import are included in the bundle (tree-shaking)
+- No runtime dependencies or CDN requests
+- Icons are optimized SVGs, typically 1-2KB each
 
 ## TypeScript Support
 
-If you're using TypeScript and need type definitions for the custom element, you can declare it:
+To get TypeScript support for icon imports, add this to your type definitions:
 
 ```typescript
-declare global {
-    namespace JSX {
-        interface IntrinsicElements {
-            'iconify-icon': any;
-        }
-    }
+declare module '~icons/*' {
+  const content: string;
+  export default content;
 }
 ```
 
+## Build-Time Benefits
+
+Unlike the web component approach, unplugin-icons:
+- ✅ Bundles only used icons (smaller bundle size)
+- ✅ No runtime icon loading (faster initial render)
+- ✅ No CDN dependencies (works offline)
+- ✅ Better for production builds
+- ✅ Type-safe imports
+
 ## Further Reading
 
-- [Iconify Documentation](https://iconify.design/docs/)
+- [unplugin-icons Documentation](https://github.com/unplugin/unplugin-icons)
 - [Icon Sets Browser](https://icon-sets.iconify.design/)
-- [iconify-icon Web Component](https://iconify.design/docs/iconify-icon/)
+- [Iconify Documentation](https://iconify.design/docs/)

@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import { execSync } from 'child_process'
 import { readFileSync } from 'fs'
 import { join } from 'path'
+import Icons from 'unplugin-icons/vite'
 
 // Get git commit hash for build info
 function getGitCommit() {
@@ -28,6 +29,12 @@ function getVersion() {
 export default defineConfig({
   base: process.env.VITE_BASE_PATH || './', // use env var for CI web build, relative path otherwise
   root: 'src', // Set the project root to the src directory
+  plugins: [
+    Icons({
+      compiler: 'raw',
+      autoInstall: false,
+    }),
+  ],
   server: {
     port: 1420,
     strictPort: true,

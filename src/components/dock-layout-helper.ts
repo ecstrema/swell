@@ -1,0 +1,155 @@
+import { DockManager } from "./docking/dock-manager.js";
+import { DockLayout, DockStack, DockNode } from "./docking/types.js";
+
+/**
+ * Helper utilities for managing docking layout and panes
+ */
+export class DockLayoutHelper {
+    private dockManager: DockManager;
+
+    constructor(dockManager: DockManager) {
+        this.dockManager = dockManager;
+    }
+
+    /**
+     * Find the main stack in the layout
+     */
+    findMainStack(): DockStack | null {
+        const layout = this.dockManager.layout;
+        if (!layout) return null;
+
+        const root = layout.root;
+        if (root.type === 'box') {
+            for (const child of root.children) {
+                if (child.type === 'stack' && child.id === 'main-stack') {
+                    return child;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Find the biggest stack in the layout (by weight)
+     */
+    findBiggestStack(node: DockNode): DockStack | null {
+        if (node.type === 'stack') {
+            return node;
+        }
+
+        if (node.type === 'box') {
+            let biggestStack: DockStack | null = null;
+            let biggestWeight = -Infinity;
+
+            for (const child of node.children) {
+                const stack = this.findBiggestStack(child);
+                if (stack && stack.weight > biggestWeight) {
+                    biggestWeight = stack.weight;
+                    biggestStack = stack;
+                }
+            }
+
+            return biggestStack;
+        }
+
+        return null;
+    }
+
+    /**
+     * Add a file pane to the main stack
+     */
+    addDockPane(fileId: string): void {
+        const mainStack = this.findMainStack();
+        if (!mainStack) return;
+
+        const filename = fileId.split(/[/\\]/).pop() || fileId;
+        const pane = {
+            id: `file-pane-${fileId}`,
+            title: filename,
+            contentId: `file-${fileId}`,
+            closable: true
+        };
+
+        mainStack.children.push(pane);
+        mainStack.activeId = pane.id;
+        this.dockManager.render();
+    }
+
+    /**
+     * Remove a file pane from the main stack
+     */
+    removeDockPane(fileId: string): void {
+        const mainStack = this.findMainStack();
+        if (!mainStack) return;
+
+        const paneId = `file-pane-${fileId}`;
+        mainStack.children = mainStack.children.filter(p => p.id !== paneId);
+
+        if (mainStack.activeId === paneId) {
+            mainStack.activeId = mainStack.children.length > 0 ? mainStack.children[0].id : null;
+        }
+
+        this.dockManager.render();
+    }
+
+    /**
+     * Update sidebar visibility based on whether files are open
+     */
+    updateSidebarVisibility(hasFiles: boolean): void {
+        const layout = this.dockManager.layout;
+        if (!layout || layout.root.type !== 'box') return;
+
+        const rootBox = layout.root;
+        const sidebarIndex = rootBox.children.findIndex(
+            child => child.type === 'stack' && child.id === 'sidebar-stack'
+        );
+        const mainStackIndex = rootBox.children.findIndex(
+            child => child.type === 'stack' && child.id === 'main-stack'
+        );
+
+        if (hasFiles) {
+            // Show sidebar if hidden
+            if (sidebarIndex === -1 && mainStackIndex !== -1) {
+                const sidebarStack: DockStack = {
+                    type: 'stack',
+                    id: 'sidebar-stack',
+                    weight: 20,
+                    activeId: 'signal-selection-pane',
+                    children: [
+                        {
+                            id: 'signal-selection-pane',
+                            title: 'Signal Selection',
+                            contentId: 'signal-selection',
+                            closable: false
+                        },
+                        {
+                            id: 'settings-pane',
+                            title: 'Settings',
+                            contentId: 'settings',
+                            closable: true
+                        }
+                    ]
+                };
+                rootBox.children.unshift(sidebarStack);
+                this.dockManager.render();
+            }
+        } else {
+            // Hide sidebar if visible
+            if (sidebarIndex !== -1) {
+                rootBox.children.splice(sidebarIndex, 1);
+                this.dockManager.render();
+            }
+        }
+    }
+
+    /**
+     * Set the active pane in the main stack
+     */
+    setActivePane(paneId: string): void {
+        const mainStack = this.findMainStack();
+        if (mainStack) {
+            mainStack.activeId = paneId;
+            this.dockManager.render();
+        }
+    }
+}

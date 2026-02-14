@@ -16,6 +16,10 @@ export interface ContextMenuItem {
 export class ContextMenu extends HTMLElement {
     private _items: ContextMenuItem[] = [];
     private menuContainer: HTMLDivElement | null = null;
+    private boundCloseHandler: () => void;
+    private boundKeydownHandler: (e: KeyboardEvent) => void;
+    private boundMenuClickHandler: (e: Event) => void;
+    private boundMenuItemClickHandler: (e: Event) => void;
 
     constructor() {
         super();
@@ -27,26 +31,55 @@ export class ContextMenu extends HTMLElement {
         `;
 
         this.menuContainer = this.shadowRoot!.querySelector('.menu-container');
+
+        // Bind event handlers
+        this.boundCloseHandler = () => this.close();
+        this.boundKeydownHandler = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && this.classList.contains('open')) {
+                this.close();
+            }
+        };
+        this.boundMenuClickHandler = (e: Event) => e.stopPropagation();
+        this.boundMenuItemClickHandler = (e: Event) => {
+            const target = e.target as HTMLElement;
+            if (target.classList.contains('menu-item') && !target.classList.contains('disabled')) {
+                const itemId = target.dataset.id;
+                const item = this._items.find(i => i.id === itemId);
+                if (item?.handler) {
+                    item.handler();
+                    this.close();
+                }
+            }
+        };
+    }
+
+    connectedCallback() {
         this.setupEventListeners();
+    }
+
+    disconnectedCallback() {
+        this.removeEventListeners();
     }
 
     private setupEventListeners() {
         // Close on click outside
-        document.addEventListener('click', () => {
-            this.close();
-        });
+        document.addEventListener('click', this.boundCloseHandler);
 
         // Close on Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.classList.contains('open')) {
-                this.close();
-            }
-        });
+        document.addEventListener('keydown', this.boundKeydownHandler);
 
         // Prevent clicks inside the menu from bubbling and closing it immediately
-        this.menuContainer?.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
+        this.menuContainer?.addEventListener('click', this.boundMenuClickHandler);
+
+        // Use event delegation for menu items
+        this.menuContainer?.addEventListener('click', this.boundMenuItemClickHandler);
+    }
+
+    private removeEventListeners() {
+        document.removeEventListener('click', this.boundCloseHandler);
+        document.removeEventListener('keydown', this.boundKeydownHandler);
+        this.menuContainer?.removeEventListener('click', this.boundMenuClickHandler);
+        this.menuContainer?.removeEventListener('click', this.boundMenuItemClickHandler);
     }
 
     get items(): ContextMenuItem[] {
@@ -81,13 +114,6 @@ export class ContextMenu extends HTMLElement {
                 }
                 menuItem.textContent = item.label;
                 menuItem.dataset.id = item.id;
-
-                if (!item.disabled && item.handler) {
-                    menuItem.addEventListener('click', () => {
-                        item.handler!();
-                        this.close();
-                    });
-                }
 
                 this.menuContainer!.appendChild(menuItem);
             }

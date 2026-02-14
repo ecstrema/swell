@@ -76,7 +76,10 @@ export const loadExampleFile = async (filename: string): Promise<string> => {
   }
 
   // In web mode, fetch from public/examples
-  const response = await fetch(`/examples/${filename}`);
+  // Use BASE_URL to support deployment with a base path (e.g., GitHub Pages)
+  const basePath = import.meta.env.BASE_URL || '/';
+  const examplesPath = `${basePath}examples/${filename}`;
+  const response = await fetch(examplesPath);
   if (!response.ok) {
     throw new Error(`Failed to load example file: ${filename}`);
   }

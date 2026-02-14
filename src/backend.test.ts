@@ -69,5 +69,23 @@ describe('Backend Interface', () => {
              await backend.removeFile('file1');
              expect(wasm.remove_file).toHaveBeenCalledWith('file1');
          });
+
+         it('loadExampleFile should use correct path with BASE_URL', async () => {
+             // Mock fetch
+             const mockFetch = vi.fn().mockResolvedValue({
+                 ok: true,
+                 arrayBuffer: async () => new ArrayBuffer(100)
+             });
+             global.fetch = mockFetch;
+
+             // Mock WASM add_file_bytes
+             vi.mocked(wasm.add_file_bytes).mockReturnValue('example-file-id');
+
+             await backend.loadExampleFile('simple.vcd');
+
+             // Should use BASE_URL (default is '/')
+             expect(mockFetch).toHaveBeenCalledWith('/examples/simple.vcd');
+             expect(wasm.add_file_bytes).toHaveBeenCalledWith('simple.vcd', expect.any(Uint8Array));
+         });
     });
 });

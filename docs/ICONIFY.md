@@ -21,7 +21,7 @@ You can use Iconify icons anywhere in your HTML or TypeScript components using t
 <iconify-icon icon="mdi:home"></iconify-icon>
 
 <!-- Font Awesome -->
-<iconify-icon icon="fa:user"></iconify-icon>
+<iconify-icon icon="fa-solid:user"></iconify-icon>
 
 <!-- Bootstrap Icons -->
 <iconify-icon icon="bi:heart"></iconify-icon>
@@ -65,7 +65,7 @@ container.appendChild(icon);
 Here are some popular icon sets you can use:
 
 - **Material Design Icons**: `mdi:icon-name` (e.g., `mdi:home`, `mdi:search`, `mdi:settings`)
-- **Font Awesome**: `fa:icon-name` or `fa-solid:icon-name` (e.g., `fa:user`, `fa-brands:github`)
+- **Font Awesome**: `fa-solid:icon-name` or `fa-brands:icon-name` (e.g., `fa-solid:user`, `fa-brands:github`)
 - **Bootstrap Icons**: `bi:icon-name` (e.g., `bi:heart`, `bi:check-circle`)
 - **Heroicons**: `heroicons:icon-name` (e.g., `heroicons:home`, `heroicons:user`)
 - **Tabler Icons**: `tabler:icon-name` (e.g., `tabler:home`, `tabler:user`)

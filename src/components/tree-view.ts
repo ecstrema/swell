@@ -191,6 +191,7 @@ export class TreeView extends HTMLElement {
             div.appendChild(checkbox);
         }
 
+        // Always add text span for node name
         const textSpan = document.createElement('span');
         textSpan.textContent = node.name;
         div.appendChild(textSpan);

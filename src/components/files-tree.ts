@@ -92,9 +92,8 @@ export class FilesTree extends TreeView {
 
     set selectedSignalRefs(refs: number[]) {
         this._selectedSignalRefs = new Set(refs);
-        // Update config to trigger re-render with new checked state
-        this.updateConfig();
         // Re-render the tree to show updated checkboxes
+        // Note: This will update the config via the isChecked callback
         this.updateTreeData();
     }
 

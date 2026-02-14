@@ -209,8 +209,9 @@ export class AppMain extends HTMLElement {
         });
 
         // Listen for selected signals changes to update hierarchy tree checkboxes
-        this.addEventListener('selected-signals-changed', (e: any) => {
-            const { filename, signalRefs } = e.detail;
+        this.addEventListener('selected-signals-changed', (e: Event) => {
+            const customEvent = e as CustomEvent<{ filename: string; signalRefs: number[] }>;
+            const { filename, signalRefs } = customEvent.detail;
             // Only update if this is for the active file
             if (filename === this.fileManager.getActiveFileId()) {
                 this.hierarchyTree.selectedSignalRefs = signalRefs;

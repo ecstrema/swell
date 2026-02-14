@@ -43,7 +43,7 @@ export class ContextMenu extends HTMLElement {
                 const itemId = target.dataset.id;
                 if (itemId) {
                     // Convert to MenuItemConfig format for findAndExecuteAction
-                    const menuItems = convertContextMenuItems(this._items);
+                    const { menuItems } = convertContextMenuItems(this._items);
                     if (findAndExecuteAction(itemId, menuItems)) {
                         this.close();
                     }
@@ -104,13 +104,12 @@ export class ContextMenu extends HTMLElement {
         }
 
         // Convert ContextMenuItem format to MenuItemConfig format and use shared renderer
-        const menuItems = convertContextMenuItems(this._items);
+        const { menuItems, disabledIds } = convertContextMenuItems(this._items);
         const renderedItems = renderMenuItems(menuItems, { isSubmenu: true });
 
-        renderedItems.forEach(({ element, id, action }) => {
+        renderedItems.forEach(({ element, id }) => {
             // Apply disabled state if applicable
-            const originalItem = this._items.find(i => i.id === id);
-            if (originalItem?.disabled) {
+            if (id && disabledIds.has(id)) {
                 element.classList.add('disabled');
             }
             this.menuContainer!.appendChild(element);

@@ -127,20 +127,31 @@ export function findAndExecuteAction(
 /**
  * Converts ContextMenu-style items to MenuItemConfig format
  * This allows ContextMenu to use the unified menu API types
- * Note: Disabled state is preserved in the returned MenuItemElement objects
- * for the caller to handle appropriately
+ * Note: MenuItemConfig doesn't have a disabled field, so we return
+ * a map of disabled states for the caller to apply after rendering
  */
-export function convertContextMenuItems(items: ContextMenuItem[]): MenuItemConfig[] {
-    return items.map(item => {
+export function convertContextMenuItems(
+    items: ContextMenuItem[]
+): { menuItems: MenuItemConfig[]; disabledIds: Set<string> } {
+    const menuItems: MenuItemConfig[] = [];
+    const disabledIds = new Set<string>();
+
+    items.forEach(item => {
         if (item.separator) {
-            return {
+            menuItems.push({
                 type: 'separator' as const
-            };
+            });
+        } else {
+            menuItems.push({
+                id: item.id,
+                text: item.label,
+                action: item.handler,
+            });
+            if (item.disabled) {
+                disabledIds.add(item.id);
+            }
         }
-        return {
-            id: item.id,
-            text: item.label,
-            action: item.handler,
-        };
     });
+
+    return { menuItems, disabledIds };
 }

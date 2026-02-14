@@ -69,5 +69,28 @@ describe('Backend Interface', () => {
              await backend.removeFile('file1');
              expect(wasm.remove_file).toHaveBeenCalledWith('file1');
          });
+
+         it('loadExampleFile should use correct path with BASE_URL', async () => {
+             // Note: import.meta.env.BASE_URL is replaced by Vite at build time,
+             // so we can't mock different values in runtime tests.
+             // This test verifies the code logic; actual path replacement is verified
+             // by building with different VITE_BASE_PATH values.
+             
+             // Mock fetch
+             const mockFetch = vi.fn().mockResolvedValue({
+                 ok: true,
+                 arrayBuffer: async () => new ArrayBuffer(100)
+             });
+             global.fetch = mockFetch;
+
+             // Mock WASM add_file_bytes
+             vi.mocked(wasm.add_file_bytes).mockReturnValue('example-file-id');
+
+             await backend.loadExampleFile('simple.vcd');
+
+             // Should use BASE_URL (default is '/')
+             expect(mockFetch).toHaveBeenCalledWith('/examples/simple.vcd');
+             expect(wasm.add_file_bytes).toHaveBeenCalledWith('simple.vcd', expect.any(Uint8Array));
+         });
     });
 });

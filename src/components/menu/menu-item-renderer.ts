@@ -9,6 +9,7 @@ export interface MenuItemElement {
     element: HTMLElement;
     id?: string;
     action?: () => void;
+    disabled?: boolean;
 }
 
 /**
@@ -77,7 +78,8 @@ export function renderMenuItems(
             const menuItem = item as MenuItemConfig;
             const menuItemElement = document.createElement('div');
             menuItemElement.className = 'menu-item';
-            menuItemElement.textContent = menuItem.text || '';
+            // Use text or fallback to empty string (separators handled above)
+            menuItemElement.textContent = menuItem.text ?? '';
             
             if (menuItem.id) {
                 menuItemElement.dataset.id = menuItem.id;
@@ -125,6 +127,8 @@ export function findAndExecuteAction(
 /**
  * Converts ContextMenu-style items to MenuItemConfig format
  * This allows ContextMenu to use the unified menu API types
+ * Note: Disabled state is preserved in the returned MenuItemElement objects
+ * for the caller to handle appropriately
  */
 export function convertContextMenuItems(items: ContextMenuItem[]): MenuItemConfig[] {
     return items.map(item => {
@@ -137,8 +141,6 @@ export function convertContextMenuItems(items: ContextMenuItem[]): MenuItemConfi
             id: item.id,
             text: item.label,
             action: item.handler,
-            // Store disabled state in a way that can be used during rendering
-            // We'll handle this in the ContextMenu component
         };
     });
 }

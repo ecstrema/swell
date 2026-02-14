@@ -111,7 +111,7 @@ describe('FileDisplay Component', () => {
     
     // Canvas should have dimensions set
     if (canvas) {
-      expect(canvas.height).toBe(100);
+      expect(canvas.height).toBe(40);
       // Width should be set (either to clientWidth or fallback to 800)
       expect(canvas.width).toBeGreaterThan(0);
     }

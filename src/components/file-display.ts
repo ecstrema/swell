@@ -171,7 +171,7 @@ export class FileDisplay extends HTMLElement {
     const canvas = document.createElement('canvas');
     // Set a reasonable default width - will be updated after render
     canvas.width = 800;
-    canvas.height = 100;
+    canvas.height = 40;
 
     this.selectedSignals.push({ name, ref, canvas, isTimeline: false });
     

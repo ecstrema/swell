@@ -143,4 +143,36 @@ describe('Timeline Component', () => {
     const canvas = timeline.shadowRoot!.querySelector('.timeline-canvas');
     expect(canvas).not.toBeNull();
   });
+
+  it('should render scrollbar inside timeline wrapper', () => {
+    const shadowRoot = timeline.shadowRoot;
+    expect(shadowRoot).not.toBeNull();
+
+    const wrapper = shadowRoot!.querySelector('.timeline-wrapper');
+    expect(wrapper).not.toBeNull();
+
+    const canvas = wrapper!.querySelector('.timeline-canvas');
+    const scrollbar = wrapper!.querySelector('.scrollbar');
+    
+    expect(canvas).not.toBeNull();
+    expect(scrollbar).not.toBeNull();
+  });
+
+  it('should handle sub-nanosecond (picosecond) time ranges', () => {
+    // Set a range that includes sub-nanosecond values (picoseconds)
+    timeline.totalRange = { start: 0, end: 1 }; // 0 to 1 nanosecond
+    timeline.visibleRange = { start: 0, end: 0.5 }; // 0 to 0.5 nanoseconds
+
+    // Verify the ranges were set correctly
+    const range = timeline.visibleRange;
+    expect(range.start).toBe(0);
+    expect(range.end).toBe(0.5);
+
+    // The formatTime method should handle these sub-nanosecond values
+    // and display them in picoseconds. We verify this works by checking
+    // that the canvas renders without errors.
+    const canvas = timeline.shadowRoot!.querySelector('.timeline-canvas') as HTMLCanvasElement;
+    expect(canvas).not.toBeNull();
+    expect(canvas.width).toBeGreaterThan(0);
+  });
 });

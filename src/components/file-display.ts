@@ -375,9 +375,6 @@ export class FileDisplay extends HTMLElement {
     if (!this.shadowRoot) return;
 
     this.shadowRoot.innerHTML = `
-      <div class="file-header">
-        Current File: <strong>${this._filename}</strong>
-      </div>
       <div class="display-container">
         <div id="signals-tree-container" class="signals-tree-container"></div>
         <div class="waveforms-container" id="waveforms-container">

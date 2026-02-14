@@ -12,9 +12,6 @@ export class Timeline extends HTMLElement {
   private _totalEndTime: number = 1000000;
   private canvas: HTMLCanvasElement | null = null;
   private scrollbarThumb: HTMLElement | null = null;
-  private zoomInBtn: HTMLElement | null = null;
-  private zoomOutBtn: HTMLElement | null = null;
-  private zoomFitBtn: HTMLElement | null = null;
   private isDragging = false;
   private dragStartX = 0;
   private dragStartScrollLeft = 0;
@@ -23,9 +20,6 @@ export class Timeline extends HTMLElement {
   private boundHandleScrollbarMouseMove: (e: MouseEvent) => void;
   private boundHandleScrollbarMouseUp: () => void;
   private boundHandleWheel: (e: WheelEvent) => void;
-  private boundZoomIn: () => void;
-  private boundZoomOut: () => void;
-  private boundZoomToFit: () => void;
   private resizeObserver: ResizeObserver | null = null;
 
   constructor() {
@@ -37,9 +31,6 @@ export class Timeline extends HTMLElement {
     this.boundHandleScrollbarMouseMove = this.handleScrollbarMouseMove.bind(this);
     this.boundHandleScrollbarMouseUp = this.handleScrollbarMouseUp.bind(this);
     this.boundHandleWheel = this.handleWheel.bind(this);
-    this.boundZoomIn = () => this.zoomIn();
-    this.boundZoomOut = () => this.zoomOut();
-    this.boundZoomToFit = () => this.zoomToFit();
   }
 
   connectedCallback() {
@@ -207,17 +198,10 @@ export class Timeline extends HTMLElement {
   private render() {
     this.shadowRoot!.innerHTML = `
       <div class="timeline-container">
-        <div class="timeline-controls">
-          <button id="zoom-in-btn" title="Zoom In">+</button>
-          <button id="zoom-out-btn" title="Zoom Out">−</button>
-          <button id="zoom-fit-btn" title="Zoom to Fit">⟷</button>
-        </div>
-        <div class="timeline-wrapper">
-          <canvas class="timeline-canvas"></canvas>
-          <div class="scrollbar">
-            <div class="scrollbar-track">
-              <div class="scrollbar-thumb"></div>
-            </div>
+        <canvas class="timeline-canvas"></canvas>
+        <div class="scrollbar">
+          <div class="scrollbar-track">
+            <div class="scrollbar-thumb"></div>
           </div>
         </div>
       </div>
@@ -240,15 +224,6 @@ export class Timeline extends HTMLElement {
   }
 
   private setupEventListeners() {
-    // Zoom buttons
-    this.zoomInBtn = this.shadowRoot!.querySelector('#zoom-in-btn');
-    this.zoomOutBtn = this.shadowRoot!.querySelector('#zoom-out-btn');
-    this.zoomFitBtn = this.shadowRoot!.querySelector('#zoom-fit-btn');
-    
-    this.zoomInBtn?.addEventListener('click', this.boundZoomIn);
-    this.zoomOutBtn?.addEventListener('click', this.boundZoomOut);
-    this.zoomFitBtn?.addEventListener('click', this.boundZoomToFit);
-    
     // Scrollbar dragging
     if (this.scrollbarThumb) {
       this.scrollbarThumb.addEventListener('mousedown', this.boundHandleScrollbarMouseDown);
@@ -273,11 +248,6 @@ export class Timeline extends HTMLElement {
   }
 
   private removeEventListeners() {
-    // Remove zoom button listeners
-    this.zoomInBtn?.removeEventListener('click', this.boundZoomIn);
-    this.zoomOutBtn?.removeEventListener('click', this.boundZoomOut);
-    this.zoomFitBtn?.removeEventListener('click', this.boundZoomToFit);
-    
     // Remove scrollbar listeners
     if (this.scrollbarThumb) {
       this.scrollbarThumb.removeEventListener('mousedown', this.boundHandleScrollbarMouseDown);

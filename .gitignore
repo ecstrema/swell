@@ -30,3 +30,6 @@ test-*.html
 timeline-demo.html
 visual-demo.html
 dist-test/
+
+# Downloaded tools
+wasm-pack-*/

@@ -21,6 +21,7 @@ export class FileDisplay extends HTMLElement {
   private signalsContainer: HTMLDivElement | null = null;
   private selectedSignalsTree: SelectedSignalsTree;
   private boundHandleSignalSelect: (event: Event) => void;
+  private boundHandleCheckboxToggle: (event: Event) => void;
   private boundHandleRangeChanged: (event: Event) => void;
   private boundHandleZoomCommand: (event: Event) => void;
   private boundHandleAddTimeline: () => void;
@@ -34,6 +35,7 @@ export class FileDisplay extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this.boundHandleSignalSelect = this.handleSignalSelect.bind(this);
+    this.boundHandleCheckboxToggle = this.handleCheckboxToggle.bind(this);
     this.boundHandleRangeChanged = this.handleRangeChanged.bind(this);
     this.boundHandleZoomCommand = this.handleZoomCommand.bind(this);
     this.boundHandleAddTimeline = this.handleAddTimeline.bind(this);
@@ -62,6 +64,9 @@ export class FileDisplay extends HTMLElement {
     // Listen for signal selection events
     document.addEventListener('signal-select', this.boundHandleSignalSelect);
     
+    // Listen for checkbox toggle events
+    document.addEventListener('checkbox-toggle', this.boundHandleCheckboxToggle);
+    
     // Listen for timeline range changes
     this.addEventListener('range-changed', this.boundHandleRangeChanged);
     
@@ -80,6 +85,7 @@ export class FileDisplay extends HTMLElement {
 
   disconnectedCallback() {
     document.removeEventListener('signal-select', this.boundHandleSignalSelect);
+    document.removeEventListener('checkbox-toggle', this.boundHandleCheckboxToggle);
     this.removeEventListener('range-changed', this.boundHandleRangeChanged);
     this.removeEventListener('zoom-command', this.boundHandleZoomCommand);
     
@@ -182,6 +188,61 @@ export class FileDisplay extends HTMLElement {
 
     // Paint the signal after the canvas is properly sized in the DOM
     this.setupAndPaintCanvas(canvas, ref);
+  }
+
+  private handleCheckboxToggle(event: Event) {
+    const customEvent = event as CustomEvent;
+    const { name, ref, filename, checked } = customEvent.detail;
+
+    // Only handle events for this file - signals are independent per file
+    if (filename !== this._filename) {
+      return;
+    }
+
+    if (checked) {
+      // Add signal if checked
+      // Check if signal is already selected
+      if (this.selectedSignals.some(s => s.ref === ref)) {
+        return;
+      }
+
+      // Create a new canvas for this signal
+      const canvas = document.createElement('canvas');
+      // Set a reasonable default width - will be updated after render
+      canvas.width = 800;
+      canvas.height = 40;
+
+      this.selectedSignals.push({ name, ref, canvas, isTimeline: false });
+      
+      // Update the selected signals tree
+      this.updateSelectedSignalsTree();
+      
+      this.render();
+
+      // Paint the signal after the canvas is properly sized in the DOM
+      this.setupAndPaintCanvas(canvas, ref);
+    } else {
+      // Remove signal if unchecked
+      this.removeSignal(ref);
+    }
+  }
+
+  private removeSignal(ref: number) {
+    // Find the signal to remove
+    const signalIndex = this.selectedSignals.findIndex(s => s.ref === ref);
+    
+    if (signalIndex === -1) {
+      return;
+    }
+
+    // Remove the signal
+    this.selectedSignals.splice(signalIndex, 1);
+    
+    // Update the selected signals tree
+    this.updateSelectedSignalsTree();
+    
+    // Re-render to update the display
+    this.render();
   }
 
   private updateSelectedSignalsTree() {

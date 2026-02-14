@@ -260,8 +260,11 @@ import HeartIcon from '~icons/mdi/heart?raw';
 
 const icon = document.createElement('span');
 icon.innerHTML = HeartIcon;
-icon.querySelector('svg').style.width = '32px';
-icon.querySelector('svg').style.height = '32px';
+const svg = icon.querySelector('svg');
+if (svg) {
+  svg.style.width = '32px';
+  svg.style.height = '32px';
+}
     </div>
   </div>
 
@@ -276,7 +279,10 @@ import StarIcon from '~icons/mdi/star?raw';
 
 const icon = document.createElement('span');
 icon.innerHTML = StarIcon;
-icon.querySelector('svg').style.color = '#f39c12';
+const svg = icon.querySelector('svg');
+if (svg) {
+  svg.style.color = '#f39c12';
+}
     </div>
   </div>
 

@@ -19,6 +19,12 @@ describe('Iconify Integration', () => {
     expect(typeof HomeIcon).toBe('string');
     expect(HomeIcon).toContain('<svg');
     expect(HomeIcon).toContain('</svg>');
+    
+    // Verify SVG has expected attributes
+    expect(HomeIcon).toMatch(/viewBox="[^"]+"/);
+    
+    // Verify it contains path/shape data (actual icon content)
+    expect(HomeIcon).toMatch(/<path|<circle|<rect|<polygon/);
   });
 
   it('should allow using icons as innerHTML', async () => {

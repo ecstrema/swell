@@ -280,4 +280,44 @@ describe('FileDisplay Component', () => {
     expect(element.getSelectedSignalRefs()).not.toContain(1);
     expect(element.getSelectedSignalRefs()).toContain(2);
   });
+
+  it('should render canvases directly without wrapper divs', async () => {
+    element.filename = 'test.vcd';
+    
+    // Add a signal
+    const event = new CustomEvent('signal-select', {
+      detail: {
+        name: 'test_signal',
+        ref: 1,
+        filename: 'test.vcd'
+      }
+    });
+    
+    document.dispatchEvent(event);
+    
+    // Wait for requestAnimationFrame to complete
+    await new Promise(resolve => requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve(undefined));
+    }));
+    
+    const shadowRoot = element.shadowRoot;
+    expect(shadowRoot).toBeTruthy();
+    
+    const waveformsContainer = shadowRoot?.querySelector('.waveforms-container');
+    expect(waveformsContainer).toBeTruthy();
+    
+    // Check that children are canvas and timeline elements directly, not wrapped in divs
+    const directChildren = waveformsContainer?.children;
+    expect(directChildren).toBeTruthy();
+    
+    // First child should be the default timeline
+    expect(directChildren?.[0]?.tagName.toLowerCase()).toBe('timeline-view');
+    
+    // Second child should be the canvas for the signal we added
+    expect(directChildren?.[1]?.tagName.toLowerCase()).toBe('canvas');
+    
+    // There should be no wrapper divs with class 'signal-item'
+    const signalItems = shadowRoot?.querySelectorAll('.signal-item');
+    expect(signalItems?.length).toBe(0);
+  });
 });

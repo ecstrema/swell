@@ -21,6 +21,11 @@
       "description": "Undo last action"
     },
     {
+      "shortcut": "Ctrl+Shift+Z",
+      "commandId": "edit-redo",
+      "description": "Redo last action"
+    },
+    {
       "shortcut": "Ctrl+=",
       "commandId": "view-zoom-in",
       "description": "Zoom in"

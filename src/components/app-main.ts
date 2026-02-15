@@ -3,9 +3,11 @@ import "./menu/menu-bar.ts";
 import "./files-tree.ts";
 import "./settings-page.ts";
 import "./about-pane.ts";
+import "./undo-tree-panel.ts";
 import { FilesTree } from "./files-tree.ts";
 import { SettingsPage } from "./settings-page.js";
 import { AboutPane } from "./about-pane.js";
+import { UndoTreePanel } from "./undo-tree-panel.js";
 import { themeManager } from "../theme-manager.js";
 import { DockManager } from "./docking/dock-manager.js";
 import { DockStack } from "./docking/types.js";
@@ -17,6 +19,8 @@ import { FileManager } from "./file-manager.js";
 import { CommandManager } from "./command-manager.js";
 import { DockLayoutHelper } from "./dock-layout-helper.js";
 import { PaneManager } from "./pane-manager.js";
+import { UndoManager } from "../undo/undo-manager.js";
+import { UndoableOperation } from "../undo/undo-tree.js";
 
 
 
@@ -27,6 +31,7 @@ export class AppMain extends HTMLElement {
     private commandManager: CommandManager;
     private dockLayoutHelper: DockLayoutHelper;
     private paneManager: PaneManager;
+    private undoManager: UndoManager;
 
     // Docking system
     private dockManager: DockManager;
@@ -34,6 +39,7 @@ export class AppMain extends HTMLElement {
     private fileViewContainer: HTMLElement;
     private settingsPage!: SettingsPage;
     private aboutPane!: AboutPane;
+    private undoTreePanel!: UndoTreePanel;
 
     constructor() {
         super();
@@ -41,6 +47,7 @@ export class AppMain extends HTMLElement {
         // Initialize managers
         this.fileManager = new FileManager();
         this.commandManager = new CommandManager();
+        this.undoManager = new UndoManager();
 
         this.attachShadow({ mode: 'open' });
         this.shadowRoot!.adoptedStyleSheets = [css(appMainCss)];
@@ -68,6 +75,10 @@ export class AppMain extends HTMLElement {
         this.settingsPage = new SettingsPage();
         this.settingsPage.id = 'settings-panel';
 
+        this.undoTreePanel = new UndoTreePanel();
+        this.undoTreePanel.id = 'undo-tree-panel';
+        this.undoTreePanel.setUndoTree(this.undoManager.getUndoTree());
+
         this.fileViewContainer = document.createElement('div');
         this.fileViewContainer.className = 'dockable-content';
         this.fileViewContainer.innerHTML = `
@@ -88,6 +99,7 @@ export class AppMain extends HTMLElement {
         this.dockManager.registerContent('file-view', () => this.fileViewContainer);
         this.dockManager.registerContent('settings', () => this.settingsPage);
         this.dockManager.registerContent('about', () => this.aboutPane);
+        this.dockManager.registerContent('undo-tree', () => this.undoTreePanel);
 
         // Set initial layout
         this.dockManager.layout = {
@@ -139,6 +151,9 @@ export class AppMain extends HTMLElement {
         // Initialize about pane
         this.initializeAboutPane();
 
+        // Add demo undo tree command
+        this.initializeDemoUndoTree();
+
         // Listeners
         this.addEventListener('file-open-request', () => this.handleFileOpen());
 
@@ -162,6 +177,17 @@ export class AppMain extends HTMLElement {
         // Listen for about open request
         this.addEventListener('about-open-request', () => {
             this.activateAboutPane();
+        });
+
+        // Listen for undo tree panel open request
+        this.addEventListener('undo-tree-open-request', () => {
+            this.activateUndoTreePane();
+        });
+
+        // Listen for undo tree node selection
+        this.addEventListener('node-select', (e: Event) => {
+            const customEvent = e as CustomEvent<{ nodeId: string }>;
+            this.undoManager.navigateTo(customEvent.detail.nodeId);
         });
 
         // Listen for setting changes to update theme
@@ -250,8 +276,10 @@ export class AppMain extends HTMLElement {
                 }
             },
             onEditUndo: () => {
-                console.log('Undo action triggered');
-                // Undo logic could be added here
+                this.undoManager.undo();
+            },
+            onEditRedo: () => {
+                this.undoManager.redo();
             },
             onZoomIn: () => {
                 // Dispatch zoom-in event for the active file display
@@ -266,6 +294,11 @@ export class AppMain extends HTMLElement {
                 this.dispatchZoomCommand('zoom-fit');
             }
         });
+
+        // Set up undo manager change listener to update the panel
+        this.undoManager.setOnChange(() => {
+            this.undoTreePanel.refresh();
+        });
     }
 
     /**
@@ -273,6 +306,70 @@ export class AppMain extends HTMLElement {
      */
     private initializeAboutPane() {
         this.aboutPane = new AboutPane();
+    }
+
+    /**
+     * Initialize demo undo tree with sample data
+     * This demonstrates the branching undo functionality
+     */
+    private initializeDemoUndoTree() {
+        // Register a command to populate demo data
+        this.commandManager.getCommandRegistry().register({
+            id: 'view-undo-tree',
+            label: 'View Undo History',
+            handler: () => {
+                // Populate with demo data if empty
+                if (this.undoManager.getUndoTree().size() === 0) {
+                    this.populateDemoUndoTree();
+                }
+                this.activateUndoTreePane();
+            }
+        });
+    }
+
+    /**
+     * Populate the undo tree with demo data to show branching
+     */
+    private populateDemoUndoTree() {
+        // Create demo operations that track state changes
+        let demoState = { step: 0, value: 'Empty' };
+
+        // Helper to create demo operations
+        const createDemoOperation = (newStep: number, newValue: string, description: string): UndoableOperation => {
+            const oldStep = demoState.step;
+            const oldValue = demoState.value;
+            
+            return {
+                do: () => {
+                    demoState = { step: newStep, value: newValue };
+                    console.log(`Do: ${description}`, demoState);
+                },
+                undo: () => {
+                    demoState = { step: oldStep, value: oldValue };
+                    console.log(`Undo: ${description}`, demoState);
+                },
+                redo: () => {
+                    demoState = { step: newStep, value: newValue };
+                    console.log(`Redo: ${description}`, demoState);
+                },
+                getDescription: () => description
+            };
+        };
+
+        // Create initial states
+        this.undoManager.execute(createDemoOperation(1, 'Initial state', 'Initial state'));
+        this.undoManager.execute(createDemoOperation(2, 'Added signal A', 'Add signal A'));
+        this.undoManager.execute(createDemoOperation(3, 'Modified signal A', 'Modify signal A'));
+        
+        // Create a branch
+        this.undoManager.undo();
+        this.undoManager.execute(createDemoOperation(4, 'Added signal B', 'Add signal B'));
+        
+        // Create another branch
+        this.undoManager.undo();
+        this.undoManager.execute(createDemoOperation(5, 'Removed signal A', 'Remove signal A'));
+        
+        console.log('Demo undo tree populated with branching structure');
     }
 
     async refreshFiles() {
@@ -379,6 +476,18 @@ export class AppMain extends HTMLElement {
 
     activateAboutPane() {
         this.paneManager.activatePane('about-pane', 'About', 'about', true);
+    }
+
+    activateUndoTreePane() {
+        this.paneManager.activatePane('undo-tree-pane', 'Undo History', 'undo-tree', true);
+    }
+
+    /**
+     * Execute an undoable operation
+     * This is the public API for other parts of the app to record operations
+     */
+    executeOperation(operation: UndoableOperation) {
+        this.undoManager.execute(operation);
     }
 
     /**

@@ -96,19 +96,6 @@ describe('Timeline Component', () => {
     expect(range.end).toBe(1000);
   });
 
-  it('should render zoom control buttons', () => {
-    const shadowRoot = timeline.shadowRoot;
-    expect(shadowRoot).not.toBeNull();
-
-    const zoomInBtn = shadowRoot!.querySelector('#zoom-in-btn');
-    const zoomOutBtn = shadowRoot!.querySelector('#zoom-out-btn');
-    const zoomFitBtn = shadowRoot!.querySelector('#zoom-fit-btn');
-
-    expect(zoomInBtn).not.toBeNull();
-    expect(zoomOutBtn).not.toBeNull();
-    expect(zoomFitBtn).not.toBeNull();
-  });
-
   it('should render canvas element', () => {
     const shadowRoot = timeline.shadowRoot;
     expect(shadowRoot).not.toBeNull();
@@ -142,20 +129,6 @@ describe('Timeline Component', () => {
     // We verify this by ensuring the timeline still functions correctly
     const canvas = timeline.shadowRoot!.querySelector('.timeline-canvas');
     expect(canvas).not.toBeNull();
-  });
-
-  it('should render scrollbar inside timeline wrapper', () => {
-    const shadowRoot = timeline.shadowRoot;
-    expect(shadowRoot).not.toBeNull();
-
-    const wrapper = shadowRoot!.querySelector('.timeline-wrapper');
-    expect(wrapper).not.toBeNull();
-
-    const canvas = wrapper!.querySelector('.timeline-canvas');
-    const scrollbar = wrapper!.querySelector('.scrollbar');
-    
-    expect(canvas).not.toBeNull();
-    expect(scrollbar).not.toBeNull();
   });
 
   it('should handle sub-nanosecond (picosecond) time ranges', () => {

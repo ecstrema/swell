@@ -152,8 +152,31 @@ describe('FilesTree Component', () => {
     expect(refs).toEqual([1, 2, 3]);
   });
 
+  it('should have filtering enabled by default', () => {
+    const hierarchy: HierarchyRoot = {
+      name: 'top',
+      ref: 0,
+      vars: [
+        { name: 'signal_a', ref: 1 },
+        { name: 'signal_b', ref: 2 }
+      ],
+      scopes: []
+    };
+    
+    element.hierarchyData = hierarchy;
+    
+    const shadowRoot = element.shadowRoot;
+    
+    // Check filter input is visible by default
+    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
+    expect(filterInput).toBeTruthy();
+    const filterContainer = shadowRoot?.querySelector('.filter-container') as HTMLElement;
+    expect(filterContainer.style.display).not.toBe('none');
+  });
+
   it('should support filtering when enabled in config', () => {
-    // First, enable filtering by updating the config
+    // Note: Filtering is now enabled by default, but this test
+    // explicitly sets the config to demonstrate backward compatibility
     element.config = {
       ...element.config,
       showFilter: true

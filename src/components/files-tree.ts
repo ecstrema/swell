@@ -63,6 +63,7 @@ export class FilesTree extends TreeView {
             leafNodeClass: 'var-node',
             scopeNodeClass: 'tree-node',
             showCheckboxes: true,
+            showFilter: true,
             isChecked: (node: TreeNode) => {
                 return this._selectedSignalRefs.has(node.id as number);
             }

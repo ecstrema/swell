@@ -1,9 +1,10 @@
-import { getSignalChanges, SignalChange } from '../backend.js';
+import { getSignalChanges, SignalChange, getHierarchy } from '../backend.js';
 import { css } from '../utils/css-utils.js';
 import { scrollbarSheet } from '../styles/shared-sheets.js';
 import fileDisplayCss from './file-display.css?inline';
 import { SelectedSignalsTree } from './selected-signals-tree.js';
 import { Timeline } from './timeline.js';
+import { saveFileState, loadFileState, FileState } from '../utils/file-state-storage.js';
 import './selected-signals-tree.js';
 import './timeline.js';
 import './resizable-panel.js';
@@ -32,6 +33,8 @@ export class FileDisplay extends HTMLElement {
   private timeRangeInitialized: boolean = false;
   private timelineCounter: number = 0;
   private resizeObserver: ResizeObserver | null = null;
+  private saveStateTimeout: number | null = null;
+  private stateRestored: boolean = false;
 
   constructor() {
     super();
@@ -87,6 +90,9 @@ export class FileDisplay extends HTMLElement {
     
     // Observe the file display element itself for size changes
     this.resizeObserver.observe(this);
+    
+    // Restore saved state for this file
+    this.restoreFileState();
   }
 
   disconnectedCallback() {
@@ -101,6 +107,15 @@ export class FileDisplay extends HTMLElement {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
     }
+    
+    // Save state before disconnecting
+    this.saveCurrentState();
+    
+    // Clear any pending save timeout
+    if (this.saveStateTimeout !== null) {
+      clearTimeout(this.saveStateTimeout);
+      this.saveStateTimeout = null;
+    }
   }
 
   private handleRangeChanged(event: Event) {
@@ -114,6 +129,9 @@ export class FileDisplay extends HTMLElement {
         signal.timeline.visibleRange = { start, end };
       }
     });
+    
+    // Save state after range changes
+    this.debouncedSaveState();
   }
 
   private handleZoomCommand(event: Event) {
@@ -159,6 +177,9 @@ export class FileDisplay extends HTMLElement {
     });
     
     this.updateSelectedSignalsTree();
+    
+    // Save state after adding timeline
+    this.debouncedSaveState();
   }
 
   private handleAddTimeline() {
@@ -175,6 +196,9 @@ export class FileDisplay extends HTMLElement {
     
     // Re-render the waveforms in the new order
     this.render();
+    
+    // Save state after reordering
+    this.debouncedSaveState();
   }
 
   private handleSignalSelect(event: Event) {
@@ -226,6 +250,9 @@ export class FileDisplay extends HTMLElement {
 
     // Paint the signal after the canvas is properly sized in the DOM
     this.setupAndPaintCanvas(canvas, ref);
+    
+    // Save state after adding signal
+    this.debouncedSaveState();
   }
 
   private removeSignal(ref: number) {
@@ -244,6 +271,9 @@ export class FileDisplay extends HTMLElement {
     
     // Re-render to update the display
     this.render();
+    
+    // Save state after removing signal
+    this.debouncedSaveState();
   }
 
   private updateSelectedSignalsTree() {
@@ -432,6 +462,132 @@ export class FileDisplay extends HTMLElement {
       .filter(signal => !signal.isTimeline)
       .map(signal => signal.ref);
   }
+
+  /**
+   * Save the current file state (debounced to avoid excessive saves)
+   */
+  private debouncedSaveState() {
+    // Clear any existing timeout
+    if (this.saveStateTimeout !== null) {
+      clearTimeout(this.saveStateTimeout);
+    }
+    
+    // Set a new timeout to save after 500ms of inactivity
+    this.saveStateTimeout = window.setTimeout(() => {
+      this.saveCurrentState();
+      this.saveStateTimeout = null;
+    }, 500);
+  }
+
+  /**
+   * Save the current state immediately
+   */
+  private saveCurrentState() {
+    if (!this._filename) return;
+    
+    const state: FileState = {
+      selectedSignalRefs: this.selectedSignals.map(s => s.ref),
+      selectedSignalNames: this.selectedSignals.map(s => s.name),
+      visibleStart: this.visibleStart,
+      visibleEnd: this.visibleEnd,
+      timelineCount: this.timelineCounter,
+      timestamp: Date.now()
+    };
+    
+    saveFileState(this._filename, state).catch(err => {
+      console.error('Failed to save file state:', err);
+    });
+  }
+
+  /**
+   * Restore the file state from storage
+   */
+  private async restoreFileState() {
+    if (!this._filename || this.stateRestored) return;
+    
+    try {
+      const state = await loadFileState(this._filename);
+      if (!state) {
+        // No saved state for this file
+        return;
+      }
+      
+      console.log(`Restoring state for ${this._filename}:`, state);
+      
+      // Mark as restored to prevent multiple restorations
+      this.stateRestored = true;
+      
+      // Restore timeline count
+      // We start with 1 timeline by default, so add more if needed
+      const additionalTimelines = state.timelineCount - 1;
+      for (let i = 0; i < additionalTimelines; i++) {
+        this.addTimelineSignal();
+      }
+      
+      // Restore visible range if it was initialized
+      if (state.visibleStart !== 0 || state.visibleEnd !== 1000000) {
+        this.visibleStart = state.visibleStart;
+        this.visibleEnd = state.visibleEnd;
+        this.timeRangeInitialized = true;
+        
+        // Update all timeline signals with the restored range
+        this.selectedSignals.forEach(signal => {
+          if (signal.isTimeline && signal.timeline) {
+            signal.timeline.totalRange = { start: this.visibleStart, end: this.visibleEnd };
+            signal.timeline.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
+          }
+        });
+      }
+      
+      // Restore selected signals (excluding timelines - they have negative refs)
+      // We need to load the hierarchy to get signal names
+      const hierarchy = await getHierarchy(this._filename);
+      if (!hierarchy) {
+        console.warn('Could not load hierarchy to restore signals');
+        return;
+      }
+      
+      // Helper to find signals by ref in the hierarchy
+      const findSignalByRef = (node: any, targetRef: number): { name: string; ref: number } | null => {
+        if (node.var_ref === targetRef) {
+          return { name: node.name, ref: targetRef };
+        }
+        if (node.children) {
+          for (const child of node.children) {
+            const found = findSignalByRef(child, targetRef);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      
+      // Restore signals (positive refs only, not timelines)
+      const signalRefsToRestore = state.selectedSignalRefs.filter(ref => ref > 0);
+      for (let i = 0; i < signalRefsToRestore.length; i++) {
+        const ref = signalRefsToRestore[i];
+        // Try to use saved name first, otherwise search hierarchy
+        let name = state.selectedSignalNames[i];
+        
+        if (!name) {
+          // Search hierarchy for the signal
+          const found = findSignalByRef(hierarchy, ref);
+          if (found) {
+            name = found.name;
+          } else {
+            console.warn(`Could not find signal with ref ${ref} in hierarchy`);
+            continue;
+          }
+        }
+        
+        this.addSignal(name, ref);
+      }
+      
+      this.render();
+    } catch (err) {
+      console.error('Failed to restore file state:', err);
+    }
+  }
+
 
   private render() {
     if (!this.shadowRoot) return;

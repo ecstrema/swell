@@ -84,10 +84,10 @@ export class Resizer extends HTMLElement {
         }));
     }
 
-    private onMouseUp() {
+    private onMouseUp(e: MouseEvent) {
         const currentPos = this.direction === 'horizontal' ? 
-            (event as MouseEvent).clientX : 
-            (event as MouseEvent).clientY;
+            e.clientX : 
+            e.clientY;
         const totalDelta = currentPos - this.startPos;
         
         // Clean up

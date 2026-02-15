@@ -2,6 +2,7 @@ import { css } from "../utils/css-utils.js";
 import contextMenuCss from "./context-menu.css?inline";
 import { MenuItemConfig } from "../menu-api.js";
 import { renderMenuItems, findAndExecuteAction, ContextMenuItem, convertContextMenuItems } from "./menu/menu-item-renderer.js";
+import { getShortcutStyles } from "../shortcuts/shortcut-icons.js";
 
 // Re-export for backward compatibility
 export type { ContextMenuItem };
@@ -23,7 +24,8 @@ export class ContextMenu extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        this.shadowRoot!.adoptedStyleSheets = [css(contextMenuCss)];
+        const contextMenuStyleSheet = css(contextMenuCss + '\n' + getShortcutStyles());
+        this.shadowRoot!.adoptedStyleSheets = [contextMenuStyleSheet];
 
         this.shadowRoot!.innerHTML = `
             <div class="menu-container"></div>

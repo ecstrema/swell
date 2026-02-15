@@ -45,6 +45,20 @@
     border-bottom: 1px solid var(--color-border-subtle, #f0f0f0);
     user-select: none;
     transition: background-color 0.1s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.menu-item-text {
+    flex: 1;
+}
+
+.menu-item-shortcut {
+    margin-left: auto;
+    opacity: 0.7;
+    font-size: 0.9em;
 }
 
 .menu-item:last-child {

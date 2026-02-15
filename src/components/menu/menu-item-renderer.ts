@@ -24,6 +24,7 @@ export interface ContextMenuItem {
     label: string;
     disabled?: boolean;
     separator?: boolean;
+    shortcut?: string; // e.g., "Ctrl+C", "Cmd+V"
     handler?: () => void;
 }
 
@@ -169,6 +170,7 @@ export function convertContextMenuItems(
                 id: item.id,
                 text: item.label,
                 action: item.handler,
+                shortcut: item.shortcut,
             });
             if (item.disabled) {
                 disabledIds.add(item.id);

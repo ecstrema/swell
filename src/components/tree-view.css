@@ -119,3 +119,49 @@ details[open] > summary::before {
     font-family: var(--font-family, sans-serif);
     font-style: italic;
 }
+
+/* Icon button container and buttons */
+.icon-button-container {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.tree-icon-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 3px;
+    color: var(--color-text-muted);
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.tree-icon-button:hover {
+    background-color: var(--color-bg-hover);
+    color: var(--color-text);
+}
+
+.tree-icon-button:active {
+    background-color: var(--color-bg-active, var(--color-bg-hover));
+}
+
+.tree-icon-button svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+
+/* Summary content wrapper for branch nodes */
+.summary-content {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+}

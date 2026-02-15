@@ -9,6 +9,16 @@ import { ShortcutManager } from "../../shortcuts/index.js";
 export class MenuBar extends HTMLElement {
   private menuConfig: MenuConfig | null = null;
   private shortcutManager: ShortcutManager | null = null;
+  
+  // Map menu item IDs to command IDs for shortcut lookup
+  private readonly menuItemToCommandIdMap: Record<string, string> = {
+      'open': 'file-open',
+      'quit': 'file-quit',
+      'undo': 'edit-undo',
+      'zoom-in': 'view-zoom-in',
+      'zoom-out': 'view-zoom-out',
+      'zoom-fit': 'view-zoom-fit',
+  };
 
   constructor() {
     super();
@@ -262,16 +272,7 @@ export class MenuBar extends HTMLElement {
    * Map menu item IDs to command IDs for shortcut lookup
    */
   private mapMenuItemIdToCommandId(menuItemId: string): string | undefined {
-      // Map menu item IDs to their corresponding command IDs
-      const idMap: Record<string, string> = {
-          'open': 'file-open',
-          'quit': 'file-quit',
-          'undo': 'edit-undo',
-          'zoom-in': 'view-zoom-in',
-          'zoom-out': 'view-zoom-out',
-          'zoom-fit': 'view-zoom-fit',
-      };
-      return idMap[menuItemId];
+      return this.menuItemToCommandIdMap[menuItemId];
   }
 
   render() {

@@ -176,7 +176,7 @@ describe('FilesTree Component', () => {
 
   it('should support filtering when enabled in config', () => {
     // Note: Filtering is now enabled by default, but this test
-    // explicitly sets the config to demonstrate backward compatibility
+    // explicitly sets the config to verify it can still be configured
     element.config = {
       ...element.config,
       showFilter: true

@@ -77,11 +77,29 @@ details[open] > summary::before {
     align-items: center;
     gap: 6px;
     user-select: none;
+    position: relative;
 }
 
 .leaf-node:hover {
     background-color: var(--color-bg-hover);
     color: var(--color-text);
+}
+
+.leaf-node[draggable="true"] {
+    cursor: grab;
+}
+
+.leaf-node.dragging {
+    opacity: 0.5;
+    cursor: grabbing !important;
+}
+
+.leaf-node.drag-over-top {
+    border-top: 2px solid var(--color-accent, #007acc);
+}
+
+.leaf-node.drag-over-bottom {
+    border-bottom: 2px solid var(--color-accent, #007acc);
 }
 
 .leaf-checkbox {

@@ -4,7 +4,7 @@ import { scrollbarSheet } from '../styles/shared-sheets.js';
 import fileDisplayCss from './file-display.css?inline';
 import { SelectedSignalsTree } from './selected-signals-tree.js';
 import { Timeline } from './timeline.js';
-import { saveFileState, loadFileState, FileState } from '../utils/file-state-storage.js';
+import { saveFileState, loadFileState, FileState, Item, ItemSignal, ItemTimeline } from '../utils/file-state-storage.js';
 import './selected-signals-tree.js';
 import './timeline.js';
 import './resizable-panel.js';
@@ -497,12 +497,27 @@ export class FileDisplay extends HTMLElement {
   private saveCurrentState() {
     if (!this._filename) return;
     
+    // Convert selectedSignals array to Item[] format
+    const items: Item[] = this.selectedSignals.map(signal => {
+      if (signal.isTimeline) {
+        return {
+          _type: 'timeline' as const,
+          name: signal.name
+        };
+      } else {
+        return {
+          _type: 'signal' as const,
+          ref: signal.ref,
+          name: signal.name
+        };
+      }
+    });
+    
     const state: FileState = {
-      selectedSignalRefs: this.selectedSignals.map(s => s.ref),
-      selectedSignalNames: this.selectedSignals.map(s => s.name),
+      version: 'V0.1',
+      items,
       visibleStart: this.visibleStart,
       visibleEnd: this.visibleEnd,
-      timelineCount: this.timelineCounter,
       timestamp: Date.now()
     };
     
@@ -524,35 +539,25 @@ export class FileDisplay extends HTMLElement {
         return;
       }
       
+      // Check version compatibility
+      if (state.version !== 'V0.1') {
+        console.warn(`Unsupported state version: ${state.version}`);
+        return;
+      }
+      
       console.log(`Restoring state for ${this._filename}:`, state);
       
       // Mark as restored to prevent multiple restorations
       this.stateRestored = true;
-      
-      // Restore timeline count
-      // We start with 1 timeline by default, so add more if needed
-      const additionalTimelines = state.timelineCount - 1;
-      for (let i = 0; i < additionalTimelines; i++) {
-        this.addTimelineSignal();
-      }
       
       // Restore visible range if it was initialized
       if (state.visibleStart !== 0 || state.visibleEnd !== 1000000) {
         this.visibleStart = state.visibleStart;
         this.visibleEnd = state.visibleEnd;
         this.timeRangeInitialized = true;
-        
-        // Update all timeline signals with the restored range
-        this.selectedSignals.forEach(signal => {
-          if (signal.isTimeline && signal.timeline) {
-            signal.timeline.totalRange = { start: this.visibleStart, end: this.visibleEnd };
-            signal.timeline.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
-          }
-        });
       }
       
-      // Restore selected signals (excluding timelines - they have negative refs)
-      // We need to load the hierarchy to get signal names
+      // Load the hierarchy to validate signals still exist
       const hierarchy = await getHierarchy(this._filename);
       if (!hierarchy) {
         console.warn('Could not load hierarchy to restore signals');
@@ -573,25 +578,34 @@ export class FileDisplay extends HTMLElement {
         return null;
       };
       
-      // Restore signals (positive refs only, not timelines)
-      const signalRefsToRestore = state.selectedSignalRefs.filter(ref => ref > 0);
-      for (const ref of signalRefsToRestore) {
-        // Find the index in the original array to get the correct name
-        const originalIndex = state.selectedSignalRefs.indexOf(ref);
-        let name = state.selectedSignalNames[originalIndex];
-        
-        if (!name) {
-          // Search hierarchy for the signal
-          const found = findSignalByRef(hierarchy, ref);
+      // Clear the default timeline that was added in constructor
+      this.selectedSignals = [];
+      this.timelineCounter = 0;
+      
+      // Restore items from the flat list
+      for (const item of state.items) {
+        if (item._type === 'timeline') {
+          this.addTimelineSignal();
+        } else if (item._type === 'signal') {
+          // Verify signal still exists in hierarchy
+          const found = findSignalByRef(hierarchy, item.ref);
           if (found) {
-            name = found.name;
+            this.addSignal(item.name, item.ref);
           } else {
-            console.warn(`Could not find signal with ref ${ref} in hierarchy`);
-            continue;
+            console.warn(`Signal ${item.name} (ref: ${item.ref}) not found in hierarchy`);
           }
         }
-        
-        this.addSignal(name, ref);
+        // Note: ItemGroup support can be added in future when needed
+      }
+      
+      // Update all timeline signals with the restored range
+      if (this.timeRangeInitialized) {
+        this.selectedSignals.forEach(signal => {
+          if (signal.isTimeline && signal.timeline) {
+            signal.timeline.totalRange = { start: this.visibleStart, end: this.visibleEnd };
+            signal.timeline.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
+          }
+        });
       }
       
       this.render();

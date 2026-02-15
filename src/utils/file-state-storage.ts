@@ -5,19 +5,51 @@ import { isTauri } from '../backend.js';
 import { getSetting, setSetting } from '../settings/settings-storage.js';
 
 /**
+ * Item representing a signal in the waveform display
+ */
+export interface ItemSignal {
+    _type: 'signal';
+    ref: number;
+    name: string;
+    format?: 'clock' | 'binary' | 'hex' | 'ascii' | 'decimal';
+    color?: string;
+}
+
+/**
+ * Item representing a timeline in the waveform display
+ */
+export interface ItemTimeline {
+    _type: 'timeline';
+    name?: string;
+}
+
+/**
+ * Item representing a collapsible group of items
+ */
+export interface ItemGroup {
+    _type: 'group';
+    name: string;
+    items: Item[];
+    collapsed: boolean;
+}
+
+/**
+ * Union type for all possible items in the display
+ */
+export type Item = ItemSignal | ItemTimeline | ItemGroup;
+
+/**
  * State information for a single file that should be persisted
  */
 export interface FileState {
-    /** List of selected signal references (positive refs for signals, negative for timelines) */
-    selectedSignalRefs: number[];
-    /** Names of selected signals in order */
-    selectedSignalNames: string[];
+    /** Version identifier for state format */
+    version: 'V0.1';
+    /** Hierarchical list of items (signals, timelines, groups) */
+    items: Item[];
     /** Visible start time */
     visibleStart: number;
     /** Visible end time */
     visibleEnd: number;
-    /** Number of timeline instances */
-    timelineCount: number;
     /** Last update timestamp */
     timestamp: number;
 }

@@ -23,11 +23,15 @@ describe('file-state-storage', () => {
     describe('saveFileState and loadFileState', () => {
         it('should save and load file state', async () => {
             const fileState: FileState = {
-                selectedSignalRefs: [1, 2, 3],
-                selectedSignalNames: ['clk', 'reset', 'data'],
+                version: 'V0.1',
+                items: [
+                    { _type: 'timeline', name: 'Timeline 1' },
+                    { _type: 'signal', ref: 1, name: 'clk' },
+                    { _type: 'signal', ref: 2, name: 'reset' },
+                    { _type: 'signal', ref: 3, name: 'data' }
+                ],
                 visibleStart: 0,
                 visibleEnd: 1000,
-                timelineCount: 1,
                 timestamp: Date.now()
             };
 
@@ -35,20 +39,23 @@ describe('file-state-storage', () => {
             const loaded = await loadFileState('/path/to/test.vcd');
 
             expect(loaded).not.toBeNull();
-            expect(loaded?.selectedSignalRefs).toEqual([1, 2, 3]);
-            expect(loaded?.selectedSignalNames).toEqual(['clk', 'reset', 'data']);
+            expect(loaded?.items).toHaveLength(4);
+            expect(loaded?.items[0]._type).toBe('timeline');
+            expect(loaded?.items[1]._type).toBe('signal');
+            expect((loaded?.items[1] as any).ref).toBe(1);
+            expect((loaded?.items[1] as any).name).toBe('clk');
             expect(loaded?.visibleStart).toBe(0);
             expect(loaded?.visibleEnd).toBe(1000);
-            expect(loaded?.timelineCount).toBe(1);
         });
 
         it('should normalize file paths consistently', async () => {
             const fileState: FileState = {
-                selectedSignalRefs: [1],
-                selectedSignalNames: ['sig'],
+                version: 'V0.1',
+                items: [
+                    { _type: 'signal', ref: 1, name: 'sig' }
+                ],
                 visibleStart: 0,
                 visibleEnd: 100,
-                timelineCount: 1,
                 timestamp: Date.now()
             };
 
@@ -58,7 +65,7 @@ describe('file-state-storage', () => {
             // Load with backslashes - should normalize to forward slashes
             const loaded = await loadFileState('\\path\\to\\test.vcd');
             expect(loaded).not.toBeNull();
-            expect(loaded?.selectedSignalRefs).toEqual([1]);
+            expect(loaded?.items).toHaveLength(1);
         });
 
         it('should return null for non-existent file state', async () => {
@@ -68,11 +75,12 @@ describe('file-state-storage', () => {
 
         it('should update timestamp when saving', async () => {
             const fileState: FileState = {
-                selectedSignalRefs: [1],
-                selectedSignalNames: ['sig'],
+                version: 'V0.1',
+                items: [
+                    { _type: 'signal', ref: 1, name: 'sig' }
+                ],
                 visibleStart: 0,
                 visibleEnd: 100,
-                timelineCount: 1,
                 timestamp: 0
             };
 
@@ -88,20 +96,27 @@ describe('file-state-storage', () => {
 
         it('should handle multiple files independently', async () => {
             const state1: FileState = {
-                selectedSignalRefs: [1, 2],
-                selectedSignalNames: ['a', 'b'],
+                version: 'V0.1',
+                items: [
+                    { _type: 'signal', ref: 1, name: 'a' },
+                    { _type: 'signal', ref: 2, name: 'b' }
+                ],
                 visibleStart: 0,
                 visibleEnd: 100,
-                timelineCount: 1,
                 timestamp: Date.now()
             };
 
             const state2: FileState = {
-                selectedSignalRefs: [5, 6, 7],
-                selectedSignalNames: ['x', 'y', 'z'],
+                version: 'V0.1',
+                items: [
+                    { _type: 'timeline', name: 'Timeline 1' },
+                    { _type: 'timeline', name: 'Timeline 2' },
+                    { _type: 'signal', ref: 5, name: 'x' },
+                    { _type: 'signal', ref: 6, name: 'y' },
+                    { _type: 'signal', ref: 7, name: 'z' }
+                ],
                 visibleStart: 500,
                 visibleEnd: 1500,
-                timelineCount: 2,
                 timestamp: Date.now()
             };
 
@@ -111,21 +126,22 @@ describe('file-state-storage', () => {
             const loaded1 = await loadFileState('file1.vcd');
             const loaded2 = await loadFileState('file2.vcd');
 
-            expect(loaded1?.selectedSignalRefs).toEqual([1, 2]);
-            expect(loaded2?.selectedSignalRefs).toEqual([5, 6, 7]);
-            expect(loaded1?.timelineCount).toBe(1);
-            expect(loaded2?.timelineCount).toBe(2);
+            expect(loaded1?.items).toHaveLength(2);
+            expect(loaded2?.items).toHaveLength(5);
+            expect(loaded1?.visibleEnd).toBe(100);
+            expect(loaded2?.visibleEnd).toBe(1500);
         });
     });
 
     describe('removeFileState', () => {
         it('should remove file state', async () => {
             const fileState: FileState = {
-                selectedSignalRefs: [1],
-                selectedSignalNames: ['sig'],
+                version: 'V0.1',
+                items: [
+                    { _type: 'signal', ref: 1, name: 'sig' }
+                ],
                 visibleStart: 0,
                 visibleEnd: 100,
-                timelineCount: 1,
                 timestamp: Date.now()
             };
 
@@ -138,8 +154,10 @@ describe('file-state-storage', () => {
 
         it('should not affect other files when removing one', async () => {
             const state1: FileState = {
-                selectedSignalRefs: [1],
-                selectedSignalNames: ['a'],
+                version: 'V0.1',
+                items: [
+                    { _type: 'signal', ref: 1, name: 'a' }
+                ],
                 visibleStart: 0,
                 visibleEnd: 100,
                 timelineCount: 1,
@@ -147,11 +165,12 @@ describe('file-state-storage', () => {
             };
 
             const state2: FileState = {
-                selectedSignalRefs: [2],
-                selectedSignalNames: ['b'],
+                version: 'V0.1',
+                items: [
+                    { _type: 'signal', ref: 2, name: 'b' }
+                ],
                 visibleStart: 0,
                 visibleEnd: 100,
-                timelineCount: 1,
                 timestamp: Date.now()
             };
 
@@ -168,11 +187,12 @@ describe('file-state-storage', () => {
     describe('clearAllFileStates', () => {
         it('should clear all file states', async () => {
             const state: FileState = {
-                selectedSignalRefs: [1],
-                selectedSignalNames: ['sig'],
+                version: 'V0.1',
+                items: [
+                    { _type: 'signal', ref: 1, name: 'sig' }
+                ],
                 visibleStart: 0,
                 visibleEnd: 100,
-                timelineCount: 1,
                 timestamp: Date.now()
             };
 
@@ -198,8 +218,10 @@ describe('file-state-storage', () => {
             });
 
             const fileState: FileState = {
-                selectedSignalRefs: [1],
-                selectedSignalNames: ['sig'],
+                version: 'V0.1',
+                items: [
+                    { _type: 'signal', ref: 1, name: 'sig' }
+                ],
                 visibleStart: 0,
                 visibleEnd: 100,
                 timelineCount: 1,

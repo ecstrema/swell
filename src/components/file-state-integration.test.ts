@@ -68,8 +68,14 @@ describe('File State Persistence Integration', () => {
     // Verify state was saved
     const savedState = await loadFileState('test.vcd');
     expect(savedState).not.toBeNull();
-    expect(savedState?.selectedSignalRefs).toContain(1);
-    expect(savedState?.selectedSignalRefs).toContain(2);
+    expect(savedState?.items).toBeDefined();
+    
+    // Check that signals are in the items array
+    const signalItems = savedState?.items.filter(item => item._type === 'signal');
+    expect(signalItems?.length).toBeGreaterThan(0);
+    const signalRefs = signalItems?.map(item => (item as any).ref);
+    expect(signalRefs).toContain(1);
+    expect(signalRefs).toContain(2);
 
     // Create a new FileDisplay with the same filename
     const element2 = document.createElement('file-display') as FileDisplay;
@@ -135,20 +141,24 @@ describe('File State Persistence Integration', () => {
     
     // Manually save states for two different files
     await saveFileState('file1.vcd', {
-      selectedSignalRefs: [-1, 1],
-      selectedSignalNames: ['Timeline 1', 'clk'],
+      version: 'V0.1',
+      items: [
+        { _type: 'timeline', name: 'Timeline 1' },
+        { _type: 'signal', ref: 1, name: 'clk' }
+      ],
       visibleStart: 1000,
       visibleEnd: 2000,
-      timelineCount: 1,
       timestamp: Date.now()
     });
     
     await saveFileState('file2.vcd', {
-      selectedSignalRefs: [-1, 2],
-      selectedSignalNames: ['Timeline 1', 'reset'],
+      version: 'V0.1',
+      items: [
+        { _type: 'timeline', name: 'Timeline 1' },
+        { _type: 'signal', ref: 2, name: 'reset' }
+      ],
       visibleStart: 5000,
       visibleEnd: 6000,
-      timelineCount: 1,
       timestamp: Date.now()
     });
     
@@ -162,11 +172,13 @@ describe('File State Persistence Integration', () => {
     if (state1 && state2) {
       expect(state1.visibleStart).toBe(1000);
       expect(state1.visibleEnd).toBe(2000);
-      expect(state1.selectedSignalRefs).toContain(1);
+      expect(state1.items).toHaveLength(2);
+      expect(state1.items[1]._type).toBe('signal');
 
       expect(state2.visibleStart).toBe(5000);
       expect(state2.visibleEnd).toBe(6000);
-      expect(state2.selectedSignalRefs).toContain(2);
+      expect(state2.items).toHaveLength(2);
+      expect(state2.items[1]._type).toBe('signal');
     }
     
     // Now verify restoration works for both

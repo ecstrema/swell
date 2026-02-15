@@ -1,5 +1,6 @@
 import { restoreSession, getStartupFiles } from "../backend.js";
 import "./menu/menu-bar.ts";
+import { MenuBar } from "./menu/menu-bar.js";
 import "./files-tree.ts";
 import "./settings-page.ts";
 import "./about-pane.ts";
@@ -130,6 +131,12 @@ export class AppMain extends HTMLElement {
 
         // Initialize shortcut system
         this.initializeShortcuts();
+
+        // Pass shortcut manager to menu bar
+        const menuBar = this.shadowRoot!.querySelector('app-menu-bar');
+        if (menuBar instanceof MenuBar) {
+            menuBar.setShortcutManager(this.commandManager.getShortcutManager());
+        }
 
         // Initialize command palette
         this.commandManager.initializeCommandPalette();

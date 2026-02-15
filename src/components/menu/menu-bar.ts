@@ -4,9 +4,21 @@ import { createMenu, MenuConfig, MenuItemConfig, SubmenuConfig } from "../../men
 import { css } from "../../utils/css-utils.js";
 import menuBarCss from "./menu-bar.css?inline";
 import { renderMenuItems, findAndExecuteAction } from "./menu-item-renderer.js";
+import { ShortcutManager } from "../../shortcuts/index.js";
 
 export class MenuBar extends HTMLElement {
   private menuConfig: MenuConfig | null = null;
+  private shortcutManager: ShortcutManager | null = null;
+  
+  // Map menu item IDs to command IDs for shortcut lookup
+  private readonly menuItemToCommandIdMap: Record<string, string> = {
+      'open': 'file-open',
+      'quit': 'file-quit',
+      'undo': 'edit-undo',
+      'zoom-in': 'view-zoom-in',
+      'zoom-out': 'view-zoom-out',
+      'zoom-fit': 'view-zoom-fit',
+  };
 
   constructor() {
     super();
@@ -245,7 +257,23 @@ export class MenuBar extends HTMLElement {
     }
   }
 
+  /**
+   * Set the shortcut manager to display shortcuts in menu items
+   */
+  setShortcutManager(shortcutManager: ShortcutManager) {
+      this.shortcutManager = shortcutManager;
+      // Re-render if already rendered
+      if (this.shadowRoot && this.shadowRoot.childNodes.length > 0) {
+          this.render();
+      }
+  }
 
+  /**
+   * Map menu item IDs to command IDs for shortcut lookup
+   */
+  private mapMenuItemIdToCommandId(menuItemId: string): string | undefined {
+      return this.menuItemToCommandIdMap[menuItemId];
+  }
 
   render() {
       if (this.shadowRoot && this.menuConfig) {
@@ -265,7 +293,10 @@ export class MenuBar extends HTMLElement {
               dropdown.className = 'dropdown';
 
               // Use shared renderer for menu items
-              const menuItems = renderMenuItems(submenu.items);
+              const menuItems = renderMenuItems(submenu.items, {
+                  shortcutManager: this.shortcutManager ?? undefined,
+                  commandIdMapper: this.shortcutManager ? this.mapMenuItemIdToCommandId.bind(this) : undefined
+              });
               menuItems.forEach(({ element }) => {
                   dropdown.appendChild(element);
               });
@@ -283,7 +314,9 @@ export class MenuBar extends HTMLElement {
           this.shadowRoot.querySelectorAll('.menu-item').forEach(item => {
               item.addEventListener('click', (e) => {
                   const target = e.target as HTMLElement;
-                  const itemId = target.dataset.id;
+                  // Handle clicks on both the menu item and its child elements
+                  const menuItem = target.classList.contains('menu-item') ? target : target.closest('.menu-item');
+                  const itemId = menuItem?.getAttribute('data-id');
 
                   if (itemId && this.menuConfig) {
                       // Find and execute the action recursively

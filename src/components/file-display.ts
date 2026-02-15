@@ -62,8 +62,14 @@ export class FileDisplay extends HTMLElement {
   }
 
   set filename(val: string) {
+    const oldFilename = this._filename;
     this._filename = val;
     this.render();
+    
+    // Restore state when filename is set (if connected and not already restored)
+    if (val && val !== oldFilename && this.isConnected && !this.stateRestored) {
+      this.restoreFileState();
+    }
   }
 
   connectedCallback() {

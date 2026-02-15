@@ -50,20 +50,20 @@ export class SelectedSignalsTree extends TreeView {
 
     private handleSignalReorder(draggedNode: TreeNode, targetNode: TreeNode, position: 'before' | 'after') {
         // Find indices of dragged and target signals
-        const draggedIndex = this._signals.findIndex(s => s.ref === draggedNode.id);
-        const targetIndex = this._signals.findIndex(s => s.ref === targetNode.id);
+        const draggedSignalIndex = this._signals.findIndex(s => s.ref === draggedNode.id);
+        const targetSignalIndex = this._signals.findIndex(s => s.ref === targetNode.id);
         
-        if (draggedIndex === -1 || targetIndex === -1) {
+        if (draggedSignalIndex === -1 || targetSignalIndex === -1) {
             return;
         }
         
         // Remove the dragged signal from its current position
-        const [draggedSignal] = this._signals.splice(draggedIndex, 1);
+        const [draggedSignal] = this._signals.splice(draggedSignalIndex, 1);
         
         // Calculate the new insertion index
         // If we removed an item before the target, we need to adjust the target index
-        let insertIndex = targetIndex;
-        if (draggedIndex < targetIndex) {
+        let insertIndex = targetSignalIndex;
+        if (draggedSignalIndex < targetSignalIndex) {
             insertIndex--;
         }
         

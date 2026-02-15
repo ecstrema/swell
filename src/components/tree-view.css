@@ -91,7 +91,7 @@ details[open] > summary::before {
 
 .leaf-node.dragging {
     opacity: 0.5;
-    cursor: grabbing !important;
+    cursor: grabbing;
 }
 
 .leaf-node.drag-over-top {

@@ -6,6 +6,7 @@ import { SelectedSignalsTree } from './selected-signals-tree.js';
 import { Timeline } from './timeline.js';
 import './selected-signals-tree.js';
 import './timeline.js';
+import './resizable-panel.js';
 
 interface SelectedSignal {
   name: string;
@@ -437,12 +438,18 @@ export class FileDisplay extends HTMLElement {
 
     this.shadowRoot.innerHTML = `
       <div class="display-container">
-        <div id="signals-tree-container" class="signals-tree-container"></div>
-        <div class="waveforms-container" id="waveforms-container">
-          ${this.selectedSignals.length === 0
-            ? '<div class="empty-message">Select signals from the left panel to display them here</div>'
-            : ''}
-        </div>
+        <app-resizable-panel 
+          direction="horizontal" 
+          initial-size="250px" 
+          min-size="200px" 
+          max-size="600px">
+          <div slot="panel" class="signals-tree-container" id="signals-tree-container"></div>
+          <div slot="content" class="waveforms-container" id="waveforms-container">
+            ${this.selectedSignals.length === 0
+              ? '<div class="empty-message">Select signals from the left panel to display them here</div>'
+              : ''}
+          </div>
+        </app-resizable-panel>
       </div>
     `;
 

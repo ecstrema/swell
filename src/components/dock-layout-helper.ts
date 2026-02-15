@@ -1,6 +1,9 @@
 import { DockManager } from "./docking/dock-manager.js";
 import { DockLayout, DockStack, DockNode } from "./docking/types.js";
 
+// Layout constants
+const SIDEBAR_DEFAULT_WEIGHT = 20;
+
 /**
  * Helper utilities for managing docking layout and panes
  */
@@ -113,7 +116,7 @@ export class DockLayoutHelper {
                 const sidebarStack: DockStack = {
                     type: 'stack',
                     id: 'sidebar-stack',
-                    weight: 20,
+                    weight: SIDEBAR_DEFAULT_WEIGHT,
                     activeId: 'signal-selection-pane',
                     children: [
                         {
@@ -171,7 +174,7 @@ export class DockLayoutHelper {
             const sidebarStack: DockStack = {
                 type: 'stack',
                 id: 'sidebar-stack',
-                weight: 20,
+                weight: SIDEBAR_DEFAULT_WEIGHT,
                 activeId: 'signal-selection-pane',
                 children: [
                     {

@@ -241,6 +241,7 @@ export class MenuBar extends HTMLElement {
                                     id: 'toggle-signal-selection',
                                     text: 'Signal Selection',
                                     type: 'checkbox' as const,
+                                    // Initial state - will be updated dynamically when files are loaded
                                     checked: true,
                                     action: () => {
                                         this.dispatchEvent(new CustomEvent('menu-action', {

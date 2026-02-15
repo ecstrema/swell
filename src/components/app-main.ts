@@ -23,6 +23,8 @@ import { PaneManager } from "./pane-manager.js";
 import { UndoManager } from "../undo/undo-manager.js";
 import { UndoableOperation } from "../undo/undo-tree.js";
 
+// Setting paths
+const SETTING_SIGNAL_SELECTION_VISIBLE = 'Interface/Signal Selection Visible';
 
 
 
@@ -400,7 +402,7 @@ export class AppMain extends HTMLElement {
             let signalSelectionVisible = true;
             try {
                 const { settingsStorage } = await import('../settings/settings-storage.js');
-                signalSelectionVisible = (await settingsStorage.getSetting('Interface/Signal Selection Visible')) ?? true;
+                signalSelectionVisible = (await settingsStorage.getSetting(SETTING_SIGNAL_SELECTION_VISIBLE)) ?? true;
             } catch (error) {
                 console.warn('Failed to load signal selection visibility setting:', error);
             }
@@ -543,7 +545,7 @@ export class AppMain extends HTMLElement {
         // Persist the setting
         try {
             const { settingsStorage } = await import('../settings/settings-storage.js');
-            await settingsStorage.setSetting('Interface/Signal Selection Visible', newVisibility);
+            await settingsStorage.setSetting(SETTING_SIGNAL_SELECTION_VISIBLE, newVisibility);
         } catch (error) {
             console.warn('Failed to persist signal selection visibility setting:', error);
         }

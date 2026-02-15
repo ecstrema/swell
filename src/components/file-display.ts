@@ -343,8 +343,11 @@ export class FileDisplay extends HTMLElement {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
+      // Get computed styles once for performance
+      const computedStyle = getComputedStyle(this);
+
       // Clear canvas - use theme background color
-      ctx.fillStyle = getComputedStyle(this).getPropertyValue('--color-bg-surface') || '#1e1e1e';
+      ctx.fillStyle = computedStyle.getPropertyValue('--color-bg-surface') || '#1e1e1e';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       if (changes.length === 0) return;
@@ -355,7 +358,7 @@ export class FileDisplay extends HTMLElement {
       const timeRange = maxTime - minTime || 1;
 
       // Draw waveform - use theme waveform color
-      ctx.strokeStyle = getComputedStyle(this).getPropertyValue('--color-waveform') || '#4CAF50';
+      ctx.strokeStyle = computedStyle.getPropertyValue('--color-waveform') || '#4CAF50';
       ctx.lineWidth = 2;
       ctx.beginPath();
 

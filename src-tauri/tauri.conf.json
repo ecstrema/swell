@@ -24,6 +24,11 @@
       "csp": null
     }
   },
+  "plugins": {
+    "cli": {
+      "description": "Swell - A waveform viewer application"
+    }
+  },
   "bundle": {
     "active": true,
     "targets": "all",

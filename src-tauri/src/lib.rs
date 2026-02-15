@@ -5,6 +5,7 @@ use backend::{
 };
 use backend::{HierarchyRoot, SignalChange};
 use tauri_plugin_store::StoreExt;
+use tauri_plugin_cli::CliExt;
 use std::sync::Mutex;
 
 const OPENED_FILES_KEY: &str = "opened_files";
@@ -177,6 +178,7 @@ pub fn run() {
     }
     
     tauri::Builder::default()
+        .plugin(tauri_plugin_cli::init())
         .plugin(
             tauri_plugin_store::Builder::new()
                 .build()
@@ -185,6 +187,13 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            // Initialize CLI plugin - this triggers parsing and automatic handling of --help and --version
+            if let Err(e) = app.cli().matches() {
+                eprintln!("Failed to parse command line arguments: {}", e);
+                eprintln!("Run with --help for usage information");
+                std::process::exit(1);
+            }
+            
             load_opened_files(&app.handle());
             Ok(())
         })

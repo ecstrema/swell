@@ -22,6 +22,7 @@ import { DockLayoutHelper } from "./dock-layout-helper.js";
 import { PaneManager } from "./pane-manager.js";
 import { UndoManager } from "../undo/undo-manager.js";
 import { UndoableOperation } from "../undo/undo-tree.js";
+import { saveStateToFile, loadStateFromFile } from "../utils/state-file-io.js";
 
 
 
@@ -288,6 +289,19 @@ export class AppMain extends HTMLElement {
             }
         });
 
+        // Register save/load state commands
+        this.commandManager.getCommandRegistry().register({
+            id: 'file-save-state',
+            label: 'Save State As...',
+            handler: () => this.handleSaveState()
+        });
+
+        this.commandManager.getCommandRegistry().register({
+            id: 'file-load-state',
+            label: 'Load State...',
+            handler: () => this.handleLoadState()
+        });
+
         // Set up undo manager change listener to update the panel
         this.undoManager.setOnChange(() => {
             this.undoTreePanel.refresh();
@@ -481,6 +495,73 @@ export class AppMain extends HTMLElement {
      */
     executeOperation(operation: UndoableOperation) {
         this.undoManager.execute(operation);
+    }
+
+    /**
+     * Handle save state command
+     */
+    async handleSaveState() {
+        const activeFileId = this.fileManager.getActiveFileId();
+        if (!activeFileId) {
+            console.warn('No active file to save state');
+            return;
+        }
+
+        const activeRes = this.fileManager.getFileResources(activeFileId);
+        if (!activeRes) {
+            console.warn('Active file resources not found');
+            return;
+        }
+
+        try {
+            const state = activeRes.element.getCurrentState();
+            await saveStateToFile(activeFileId, state);
+            console.log('State saved successfully');
+        } catch (err) {
+            console.error('Failed to save state:', err);
+            alert(`Failed to save state: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        }
+    }
+
+    /**
+     * Handle load state command
+     */
+    async handleLoadState() {
+        try {
+            const loaded = await loadStateFromFile();
+            if (!loaded) {
+                // User cancelled
+                return;
+            }
+
+            const { filename, state } = loaded;
+
+            // Check if the file is currently open
+            const fileId = this.fileManager.getFileIdFromFilename(filename);
+            if (!fileId) {
+                alert(`The waveform file "${filename}" is not currently open. Please open it first.`);
+                return;
+            }
+
+            const fileRes = this.fileManager.getFileResources(fileId);
+            if (!fileRes) {
+                console.warn('File resources not found');
+                return;
+            }
+
+            // Apply the state to the file display
+            await fileRes.element.applyState(state);
+            
+            // Switch to the file if it's not active
+            if (this.fileManager.getActiveFileId() !== fileId) {
+                this.setActiveFile(fileId);
+            }
+
+            console.log('State loaded successfully');
+        } catch (err) {
+            console.error('Failed to load state:', err);
+            alert(`Failed to load state: ${err instanceof Error ? err.message : 'Unknown error'}`);
+        }
     }
 
     /**

@@ -3,7 +3,7 @@
 import init, * as wasm from "../backend/pkg/backend";
 
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
 import { saveFileToSession, removeFileFromSession, getSessionFiles } from "./utils/file-session.js";
 
 // Detect if we are running in Tauri
@@ -41,6 +41,63 @@ export async function openFileDialog(): Promise<string | File | undefined | null
       };
       input.click();
     });
+  }
+}
+
+/**
+ * Open a file dialog to select a .swellstate file
+ */
+export async function openStateFileDialog(): Promise<string | File | undefined | null> {
+  if (isTauri) {
+    try {
+      return await open({
+        multiple: false,
+        directory: false,
+        filters: [{
+          name: 'Swell State Files',
+          extensions: ['swellstate']
+        }]
+      });
+    } catch (e) {
+      console.error("Failed to open state file dialog:", e);
+      return null;
+    }
+  } else {
+    // For web, use file input
+    return new Promise((resolve) => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".swellstate";
+      input.onchange = (event) => {
+        resolve((event.target as HTMLInputElement).files?.[0])
+      };
+      input.click();
+    });
+  }
+}
+
+/**
+ * Open a save file dialog for saving a .swellstate file
+ * @param defaultName - Optional default file name
+ */
+export async function saveStateFileDialog(defaultName?: string): Promise<string | null> {
+  if (isTauri) {
+    try {
+      return await save({
+        defaultPath: defaultName,
+        filters: [{
+          name: 'Swell State Files',
+          extensions: ['swellstate']
+        }]
+      });
+    } catch (e) {
+      console.error("Failed to open save state file dialog:", e);
+      return null;
+    }
+  } else {
+    // For web, we'll use download functionality
+    // Return a synthetic path to trigger the download
+    return defaultName || 'state.swellstate';
   }
 }
 
@@ -207,5 +264,53 @@ export const getStartupFiles = async (): Promise<string[]> => {
     } catch (e) {
         console.error('Failed to get startup files:', e);
         return [];
+    }
+};
+
+/**
+ * Write text content to a file
+ * @param path - File path (Tauri) or filename (web)
+ * @param content - Text content to write
+ */
+export const writeTextFile = async (path: string, content: string): Promise<void> => {
+    if (isTauri) {
+        try {
+            await invoke("write_text_file", { path, content });
+        } catch (e) {
+            console.error(`Failed to write file ${path}:`, e);
+            throw e;
+        }
+    } else {
+        // For web, trigger a download
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = path;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+};
+
+/**
+ * Read text content from a file
+ * @param fileOrPath - File object (web) or path string (Tauri)
+ */
+export const readTextFile = async (fileOrPath: string | File): Promise<string> => {
+    if (isTauri) {
+        if (typeof fileOrPath !== 'string') {
+            throw new Error('Expected file path string in Tauri mode');
+        }
+        try {
+            return await invoke("read_text_file", { path: fileOrPath });
+        } catch (e) {
+            console.error(`Failed to read file ${fileOrPath}:`, e);
+            throw e;
+        }
+    } else {
+        if (!(fileOrPath instanceof File)) {
+            throw new Error('Expected File object in web mode');
+        }
+        return await fileOrPath.text();
     }
 };

@@ -80,6 +80,114 @@ export class FileDisplay extends HTMLElement {
     }
   }
 
+  /**
+   * Get the current state of selected signals and view
+   * Used for explicit state file save operations
+   */
+  getCurrentState(): FileState {
+    const items: Item[] = this.selectedSignals.map(signal => {
+      if (signal.isTimeline) {
+        return {
+          _type: 'timeline' as const,
+          name: signal.name
+        };
+      } else {
+        return {
+          _type: 'signal' as const,
+          ref: signal.ref,
+          name: signal.name
+        };
+      }
+    });
+    
+    return {
+      version: 'V0.1',
+      items,
+      visibleStart: this.visibleStart,
+      visibleEnd: this.visibleEnd,
+      timestamp: Date.now()
+    };
+  }
+
+  /**
+   * Apply a loaded state to this file display
+   * Used for explicit state file load operations
+   */
+  async applyState(state: FileState): Promise<void> {
+    try {
+      // Check version compatibility
+      if (state.version !== 'V0.1') {
+        throw new Error(`Unsupported state version: ${state.version}`);
+      }
+      
+      console.log(`Applying state to ${this._filename}:`, state);
+      
+      // Restore visible range
+      if (state.visibleStart !== 0 || state.visibleEnd !== 1000000) {
+        this.visibleStart = state.visibleStart;
+        this.visibleEnd = state.visibleEnd;
+        this.timeRangeInitialized = true;
+      }
+      
+      // Load the hierarchy to validate signals still exist
+      const hierarchy = await getHierarchy(this._filename);
+      if (!hierarchy) {
+        throw new Error('Could not load hierarchy to apply state');
+      }
+      
+      // Helper to find signals by ref in the hierarchy
+      const findSignalByRef = (node: HierarchyNode, targetRef: number): { name: string; ref: number } | null => {
+        if (node.var_ref === targetRef) {
+          return { name: node.name, ref: targetRef };
+        }
+        if (node.children) {
+          for (const child of node.children) {
+            const found = findSignalByRef(child, targetRef);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      
+      // Clear current signals
+      this.selectedSignals = [];
+      this.timelineCounter = 0;
+      
+      // Restore items from the flat list
+      for (const item of state.items) {
+        if (item._type === 'timeline') {
+          this.addTimelineSignal();
+        } else if (item._type === 'signal') {
+          // Verify signal still exists in hierarchy
+          const found = findSignalByRef(hierarchy, item.ref);
+          if (found) {
+            this.addSignal(item.name, item.ref);
+          } else {
+            console.warn(`Signal ${item.name} (ref: ${item.ref}) not found in hierarchy`);
+          }
+        }
+      }
+      
+      // Update all timeline signals with the restored range
+      if (this.timeRangeInitialized) {
+        this.selectedSignals.forEach(signal => {
+          if (signal.isTimeline && signal.timeline) {
+            signal.timeline.totalRange = { start: this.visibleStart, end: this.visibleEnd };
+            signal.timeline.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
+          }
+        });
+      }
+      
+      this.render();
+      
+      // Save state automatically after applying
+      this.scheduleStateSave();
+    } catch (err) {
+      console.error('Failed to apply state:', err);
+      throw err;
+    }
+  }
+
   connectedCallback() {
     // Listen for signal selection events
     document.addEventListener('signal-select', this.boundHandleSignalSelect);

@@ -397,8 +397,13 @@ export class AppMain extends HTMLElement {
         // Update layout to show/hide sidebar based on file count and user preference
         if (fileIds.length > 0) {
             // Get user preference for signal selection visibility
-            const { settingsStorage } = await import('../settings/settings-storage.js');
-            const signalSelectionVisible = await settingsStorage.getSetting('Interface/Signal Selection Visible') ?? true;
+            let signalSelectionVisible = true;
+            try {
+                const { settingsStorage } = await import('../settings/settings-storage.js');
+                signalSelectionVisible = (await settingsStorage.getSetting('Interface/Signal Selection Visible')) ?? true;
+            } catch (error) {
+                console.warn('Failed to load signal selection visibility setting:', error);
+            }
             
             // Only show sidebar if user wants it visible
             if (signalSelectionVisible) {
@@ -536,8 +541,12 @@ export class AppMain extends HTMLElement {
         }
         
         // Persist the setting
-        const { settingsStorage } = await import('../settings/settings-storage.js');
-        await settingsStorage.setSetting('Interface/Signal Selection Visible', newVisibility);
+        try {
+            const { settingsStorage } = await import('../settings/settings-storage.js');
+            await settingsStorage.setSetting('Interface/Signal Selection Visible', newVisibility);
+        } catch (error) {
+            console.warn('Failed to persist signal selection visibility setting:', error);
+        }
     }
 }
 

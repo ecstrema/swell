@@ -1,36 +1,21 @@
-import { UndoTree } from '../undo/undo-tree.js';
-
-/**
- * Interface for objects that can be saved/restored
- */
-export interface UndoableState {
-    /**
-     * Get a serializable representation of the current state
-     */
-    captureState(): any;
-
-    /**
-     * Restore state from a captured representation
-     */
-    restoreState(state: any): void;
-}
+import { UndoTree, UndoableOperation } from '../undo/undo-tree.js';
 
 /**
  * Manages undo/redo operations for the application
- * Coordinates between the UI and the undo tree
+ * Coordinates between the UI and the undo tree using the command pattern
  */
-export class UndoManager<T = any> {
-    private undoTree: UndoTree<T>;
+export class UndoManager {
+    private undoTree: UndoTree;
     private onChange: (() => void) | null = null;
 
     constructor() {
-        this.undoTree = new UndoTree<T>();
+        this.undoTree = new UndoTree();
     }
 
     /**
      * Get the underlying undo tree
      */
-    getUndoTree(): UndoTree<T> {
+    getUndoTree(): UndoTree {
         return this.undoTree;
     }
 
@@ -42,40 +27,47 @@ export class UndoManager<T = any> {
     }
 
     /**
-     * Record a new state
+     * Execute and record a new operation
      */
-    recordState(state: T, description: string): void {
-        this.undoTree.addState(state, description);
+    execute(operation: UndoableOperation): void {
+        this.undoTree.addOperation(operation);
         this.notifyChange();
     }
 
     /**
-     * Undo to previous state
-     * Returns the previous state or null if at root
+     * Undo the current operation
+     * Returns true if successful, false otherwise
      */
-    undo(): T | null {
-        const state = this.undoTree.undo();
-        this.notifyChange();
-        return state;
+    undo(): boolean {
+        const success = this.undoTree.undo();
+        if (success) {
+            this.notifyChange();
+        }
+        return success;
     }
 
     /**
-     * Redo to next state
-     * Returns the next state or null if no children
+     * Redo the next operation
+     * Returns true if successful, false otherwise
      */
-    redo(): T | null {
-        const state = this.undoTree.redo();
-        this.notifyChange();
-        return state;
+    redo(): boolean {
+        const success = this.undoTree.redo();
+        if (success) {
+            this.notifyChange();
+        }
+        return success;
     }
 
     /**
      * Navigate to a specific node
+     * Returns true if successful, false otherwise
      */
-    navigateTo(nodeId: string): T | null {
-        const state = this.undoTree.navigateTo(nodeId);
-        this.notifyChange();
-        return state;
+    navigateTo(nodeId: string): boolean {
+        const success = this.undoTree.navigateTo(nodeId);
+        if (success) {
+            this.notifyChange();
+        }
+        return success;
     }
 
     /**
@@ -90,14 +82,6 @@ export class UndoManager<T = any> {
      */
     canRedo(): boolean {
         return this.undoTree.canRedo();
-    }
-
-    /**
-     * Get the current state
-     */
-    getCurrentState(): T | null {
-        const node = this.undoTree.getCurrentNode();
-        return node ? node.state : null;
     }
 
     /**

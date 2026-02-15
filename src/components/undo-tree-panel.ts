@@ -7,7 +7,7 @@ import undoTreePanelCss from "./undo-tree-panel.css?inline";
  * Users can click on nodes to navigate to different states
  */
 export class UndoTreePanel extends HTMLElement {
-    private undoTree: UndoTree<any> | null = null;
+    private undoTree: UndoTree | null = null;
     private contentContainer: HTMLElement;
 
     constructor() {
@@ -33,7 +33,7 @@ export class UndoTreePanel extends HTMLElement {
     /**
      * Set the undo tree to display
      */
-    setUndoTree(tree: UndoTree<any>): void {
+    setUndoTree(tree: UndoTree): void {
         this.undoTree = tree;
         this.render();
     }
@@ -88,7 +88,7 @@ export class UndoTreePanel extends HTMLElement {
 
         const nodeLabel = document.createElement('span');
         nodeLabel.className = 'node-label';
-        nodeLabel.textContent = node.description;
+        nodeLabel.textContent = node.operation.getDescription();
         
         const nodeTime = document.createElement('span');
         nodeTime.className = 'node-time';

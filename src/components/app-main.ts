@@ -20,6 +20,7 @@ import { CommandManager } from "./command-manager.js";
 import { DockLayoutHelper } from "./dock-layout-helper.js";
 import { PaneManager } from "./pane-manager.js";
 import { UndoManager } from "../undo/undo-manager.js";
+import { UndoableOperation } from "../undo/undo-tree.js";
 
 
 
@@ -30,7 +31,7 @@ export class AppMain extends HTMLElement {
     private commandManager: CommandManager;
     private dockLayoutHelper: DockLayoutHelper;
     private paneManager: PaneManager;
-    private undoManager: UndoManager<any>;
+    private undoManager: UndoManager;
 
     // Docking system
     private dockManager: DockManager;
@@ -186,10 +187,7 @@ export class AppMain extends HTMLElement {
         // Listen for undo tree node selection
         this.addEventListener('node-select', (e: Event) => {
             const customEvent = e as CustomEvent<{ nodeId: string }>;
-            const state = this.undoManager.navigateTo(customEvent.detail.nodeId);
-            if (state !== null) {
-                this.applyUndoState(state);
-            }
+            this.undoManager.navigateTo(customEvent.detail.nodeId);
         });
 
         // Listen for setting changes to update theme
@@ -278,16 +276,10 @@ export class AppMain extends HTMLElement {
                 }
             },
             onEditUndo: () => {
-                const state = this.undoManager.undo();
-                if (state !== null) {
-                    this.applyUndoState(state);
-                }
+                this.undoManager.undo();
             },
             onEditRedo: () => {
-                const state = this.undoManager.redo();
-                if (state !== null) {
-                    this.applyUndoState(state);
-                }
+                this.undoManager.redo();
             },
             onZoomIn: () => {
                 // Dispatch zoom-in event for the active file display
@@ -339,18 +331,43 @@ export class AppMain extends HTMLElement {
      * Populate the undo tree with demo data to show branching
      */
     private populateDemoUndoTree() {
+        // Create demo operations that track state changes
+        let demoState = { step: 0, value: 'Empty' };
+
+        // Helper to create demo operations
+        const createDemoOperation = (newStep: number, newValue: string, description: string): UndoableOperation => {
+            const oldStep = demoState.step;
+            const oldValue = demoState.value;
+            
+            return {
+                do: () => {
+                    demoState = { step: newStep, value: newValue };
+                    console.log(`Do: ${description}`, demoState);
+                },
+                undo: () => {
+                    demoState = { step: oldStep, value: oldValue };
+                    console.log(`Undo: ${description}`, demoState);
+                },
+                redo: () => {
+                    demoState = { step: newStep, value: newValue };
+                    console.log(`Redo: ${description}`, demoState);
+                },
+                getDescription: () => description
+            };
+        };
+
         // Create initial states
-        this.undoManager.recordState({ step: 1, value: 'Initial state' }, 'Initial state');
-        this.undoManager.recordState({ step: 2, value: 'Added signal A' }, 'Add signal A');
-        this.undoManager.recordState({ step: 3, value: 'Modified signal A' }, 'Modify signal A');
+        this.undoManager.execute(createDemoOperation(1, 'Initial state', 'Initial state'));
+        this.undoManager.execute(createDemoOperation(2, 'Added signal A', 'Add signal A'));
+        this.undoManager.execute(createDemoOperation(3, 'Modified signal A', 'Modify signal A'));
         
         // Create a branch
         this.undoManager.undo();
-        this.undoManager.recordState({ step: 4, value: 'Added signal B' }, 'Add signal B');
+        this.undoManager.execute(createDemoOperation(4, 'Added signal B', 'Add signal B'));
         
         // Create another branch
         this.undoManager.undo();
-        this.undoManager.recordState({ step: 5, value: 'Removed signal A' }, 'Remove signal A');
+        this.undoManager.execute(createDemoOperation(5, 'Removed signal A', 'Remove signal A'));
         
         console.log('Demo undo tree populated with branching structure');
     }
@@ -466,22 +483,11 @@ export class AppMain extends HTMLElement {
     }
 
     /**
-     * Apply an undo state
-     * For this demo implementation, we just log the state
-     * In a real app, this would restore the application state
+     * Execute an undoable operation
+     * This is the public API for other parts of the app to record operations
      */
-    private applyUndoState(state: any) {
-        console.log('Applying undo state:', state);
-        // In a full implementation, this would restore actual application state
-        // For now, we'll add a simple demo that tracks a counter
-    }
-
-    /**
-     * Record a state change in the undo tree
-     * This is a demo method - in a real app, this would be called when state changes
-     */
-    recordStateChange(state: any, description: string) {
-        this.undoManager.recordState(state, description);
+    executeOperation(operation: UndoableOperation) {
+        this.undoManager.execute(operation);
     }
 
     /**

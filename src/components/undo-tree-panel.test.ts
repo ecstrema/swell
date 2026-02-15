@@ -1,15 +1,39 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { UndoTreePanel } from './undo-tree-panel.js';
-import { UndoTree } from '../undo/undo-tree.js';
+import { UndoTree, UndoableOperation } from '../undo/undo-tree.js';
+
+// Helper to create test operations
+function createTestOperation(
+    state: { value: number },
+    newValue: number,
+    description: string
+): UndoableOperation {
+    const oldValue = state.value;
+    
+    return {
+        do: () => {
+            state.value = newValue;
+        },
+        undo: () => {
+            state.value = oldValue;
+        },
+        redo: () => {
+            state.value = newValue;
+        },
+        getDescription: () => description
+    };
+}
 
 describe('UndoTreePanel', () => {
     let panel: UndoTreePanel;
-    let tree: UndoTree<{ value: number }>;
+    let tree: UndoTree;
+    let testState: { value: number };
 
     beforeEach(() => {
         panel = new UndoTreePanel();
         document.body.appendChild(panel);
-        tree = new UndoTree<{ value: number }>();
+        tree = new UndoTree();
+        testState = { value: 0 };
     });
 
     afterEach(() => {
@@ -29,9 +53,9 @@ describe('UndoTreePanel', () => {
     });
 
     it('should display tree structure', () => {
-        tree.addState({ value: 1 }, 'First state');
-        tree.addState({ value: 2 }, 'Second state');
-        tree.addState({ value: 3 }, 'Third state');
+        tree.addOperation(createTestOperation(testState, 1, 'First state'));
+        tree.addOperation(createTestOperation(testState, 2, 'Second state'));
+        tree.addOperation(createTestOperation(testState, 3, 'Third state'));
 
         panel.setUndoTree(tree);
 
@@ -40,9 +64,9 @@ describe('UndoTreePanel', () => {
     });
 
     it('should highlight current node', () => {
-        tree.addState({ value: 1 }, 'First state');
-        tree.addState({ value: 2 }, 'Second state');
-        tree.addState({ value: 3 }, 'Third state');
+        tree.addOperation(createTestOperation(testState, 1, 'First state'));
+        tree.addOperation(createTestOperation(testState, 2, 'Second state'));
+        tree.addOperation(createTestOperation(testState, 3, 'Third state'));
 
         panel.setUndoTree(tree);
 
@@ -52,9 +76,9 @@ describe('UndoTreePanel', () => {
     });
 
     it('should update highlight after undo', () => {
-        tree.addState({ value: 1 }, 'First state');
-        tree.addState({ value: 2 }, 'Second state');
-        tree.addState({ value: 3 }, 'Third state');
+        tree.addOperation(createTestOperation(testState, 1, 'First state'));
+        tree.addOperation(createTestOperation(testState, 2, 'Second state'));
+        tree.addOperation(createTestOperation(testState, 3, 'Third state'));
 
         panel.setUndoTree(tree);
 
@@ -68,10 +92,10 @@ describe('UndoTreePanel', () => {
     });
 
     it('should display branching structure', () => {
-        tree.addState({ value: 1 }, 'Root');
-        tree.addState({ value: 2 }, 'Branch A');
+        tree.addOperation(createTestOperation(testState, 1, 'Root'));
+        tree.addOperation(createTestOperation(testState, 2, 'Branch A'));
         tree.undo();
-        tree.addState({ value: 3 }, 'Branch B');
+        tree.addOperation(createTestOperation(testState, 3, 'Branch B'));
 
         panel.setUndoTree(tree);
 
@@ -83,8 +107,8 @@ describe('UndoTreePanel', () => {
     });
 
     it('should emit node-select event on click', async () => {
-        tree.addState({ value: 1 }, 'First state');
-        tree.addState({ value: 2 }, 'Second state');
+        tree.addOperation(createTestOperation(testState, 1, 'First state'));
+        tree.addOperation(createTestOperation(testState, 2, 'Second state'));
 
         panel.setUndoTree(tree);
 
@@ -104,7 +128,7 @@ describe('UndoTreePanel', () => {
     });
 
     it('should display node descriptions', () => {
-        tree.addState({ value: 1 }, 'Test Description');
+        tree.addOperation(createTestOperation(testState, 1, 'Test Description'));
 
         panel.setUndoTree(tree);
 
@@ -113,7 +137,7 @@ describe('UndoTreePanel', () => {
     });
 
     it('should display timestamps', () => {
-        tree.addState({ value: 1 }, 'First state');
+        tree.addOperation(createTestOperation(testState, 1, 'First state'));
 
         panel.setUndoTree(tree);
 

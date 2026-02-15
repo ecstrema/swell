@@ -15,6 +15,7 @@ export class MenuBar extends HTMLElement {
       'open': 'file-open',
       'quit': 'file-quit',
       'undo': 'edit-undo',
+      'redo': 'edit-redo',
       'zoom-in': 'view-zoom-in',
       'zoom-out': 'view-zoom-out',
       'zoom-fit': 'view-zoom-fit',
@@ -160,6 +161,17 @@ export class MenuBar extends HTMLElement {
                                     bubbles: true,
                                     composed: true,
                                     detail: 'edit-undo'
+                                }));
+                            }
+                        },
+                        {
+                            id: 'redo',
+                            text: 'Redo',
+                            action: () => {
+                                this.dispatchEvent(new CustomEvent('menu-action', {
+                                    bubbles: true,
+                                    composed: true,
+                                    detail: 'edit-redo'
                                 }));
                             }
                         }

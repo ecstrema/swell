@@ -5,6 +5,7 @@
 
 import { MenuItemConfig, SubmenuConfig } from "../../menu-api.js";
 import { ShortcutManager } from "../../shortcuts/index.js";
+import ChevronRightIcon from '~icons/mdi/chevron-right?raw';
 
 export interface MenuItemElement {
     element: HTMLElement;
@@ -55,7 +56,7 @@ export function renderMenuItems(
             
             const arrow = document.createElement('span');
             arrow.className = 'submenu-arrow';
-            arrow.textContent = '▶';
+            arrow.innerHTML = ChevronRightIcon;
             titleElement.appendChild(arrow);
             
             const dropdownElement = document.createElement('div');

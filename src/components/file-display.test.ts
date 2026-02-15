@@ -242,8 +242,10 @@ describe('FileDisplay Component', () => {
     
     document.dispatchEvent(removeEvent);
     
-    // Wait for render to complete
-    await new Promise(resolve => setTimeout(resolve, 0));
+    // Wait for requestAnimationFrame to complete
+    await new Promise(resolve => requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve(undefined));
+    }));
     
     // Check that the signal was removed
     expect(element.getSelectedSignalRefs()).not.toContain(1);
@@ -279,7 +281,9 @@ describe('FileDisplay Component', () => {
       detail: { name: 'signal1', ref: 1, filename: 'test.vcd', checked: false }
     }));
     
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise(resolve => requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve(undefined));
+    }));
     
     // Only second signal should remain
     expect(element.getSelectedSignalRefs()).not.toContain(1);

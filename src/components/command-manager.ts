@@ -50,6 +50,7 @@ export class CommandManager {
         onFileOpen: () => void,
         onFileQuit: () => Promise<void>,
         onEditUndo: () => void,
+        onEditRedo: () => void,
         onZoomIn: () => void,
         onZoomOut: () => void,
         onZoomFit: () => void
@@ -71,6 +72,12 @@ export class CommandManager {
             id: 'edit-undo',
             label: 'Undo',
             handler: commandHandlers.onEditUndo
+        });
+
+        this.commandRegistry.register({
+            id: 'edit-redo',
+            label: 'Redo',
+            handler: commandHandlers.onEditRedo
         });
 
         this.commandRegistry.register({

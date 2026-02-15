@@ -37,9 +37,21 @@
 .menu-item {
     padding: 8px 15px;
     cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
 }
 .menu-item:hover {
     background: var(--menu-item-hover);
+}
+.menu-item-label {
+    flex: 1;
+}
+.menu-item-shortcut {
+    color: var(--color-text-secondary, #888);
+    font-size: 0.9em;
+    white-space: nowrap;
 }
 .separator {
     height: 1px;

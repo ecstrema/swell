@@ -131,6 +131,12 @@ export class AppMain extends HTMLElement {
         // Initialize shortcut system
         this.initializeShortcuts();
 
+        // Pass shortcut manager to menu bar
+        const menuBar = this.shadowRoot!.querySelector('app-menu-bar');
+        if (menuBar) {
+            (menuBar as any).setShortcutManager(this.commandManager.getShortcutManager());
+        }
+
         // Initialize command palette
         this.commandManager.initializeCommandPalette();
 

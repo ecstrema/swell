@@ -4,6 +4,7 @@
  */
 
 import { MenuItemConfig, SubmenuConfig } from "../../menu-api.js";
+import { ShortcutManager } from "../../shortcuts/index.js";
 
 export interface MenuItemElement {
     element: HTMLElement;
@@ -35,6 +36,8 @@ export function renderMenuItems(
     options: {
         isSubmenu?: boolean;
         onItemClick?: (id: string) => void;
+        shortcutManager?: ShortcutManager;
+        commandIdMapper?: (menuItemId: string) => string | undefined;
     } = {}
 ): MenuItemElement[] {
     const elements: MenuItemElement[] = [];
@@ -78,8 +81,26 @@ export function renderMenuItems(
             const menuItem = item as MenuItemConfig;
             const menuItemElement = document.createElement('div');
             menuItemElement.className = 'menu-item';
-            // Use text or fallback to empty string (separators handled above)
-            menuItemElement.textContent = menuItem.text ?? '';
+            
+            // Create label span
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'menu-item-label';
+            labelSpan.textContent = menuItem.text ?? '';
+            menuItemElement.appendChild(labelSpan);
+            
+            // Add shortcut if available
+            if (menuItem.id && options.shortcutManager && options.commandIdMapper) {
+                const commandId = options.commandIdMapper(menuItem.id);
+                if (commandId) {
+                    const shortcuts = options.shortcutManager.getShortcutsForCommand(commandId);
+                    if (shortcuts.length > 0) {
+                        const shortcutSpan = document.createElement('span');
+                        shortcutSpan.className = 'menu-item-shortcut';
+                        shortcutSpan.textContent = ShortcutManager.formatShortcut(shortcuts[0]);
+                        menuItemElement.appendChild(shortcutSpan);
+                    }
+                }
+            }
             
             if (menuItem.id) {
                 menuItemElement.dataset.id = menuItem.id;

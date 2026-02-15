@@ -12,7 +12,12 @@ vi.mock('../backend.js', () => ({
       { time: Math.floor((start + end) / 2), value: '1' },
       { time: end, value: '0' }
     ];
-  })
+  }),
+  getHierarchy: vi.fn(async () => ({
+    name: 'top',
+    children: []
+  })),
+  isTauri: false
 }));
 
 describe('FileDisplay Component', () => {

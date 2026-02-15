@@ -193,3 +193,21 @@ export const restoreSession = async (): Promise<void> => {
     }
 };
 
+/**
+ * Get files passed as command-line arguments (Tauri only)
+ * Returns an empty array if not in Tauri or if no files were passed
+ */
+export const getStartupFiles = async (): Promise<string[]> => {
+    if (!isTauri) {
+        return [];
+    }
+    
+    try {
+        return await invoke("get_startup_files");
+    } catch (e) {
+        console.error('Failed to get startup files:', e);
+        return [];
+    }
+};
+
+

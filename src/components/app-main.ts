@@ -1,4 +1,4 @@
-import { restoreSession } from "../backend.js";
+import { restoreSession, getStartupFiles } from "../backend.js";
 import "./menu/menu-bar.ts";
 import "./files-tree.ts";
 import "./settings-page.ts";
@@ -126,6 +126,9 @@ export class AppMain extends HTMLElement {
     async connectedCallback() {
         // Restore session (web only - Tauri handles this on startup)
         await restoreSession();
+
+        // Handle startup files from command-line arguments (Tauri only)
+        await this.handleStartupFiles();
 
         // Initialize shortcut system
         this.initializeShortcuts();
@@ -313,6 +316,27 @@ export class AppMain extends HTMLElement {
         if (fileId) {
             await this.refreshFiles();
             this.setActiveFile(fileId);
+        }
+    }
+
+    async handleStartupFiles() {
+        try {
+            const startupFiles = await getStartupFiles();
+            if (startupFiles.length > 0) {
+                console.log(`Opening ${startupFiles.length} file(s) from command-line arguments:`, startupFiles);
+                
+                for (const filePath of startupFiles) {
+                    const fileId = await this.fileManager.openFilePath(filePath);
+                    if (fileId) {
+                        console.log(`Successfully opened: ${filePath}`);
+                    }
+                }
+                
+                // Refresh the file list to display the newly opened files
+                // This will be called by refreshFiles in connectedCallback
+            }
+        } catch (err) {
+            console.error("Error handling startup files:", err);
         }
     }
 

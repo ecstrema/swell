@@ -10,6 +10,7 @@ vi.mock('../backend.js', () => ({
     getFiles: vi.fn(() => Promise.resolve([])),
     removeFile: vi.fn(),
     restoreSession: vi.fn(() => Promise.resolve()),
+    getStartupFiles: vi.fn(() => Promise.resolve([])),
     isTauri: false
 }));
 

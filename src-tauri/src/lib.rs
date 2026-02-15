@@ -5,10 +5,14 @@ use backend::{
 };
 use backend::{HierarchyRoot, SignalChange};
 use tauri_plugin_store::StoreExt;
+use std::sync::Mutex;
 
 const OPENED_FILES_KEY: &str = "opened_files";
 const STORE_NAME: &str = "store.json";
 const SETTINGS_STORE_NAME: &str = "settings.json";
+
+// Store command-line file arguments for the frontend to retrieve
+static STARTUP_FILES: Mutex<Option<Vec<String>>> = Mutex::new(None);
 
 fn save_opened_files(app_handle: &tauri::AppHandle) {
     let files = backend_get_files();
@@ -115,6 +119,12 @@ fn get_all_settings(app_handle: tauri::AppHandle) -> serde_json::Value {
     store.get("settings").unwrap_or(serde_json::json!({}))
 }
 
+#[tauri::command]
+fn get_startup_files() -> Vec<String> {
+    let mut files = STARTUP_FILES.lock().unwrap();
+    files.take().unwrap_or_default()
+}
+
 fn get_nested_value(value: Option<&serde_json::Value>, path: &str) -> Option<serde_json::Value> {
     let parts: Vec<&str> = path.split('/').collect();
     let mut current = value?;
@@ -143,6 +153,29 @@ fn set_nested_value(obj: &mut serde_json::Map<String, serde_json::Value>, path: 
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Capture command-line arguments before Tauri consumes them
+    let args: Vec<String> = std::env::args().collect();
+    
+    // Filter out the executable path and any Tauri-specific arguments
+    // Collect file paths (arguments that exist as files)
+    let file_paths: Vec<String> = args.iter()
+        .skip(1) // Skip the executable path
+        .filter(|arg| {
+            // Skip Tauri internal arguments
+            !arg.starts_with("--") && !arg.starts_with("-")
+        })
+        .filter(|path| {
+            // Check if the path exists as a file
+            std::path::Path::new(path).is_file()
+        })
+        .map(|s| s.to_string())
+        .collect();
+    
+    // Store the file paths for the frontend to retrieve
+    if !file_paths.is_empty() {
+        *STARTUP_FILES.lock().unwrap() = Some(file_paths);
+    }
+    
     tauri::Builder::default()
         .plugin(
             tauri_plugin_store::Builder::new()
@@ -163,7 +196,8 @@ pub fn run() {
             get_signal_changes,
             get_setting,
             set_setting,
-            get_all_settings
+            get_all_settings,
+            get_startup_files
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

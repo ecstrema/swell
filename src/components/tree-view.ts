@@ -2,6 +2,7 @@ import { css } from "../utils/css-utils.js";
 import { scrollbarSheet } from "../styles/shared-sheets.js";
 import treeViewCss from "./tree-view.css?inline";
 import { getSetting } from "../settings/settings-storage.js";
+import ChevronRightIcon from '~icons/mdi/chevron-right?raw';
 
 export interface TreeNode {
     name: string;
@@ -292,6 +293,12 @@ export class TreeView extends HTMLElement {
         details.open = true;
 
         const summary = document.createElement('summary');
+        
+        // Add chevron icon
+        const chevron = document.createElement('span');
+        chevron.className = 'tree-chevron';
+        chevron.innerHTML = ChevronRightIcon;
+        summary.appendChild(chevron);
         
         // Create a wrapper for content (text + icon buttons)
         const summaryContent = document.createElement('div');

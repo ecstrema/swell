@@ -47,6 +47,9 @@ details > summary {
     padding: 2px 4px;
     margin-left: calc(-1 * var(--tree-indent, 20px));
     user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 details > summary::-webkit-details-marker {
@@ -57,15 +60,24 @@ details > summary:hover {
     background-color: var(--color-bg-hover);
 }
 
-details > summary::before {
-    content: '▶';
-    display: inline-block;
-    margin-right: 6px;
-    font-size: 0.8em;
+/* Chevron icon styling */
+.tree-chevron {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
     transition: transform 0.2s;
 }
 
-details[open] > summary::before {
+.tree-chevron svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+details[open] > summary .tree-chevron {
     transform: rotate(90deg);
 }
 

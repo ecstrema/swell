@@ -5,8 +5,12 @@ import { getSetting, setSetting } from '../settings/settings-storage.js';
 import { css } from '../utils/css-utils.js';
 import { scrollbarSheet } from '../styles/shared-sheets.js';
 import settingsCss from './settings-page.css?inline';
+import { TreeView, TreeNode } from './tree-view.js';
 
 export class SettingsPage extends HTMLElement {
+    private static readonly HIGHLIGHT_DURATION_MS = 1000;
+    private treeView: TreeView | null = null;
+
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
@@ -129,6 +133,50 @@ export class SettingsPage extends HTMLElement {
         }
     }
 
+    /**
+     * Generate tree data from settings categories and individual settings
+     */
+    generateTreeData(): TreeNode[] {
+        const grouped = settingsRegister.getGrouped();
+        const treeData: TreeNode[] = [];
+
+        for (const [category, settings] of grouped) {
+            const categoryNode: TreeNode = {
+                name: category,
+                id: `category-${category}`,
+                children: settings.map(setting => ({
+                    name: setting.path.split('/').pop() || setting.path,
+                    id: setting.path,
+                    children: undefined
+                }))
+            };
+            treeData.push(categoryNode);
+        }
+
+        return treeData;
+    }
+
+    /**
+     * Scroll to a specific setting in the settings content area
+     */
+    scrollToSetting(settingPath: string) {
+        const settingId = settingPath.replace(/\//g, '-');
+        const settingElement = this.shadowRoot!.getElementById(settingId);
+        
+        if (settingElement) {
+            // Find the setting row that contains this element
+            const settingRow = settingElement.closest('.setting-row');
+            if (settingRow) {
+                settingRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Add a brief highlight effect
+                settingRow.classList.add('highlight');
+                setTimeout(() => {
+                    settingRow.classList.remove('highlight');
+                }, SettingsPage.HIGHLIGHT_DURATION_MS);
+            }
+        }
+    }
+
     render() {
         const grouped = settingsRegister.getGrouped();
 
@@ -136,9 +184,12 @@ export class SettingsPage extends HTMLElement {
 
         this.shadowRoot!.innerHTML = `
             <div class="settings-container">
+                <div class="settings-sidebar">
+                    <div id="settings-tree"></div>
+                </div>
                 <div class="settings-content">
                     ${Array.from(grouped.entries()).map(([category, settings]) => `
-                        <div class="settings-category">
+                        <div class="settings-category" id="category-${category}">
                             <div class="category-title">${category}</div>
                             ${settings.map(setting => this.renderSetting(setting)).join('')}
                         </div>
@@ -146,6 +197,27 @@ export class SettingsPage extends HTMLElement {
                 </div>
             </div>
         `;
+
+        // Create and configure tree view
+        this.treeView = new TreeView();
+        this.treeView.data = this.generateTreeData();
+        this.treeView.config = {
+            onLeafClick: (node: TreeNode) => {
+                // When a leaf node (individual setting) is clicked, scroll to it
+                // TreeNode id is always a string for settings (setting path)
+                if (typeof node.id === 'string') {
+                    this.scrollToSetting(node.id);
+                }
+            },
+            showFilter: false,
+            showCheckboxes: false
+        };
+
+        // Add tree view to the sidebar
+        const treeContainer = this.shadowRoot!.getElementById('settings-tree');
+        if (treeContainer) {
+            treeContainer.appendChild(this.treeView);
+        }
 
         // Add change listeners to all inputs
         const allSettings = settingsRegister.getAll();

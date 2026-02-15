@@ -17,6 +17,12 @@ interface SelectedSignal {
   isTimeline?: boolean;
 }
 
+interface HierarchyNode {
+  name: string;
+  var_ref?: number;
+  children?: HierarchyNode[];
+}
+
 export class FileDisplay extends HTMLElement {
   private _filename: string = '';
   private selectedSignals: SelectedSignal[] = [];
@@ -554,7 +560,7 @@ export class FileDisplay extends HTMLElement {
       }
       
       // Helper to find signals by ref in the hierarchy
-      const findSignalByRef = (node: any, targetRef: number): { name: string; ref: number } | null => {
+      const findSignalByRef = (node: HierarchyNode, targetRef: number): { name: string; ref: number } | null => {
         if (node.var_ref === targetRef) {
           return { name: node.name, ref: targetRef };
         }
@@ -569,10 +575,10 @@ export class FileDisplay extends HTMLElement {
       
       // Restore signals (positive refs only, not timelines)
       const signalRefsToRestore = state.selectedSignalRefs.filter(ref => ref > 0);
-      for (let i = 0; i < signalRefsToRestore.length; i++) {
-        const ref = signalRefsToRestore[i];
-        // Try to use saved name first, otherwise search hierarchy
-        let name = state.selectedSignalNames[i];
+      for (const ref of signalRefsToRestore) {
+        // Find the index in the original array to get the correct name
+        const originalIndex = state.selectedSignalRefs.indexOf(ref);
+        let name = state.selectedSignalNames[originalIndex];
         
         if (!name) {
           // Search hierarchy for the signal

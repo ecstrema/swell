@@ -26,12 +26,12 @@ const FILE_STATE_KEY = 'FileStates';
 
 /**
  * Get a normalized file identifier for storage key
- * Uses the filename without path for consistency across platforms
+ * To handle files with the same name in different directories,
+ * we use the full path but normalize path separators
  */
 function getFileKey(fileId: string): string {
-    // Extract just the filename from the full path
-    const filename = fileId.split(/[/\\]/).pop() || fileId;
-    return filename;
+    // Normalize path separators to forward slashes for consistency
+    return fileId.replace(/\\/g, '/');
 }
 
 /**

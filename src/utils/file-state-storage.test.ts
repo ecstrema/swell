@@ -42,7 +42,7 @@ describe('file-state-storage', () => {
             expect(loaded?.timelineCount).toBe(1);
         });
 
-        it('should normalize file paths to just filename', async () => {
+        it('should normalize file paths consistently', async () => {
             const fileState: FileState = {
                 selectedSignalRefs: [1],
                 selectedSignalNames: ['sig'],
@@ -52,11 +52,11 @@ describe('file-state-storage', () => {
                 timestamp: Date.now()
             };
 
-            // Save with different paths but same filename
+            // Save with forward slashes
             await saveFileState('/path/to/test.vcd', fileState);
             
-            // Load with different path should work
-            const loaded = await loadFileState('C:\\other\\path\\test.vcd');
+            // Load with backslashes - should normalize to forward slashes
+            const loaded = await loadFileState('\\path\\to\\test.vcd');
             expect(loaded).not.toBeNull();
             expect(loaded?.selectedSignalRefs).toEqual([1]);
         });

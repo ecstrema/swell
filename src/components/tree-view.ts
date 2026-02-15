@@ -318,7 +318,6 @@ export class TreeView extends HTMLElement {
                     
                     // Stop propagation to prevent details toggle
                     button.addEventListener('click', (e: MouseEvent) => {
-                        e.preventDefault();
                         e.stopPropagation();
                         btnConfig.onClick(node, e);
                     });

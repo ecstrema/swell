@@ -80,7 +80,7 @@ export class FilesTree extends TreeView {
                         buttons.push({
                             icon: PlusBoxIcon,
                             tooltip: 'Add all signals in this group',
-                            onClick: (node: TreeNode, e: MouseEvent) => {
+                            onClick: (node: TreeNode) => {
                                 this.addAllDirectChildSignals(node);
                             }
                         });

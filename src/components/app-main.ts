@@ -329,6 +329,8 @@ export class AppMain extends HTMLElement {
                     const fileId = await this.fileManager.openFilePath(filePath);
                     if (fileId) {
                         console.log(`Successfully opened: ${filePath}`);
+                    } else {
+                        console.error(`Failed to open file: ${filePath}`);
                     }
                 }
                 

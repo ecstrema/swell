@@ -209,5 +209,3 @@ export const getStartupFiles = async (): Promise<string[]> => {
         return [];
     }
 };
-
-

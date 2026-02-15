@@ -5,6 +5,12 @@ import { FileState } from './file-state-storage.js';
 import { saveStateFileDialog, openStateFileDialog, writeTextFile, readTextFile, isTauri } from '../backend.js';
 
 /**
+ * Current state file format version
+ * Used for versioning the .swellstate file format
+ */
+export const CURRENT_STATE_VERSION = 'V0.1';
+
+/**
  * Interface for the complete application state that can be saved to a file
  */
 export interface AppState {
@@ -32,7 +38,7 @@ export async function saveStateToFile(filename: string, state: FileState): Promi
     
     // Create the app state object
     const appState: AppState = {
-        version: 'V0.1',
+        version: CURRENT_STATE_VERSION,
         filename: filename,
         state: state
     };
@@ -65,8 +71,8 @@ export async function loadStateFromFile(): Promise<{ filename: string; state: Fi
         const appState: AppState = JSON.parse(content);
         
         // Validate version
-        if (appState.version !== 'V0.1') {
-            console.warn(`Unknown state file version: ${appState.version}`);
+        if (appState.version !== CURRENT_STATE_VERSION) {
+            console.warn(`Unknown state file version: ${appState.version} (expected ${CURRENT_STATE_VERSION})`);
         }
         
         // Validate required fields

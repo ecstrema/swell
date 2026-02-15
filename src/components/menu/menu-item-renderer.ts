@@ -78,10 +78,18 @@ export function renderMenuItems(
             separator.className = options.isSubmenu ? 'menu-separator' : 'separator';
             elements.push({ element: separator });
         } else {
-            // Regular menu item
+            // Regular menu item or checkbox item
             const menuItem = item as MenuItemConfig;
             const menuItemElement = document.createElement('div');
             menuItemElement.className = 'menu-item';
+            
+            // Add checkbox indicator if this is a checkbox type
+            if (menuItem.type === 'checkbox') {
+                const checkboxSpan = document.createElement('span');
+                checkboxSpan.className = 'menu-item-checkbox';
+                checkboxSpan.textContent = menuItem.checked ? '✓' : '';
+                menuItemElement.appendChild(checkboxSpan);
+            }
             
             // Create label span
             const labelSpan = document.createElement('span');

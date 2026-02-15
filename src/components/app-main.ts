@@ -24,6 +24,8 @@ import { UndoManager } from "../undo/undo-manager.js";
 import { UndoableOperation } from "../undo/undo-tree.js";
 import { saveStateToFile, loadStateFromFile } from "../utils/state-file-io.js";
 
+// Setting paths
+const SETTING_SIGNAL_SELECTION_VISIBLE = 'Interface/Signal Selection Visible';
 
 
 
@@ -42,6 +44,7 @@ export class AppMain extends HTMLElement {
     private settingsPage!: SettingsPage;
     private aboutPane!: AboutPane;
     private undoTreePanel!: UndoTreePanel;
+    private menuBar: MenuBar | null = null;
 
     constructor() {
         super();
@@ -133,9 +136,10 @@ export class AppMain extends HTMLElement {
         // Initialize shortcut system
         this.initializeShortcuts();
 
-        // Pass shortcut manager to menu bar
+        // Pass shortcut manager to menu bar and store reference
         const menuBar = this.shadowRoot!.querySelector('app-menu-bar');
         if (menuBar instanceof MenuBar) {
+            this.menuBar = menuBar;
             menuBar.setShortcutManager(this.commandManager.getShortcutManager());
         }
 
@@ -286,6 +290,9 @@ export class AppMain extends HTMLElement {
             onZoomFit: () => {
                 // Dispatch zoom-fit event for the active file display
                 this.dispatchZoomCommand('zoom-fit');
+            },
+            onToggleSignalSelection: () => {
+                this.toggleSignalSelection();
             }
         });
 
@@ -403,8 +410,30 @@ export class AppMain extends HTMLElement {
             this.setActiveFile(activeFileId);
         }
 
-        // Update layout to show/hide sidebar based on file count
-        this.dockLayoutHelper.updateSidebarVisibility(fileIds.length > 0);
+        // Update layout to show/hide sidebar based on file count and user preference
+        if (fileIds.length > 0) {
+            // Get user preference for signal selection visibility
+            let signalSelectionVisible = true;
+            try {
+                const { settingsStorage } = await import('../settings/settings-storage.js');
+                signalSelectionVisible = (await settingsStorage.getSetting(SETTING_SIGNAL_SELECTION_VISIBLE)) ?? true;
+            } catch (error) {
+                console.warn('Failed to load signal selection visibility setting:', error);
+            }
+            
+            // Only show sidebar if user wants it visible
+            if (signalSelectionVisible) {
+                this.dockLayoutHelper.updateSidebarVisibility(true);
+            }
+            
+            // Update menu checkbox to reflect current state
+            if (this.menuBar) {
+                this.menuBar.updateMenuItemChecked('toggle-signal-selection', this.dockLayoutHelper.isSidebarVisible());
+            }
+        } else {
+            // Hide sidebar when no files are open
+            this.dockLayoutHelper.updateSidebarVisibility(false);
+        }
     }
 
     async handleFileOpen() {
@@ -581,6 +610,26 @@ export class AppMain extends HTMLElement {
         });
         
         activeRes.element.dispatchEvent(event);
+    }
+
+    /**
+     * Toggle the signal selection view visibility
+     */
+    private async toggleSignalSelection() {
+        const newVisibility = this.dockLayoutHelper.toggleSidebarVisibility();
+        
+        // Update the menu checkbox state
+        if (this.menuBar) {
+            this.menuBar.updateMenuItemChecked('toggle-signal-selection', newVisibility);
+        }
+        
+        // Persist the setting
+        try {
+            const { settingsStorage } = await import('../settings/settings-storage.js');
+            await settingsStorage.setSetting(SETTING_SIGNAL_SELECTION_VISIBLE, newVisibility);
+        } catch (error) {
+            console.warn('Failed to persist signal selection visibility setting:', error);
+        }
     }
 }
 

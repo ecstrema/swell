@@ -1,6 +1,9 @@
 import { DockManager } from "./docking/dock-manager.js";
 import { DockLayout, DockStack, DockNode } from "./docking/types.js";
 
+// Layout constants
+const SIDEBAR_DEFAULT_WEIGHT = 20;
+
 /**
  * Helper utilities for managing docking layout and panes
  */
@@ -113,7 +116,7 @@ export class DockLayoutHelper {
                 const sidebarStack: DockStack = {
                     type: 'stack',
                     id: 'sidebar-stack',
-                    weight: 20,
+                    weight: SIDEBAR_DEFAULT_WEIGHT,
                     activeId: 'signal-selection-pane',
                     children: [
                         {
@@ -151,5 +154,64 @@ export class DockLayoutHelper {
             mainStack.activeId = paneId;
             this.dockManager.render();
         }
+    }
+
+    /**
+     * Toggle sidebar visibility
+     * @returns new visibility state (true = visible, false = hidden)
+     */
+    toggleSidebarVisibility(): boolean {
+        const layout = this.dockManager.layout;
+        if (!layout || layout.root.type !== 'box') return false;
+
+        const rootBox = layout.root;
+        const sidebarIndex = rootBox.children.findIndex(
+            child => child.type === 'stack' && child.id === 'sidebar-stack'
+        );
+
+        if (sidebarIndex === -1) {
+            // Sidebar is hidden, show it
+            const sidebarStack: DockStack = {
+                type: 'stack',
+                id: 'sidebar-stack',
+                weight: SIDEBAR_DEFAULT_WEIGHT,
+                activeId: 'signal-selection-pane',
+                children: [
+                    {
+                        id: 'signal-selection-pane',
+                        title: 'Signal Selection',
+                        contentId: 'signal-selection',
+                        closable: false
+                    },
+                    {
+                        id: 'settings-pane',
+                        title: 'Settings',
+                        contentId: 'settings',
+                        closable: true
+                    }
+                ]
+            };
+            rootBox.children.unshift(sidebarStack);
+            this.dockManager.render();
+            return true;
+        } else {
+            // Sidebar is visible, hide it
+            rootBox.children.splice(sidebarIndex, 1);
+            this.dockManager.render();
+            return false;
+        }
+    }
+
+    /**
+     * Check if sidebar is currently visible
+     */
+    isSidebarVisible(): boolean {
+        const layout = this.dockManager.layout;
+        if (!layout || layout.root.type !== 'box') return false;
+
+        const rootBox = layout.root;
+        return rootBox.children.some(
+            child => child.type === 'stack' && child.id === 'sidebar-stack'
+        );
     }
 }

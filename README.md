@@ -23,6 +23,12 @@ swell path/to/waveform.vcd
 
 # Open multiple files
 swell design.vcd testbench.fst signals.ghw
+
+# Display help information
+swell --help
+
+# Display version information
+swell --version
 ```
 
 The application will automatically load all specified files on startup.

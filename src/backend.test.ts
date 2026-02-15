@@ -92,5 +92,11 @@ describe('Backend Interface', () => {
              expect(mockFetch).toHaveBeenCalledWith('/examples/simple.vcd');
              expect(wasm.add_file_bytes).toHaveBeenCalledWith('simple.vcd', expect.any(Uint8Array));
          });
+
+         it('getStartupFiles should return empty array in Web mode', async () => {
+             const result = await backend.getStartupFiles();
+             expect(result).toEqual([]);
+             expect(invoke).not.toHaveBeenCalled();
+         });
     });
 });

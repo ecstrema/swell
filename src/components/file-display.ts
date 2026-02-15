@@ -347,7 +347,7 @@ export class FileDisplay extends HTMLElement {
       const computedStyle = getComputedStyle(this);
 
       // Clear canvas - use theme background color
-      ctx.fillStyle = computedStyle.getPropertyValue('--color-bg-surface') || '#1e1e1e';
+      ctx.fillStyle = computedStyle.getPropertyValue('--color-bg-surface') || '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       if (changes.length === 0) return;

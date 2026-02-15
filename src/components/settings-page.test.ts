@@ -121,7 +121,7 @@ describe('SettingsPage', () => {
         expect((treeIndentInput as HTMLInputElement)?.type).toBe('number');
     });
 
-    it('should scroll to setting when tree item is clicked', () => {
+    it('should scroll to setting when tree item is clicked', async () => {
         // Create a spy for scrollIntoView
         const scrollIntoViewMock = vi.fn();
         Element.prototype.scrollIntoView = scrollIntoViewMock;
@@ -129,27 +129,33 @@ describe('SettingsPage', () => {
         const settingPath = 'Application/Color Theme';
         settingsPage.scrollToSetting(settingPath);
 
-        // Wait a bit for the DOM to update
-        setTimeout(() => {
-            expect(scrollIntoViewMock).toHaveBeenCalled();
-        }, 100);
+        // scrollIntoView should be called
+        expect(scrollIntoViewMock).toHaveBeenCalled();
     });
 
-    it('should add highlight class when scrolling to setting', () => {
+    it('should add highlight class when scrolling to setting', async () => {
+        vi.useFakeTimers();
+        
         const settingPath = 'Application/Color Theme';
         const settingId = settingPath.replace(/\//g, '-');
         const settingElement = settingsPage.shadowRoot!.getElementById(settingId);
         
-        if (settingElement) {
-            const settingRow = settingElement.closest('.setting-row');
-            
-            settingsPage.scrollToSetting(settingPath);
-            
-            // Check that highlight class is added (it will be removed after 1 second)
-            setTimeout(() => {
-                expect(settingRow?.classList.contains('highlight')).toBe(true);
-            }, 100);
-        }
+        expect(settingElement).not.toBeNull();
+        const settingRow = settingElement!.closest('.setting-row');
+        expect(settingRow).not.toBeNull();
+        
+        settingsPage.scrollToSetting(settingPath);
+        
+        // Check that highlight class is added
+        expect(settingRow?.classList.contains('highlight')).toBe(true);
+        
+        // Fast-forward time by 1 second
+        vi.advanceTimersByTime(1000);
+        
+        // Check that highlight class is removed after timeout
+        expect(settingRow?.classList.contains('highlight')).toBe(false);
+        
+        vi.useRealTimers();
     });
 
     it('should have tree data with correct structure', () => {

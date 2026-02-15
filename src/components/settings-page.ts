@@ -8,6 +8,7 @@ import settingsCss from './settings-page.css?inline';
 import { TreeView, TreeNode } from './tree-view.js';
 
 export class SettingsPage extends HTMLElement {
+    private static readonly HIGHLIGHT_DURATION_MS = 1000;
     private treeView: TreeView | null = null;
 
     constructor() {
@@ -171,7 +172,7 @@ export class SettingsPage extends HTMLElement {
                 settingRow.classList.add('highlight');
                 setTimeout(() => {
                     settingRow.classList.remove('highlight');
-                }, 1000);
+                }, SettingsPage.HIGHLIGHT_DURATION_MS);
             }
         }
     }
@@ -203,7 +204,10 @@ export class SettingsPage extends HTMLElement {
         this.treeView.config = {
             onLeafClick: (node: TreeNode) => {
                 // When a leaf node (individual setting) is clicked, scroll to it
-                this.scrollToSetting(node.id as string);
+                // TreeNode id is always a string for settings (setting path)
+                if (typeof node.id === 'string') {
+                    this.scrollToSetting(node.id);
+                }
             },
             showFilter: false,
             showCheckboxes: false

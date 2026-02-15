@@ -152,4 +152,63 @@ export class DockLayoutHelper {
             this.dockManager.render();
         }
     }
+
+    /**
+     * Toggle sidebar visibility
+     * @returns new visibility state (true = visible, false = hidden)
+     */
+    toggleSidebarVisibility(): boolean {
+        const layout = this.dockManager.layout;
+        if (!layout || layout.root.type !== 'box') return false;
+
+        const rootBox = layout.root;
+        const sidebarIndex = rootBox.children.findIndex(
+            child => child.type === 'stack' && child.id === 'sidebar-stack'
+        );
+
+        if (sidebarIndex === -1) {
+            // Sidebar is hidden, show it
+            const sidebarStack: DockStack = {
+                type: 'stack',
+                id: 'sidebar-stack',
+                weight: 20,
+                activeId: 'signal-selection-pane',
+                children: [
+                    {
+                        id: 'signal-selection-pane',
+                        title: 'Signal Selection',
+                        contentId: 'signal-selection',
+                        closable: false
+                    },
+                    {
+                        id: 'settings-pane',
+                        title: 'Settings',
+                        contentId: 'settings',
+                        closable: true
+                    }
+                ]
+            };
+            rootBox.children.unshift(sidebarStack);
+            this.dockManager.render();
+            return true;
+        } else {
+            // Sidebar is visible, hide it
+            rootBox.children.splice(sidebarIndex, 1);
+            this.dockManager.render();
+            return false;
+        }
+    }
+
+    /**
+     * Check if sidebar is currently visible
+     */
+    isSidebarVisible(): boolean {
+        const layout = this.dockManager.layout;
+        if (!layout || layout.root.type !== 'box') return false;
+
+        const rootBox = layout.root;
+        return rootBox.children.some(
+            child => child.type === 'stack' && child.id === 'sidebar-stack'
+        );
+    }
 }

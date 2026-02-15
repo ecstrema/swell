@@ -18,6 +18,7 @@ export class MenuBar extends HTMLElement {
       'zoom-in': 'view-zoom-in',
       'zoom-out': 'view-zoom-out',
       'zoom-fit': 'view-zoom-fit',
+      'toggle-signal-selection': 'view-toggle-signal-selection',
   };
 
   constructor() {
@@ -229,6 +230,27 @@ export class MenuBar extends HTMLElement {
                                     }
                                 }
                             ]
+                        },
+                        {
+                            type: 'separator' as const
+                        },
+                        {
+                            text: 'Panes',
+                            items: [
+                                {
+                                    id: 'toggle-signal-selection',
+                                    text: 'Signal Selection',
+                                    type: 'checkbox' as const,
+                                    checked: true,
+                                    action: () => {
+                                        this.dispatchEvent(new CustomEvent('menu-action', {
+                                            bubbles: true,
+                                            composed: true,
+                                            detail: 'view-toggle-signal-selection'
+                                        }));
+                                    }
+                                }
+                            ]
                         }
                     ]
                 },
@@ -266,6 +288,42 @@ export class MenuBar extends HTMLElement {
       if (this.shadowRoot && this.shadowRoot.childNodes.length > 0) {
           this.render();
       }
+  }
+
+  /**
+   * Update a menu item's checked state
+   */
+  updateMenuItemChecked(menuItemId: string, checked: boolean) {
+      if (!this.menuConfig) return;
+
+      // Find and update the menu item in the config
+      const findAndUpdate = (items: (MenuItemConfig | SubmenuConfig)[]): boolean => {
+          for (const item of items) {
+              if ('items' in item) {
+                  // Recursively search in nested submenu
+                  if (findAndUpdate(item.items)) {
+                      return true;
+                  }
+              } else {
+                  const menuItem = item as MenuItemConfig;
+                  if (menuItem.id === menuItemId) {
+                      menuItem.checked = checked;
+                      return true;
+                  }
+              }
+          }
+          return false;
+      };
+
+      // Update in all submenus
+      for (const submenu of this.menuConfig.items) {
+          if (findAndUpdate(submenu.items)) {
+              break;
+          }
+      }
+
+      // Re-render the menu
+      this.render();
   }
 
   /**

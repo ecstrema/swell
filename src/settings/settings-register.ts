@@ -103,3 +103,10 @@ settingsRegister.register({
     max: 60,
     step: 1
 });
+
+settingsRegister.register({
+    path: 'Interface/Signal Selection Visible',
+    description: 'Show or hide the signal selection panel',
+    type: 'boolean',
+    defaultValue: true
+});

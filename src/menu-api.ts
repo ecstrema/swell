@@ -3,7 +3,7 @@
 import { isTauri } from "./backend.js";
 
 // Menu item types
-export type MenuItemType = 'normal' | 'separator';
+export type MenuItemType = 'normal' | 'separator' | 'checkbox';
 
 // Menu item definition
 export interface MenuItemConfig {
@@ -11,6 +11,7 @@ export interface MenuItemConfig {
     text?: string;
     type?: MenuItemType;
     action?: () => void;
+    checked?: boolean;
 }
 
 // Submenu definition
@@ -29,6 +30,7 @@ export interface AbstractMenuItem {
     id?: string;
     text?: string;
     type: MenuItemType;
+    checked?: boolean;
 }
 
 // Abstract submenu

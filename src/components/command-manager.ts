@@ -53,7 +53,8 @@ export class CommandManager {
         onEditRedo: () => void,
         onZoomIn: () => void,
         onZoomOut: () => void,
-        onZoomFit: () => void
+        onZoomFit: () => void,
+        onToggleSignalSelection: () => void
     }): void {
         // Register commands that can be triggered by shortcuts or menu items
         this.commandRegistry.register({
@@ -96,6 +97,12 @@ export class CommandManager {
             id: 'view-zoom-fit',
             label: 'Zoom to Fit',
             handler: commandHandlers.onZoomFit
+        });
+
+        this.commandRegistry.register({
+            id: 'view-toggle-signal-selection',
+            label: 'Toggle Signal Selection View',
+            handler: commandHandlers.onToggleSignalSelection
         });
 
         // Register command palette command

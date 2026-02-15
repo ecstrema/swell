@@ -1,0 +1,23 @@
+:host {
+    display: block;
+    flex: 0 0 auto;
+    background: transparent;
+    transition: background 0.2s;
+    z-index: 10;
+}
+
+:host(:hover) {
+    background: var(--color-accent, #007acc);
+}
+
+:host([direction="horizontal"]) {
+    cursor: ew-resize;
+    width: var(--resizer-size, 4px);
+    height: 100%;
+}
+
+:host([direction="vertical"]) {
+    cursor: ns-resize;
+    height: var(--resizer-size, 4px);
+    width: 100%;
+}

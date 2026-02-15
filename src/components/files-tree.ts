@@ -1,7 +1,8 @@
-import { TreeView, TreeNode } from "./tree-view.js";
+import { TreeView, TreeNode, TreeIconButton } from "./tree-view.js";
 import { css } from "../utils/css-utils.js";
 import filesTreeCss from "./files-tree.css?inline";
 import "./tree-view.js";
+import PlusBoxIcon from '~icons/mdi/plus-box?raw';
 
 export interface HierarchyVar {
     name: string;
@@ -66,6 +67,27 @@ export class FilesTree extends TreeView {
             showFilter: true,
             isChecked: (node: TreeNode) => {
                 return this._selectedSignalRefs.has(node.id as number);
+            },
+            branchIconButtons: (node: TreeNode) => {
+                // Add button to add all direct child signals (non-recursively)
+                const buttons: TreeIconButton[] = [];
+                
+                if (node.children && node.children.length > 0) {
+                    // Check if there are any leaf children (signals)
+                    const hasLeafChildren = node.children.some(child => !child.children || child.children.length === 0);
+                    
+                    if (hasLeafChildren) {
+                        buttons.push({
+                            icon: PlusBoxIcon,
+                            tooltip: 'Add all signals in this group',
+                            onClick: (node: TreeNode) => {
+                                this.addAllDirectChildSignals(node);
+                            }
+                        });
+                    }
+                }
+                
+                return buttons;
             }
         };
     }
@@ -158,6 +180,35 @@ export class FilesTree extends TreeView {
             name: variable.name,
             id: variable.ref
         };
+    }
+    
+    /**
+     * Add all direct child signals (non-recursively) from a scope node
+     */
+    private addAllDirectChildSignals(node: TreeNode) {
+        if (!node.children) {
+            return;
+        }
+        
+        // Collect all direct child signals (leaf nodes)
+        const leafChildren = node.children.filter(child => !child.children || child.children.length === 0);
+        
+        // Dispatch checkbox-toggle event for each leaf child
+        leafChildren.forEach(leafNode => {
+            // Only add if not already selected
+            if (!this._selectedSignalRefs.has(leafNode.id as number)) {
+                this.dispatchEvent(new CustomEvent('checkbox-toggle', {
+                    detail: { 
+                        name: leafNode.name, 
+                        ref: leafNode.id, 
+                        filename: this._filename, 
+                        checked: true 
+                    },
+                    bubbles: true,
+                    composed: true
+                }));
+            }
+        });
     }
 }
 

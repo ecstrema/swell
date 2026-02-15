@@ -302,4 +302,119 @@ describe('TreeView Component', () => {
     
     expect(shadowRoot?.textContent).toContain('CheRRy');
   });
+
+  it('should render icon buttons on leaf nodes when configured', () => {
+    const mockIcon = '<svg><circle/></svg>';
+    let clickedNode: TreeNode | null = null;
+    
+    element.config = {
+      leafIconButtons: (node: TreeNode) => {
+        return [{
+          icon: mockIcon,
+          tooltip: 'Test Action',
+          onClick: (node: TreeNode) => {
+            clickedNode = node;
+          }
+        }];
+      }
+    };
+    
+    const nodes: TreeNode[] = [
+      { name: 'Test Node', id: 42 }
+    ];
+    
+    element.data = nodes;
+    
+    const shadowRoot = element.shadowRoot;
+    const button = shadowRoot?.querySelector('.tree-icon-button') as HTMLButtonElement;
+    
+    expect(button).toBeTruthy();
+    expect(button.title).toBe('Test Action');
+    expect(button.innerHTML).toContain('<svg>');
+    
+    // Click the button
+    button.click();
+    
+    expect(clickedNode).not.toBeNull();
+    expect(clickedNode?.name).toBe('Test Node');
+    expect(clickedNode?.id).toBe(42);
+  });
+
+  it('should render icon buttons on branch nodes when configured', () => {
+    const mockIcon = '<svg><rect/></svg>';
+    let clickedNode: TreeNode | null = null;
+    
+    element.config = {
+      branchIconButtons: (node: TreeNode) => {
+        return [{
+          icon: mockIcon,
+          tooltip: 'Branch Action',
+          onClick: (node: TreeNode) => {
+            clickedNode = node;
+          }
+        }];
+      }
+    };
+    
+    const nodes: TreeNode[] = [
+      {
+        name: 'Parent',
+        id: 1,
+        children: [
+          { name: 'Child', id: 2 }
+        ]
+      }
+    ];
+    
+    element.data = nodes;
+    
+    const shadowRoot = element.shadowRoot;
+    const button = shadowRoot?.querySelector('.tree-icon-button') as HTMLButtonElement;
+    
+    expect(button).toBeTruthy();
+    expect(button.title).toBe('Branch Action');
+    expect(button.innerHTML).toContain('<svg>');
+    
+    // Click the button
+    button.click();
+    
+    expect(clickedNode).not.toBeNull();
+    expect(clickedNode?.name).toBe('Parent');
+    expect(clickedNode?.id).toBe(1);
+  });
+
+  it('should not trigger parent click when icon button is clicked', () => {
+    const mockIcon = '<svg><circle/></svg>';
+    let leafClicked = false;
+    let buttonClicked = false;
+    
+    element.config = {
+      onLeafClick: () => {
+        leafClicked = true;
+      },
+      leafIconButtons: (node: TreeNode) => {
+        return [{
+          icon: mockIcon,
+          tooltip: 'Test',
+          onClick: () => {
+            buttonClicked = true;
+          }
+        }];
+      }
+    };
+    
+    const nodes: TreeNode[] = [
+      { name: 'Test', id: 1 }
+    ];
+    
+    element.data = nodes;
+    
+    const shadowRoot = element.shadowRoot;
+    const button = shadowRoot?.querySelector('.tree-icon-button') as HTMLButtonElement;
+    
+    button.click();
+    
+    expect(buttonClicked).toBe(true);
+    expect(leafClicked).toBe(false);
+  });
 });

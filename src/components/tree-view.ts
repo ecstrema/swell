@@ -9,6 +9,23 @@ export interface TreeNode {
     children?: TreeNode[];
 }
 
+export interface TreeIconButton {
+    /**
+     * SVG icon to display (raw SVG string from unplugin-icons)
+     */
+    icon: string;
+    
+    /**
+     * Tooltip text to display on hover
+     */
+    tooltip: string;
+    
+    /**
+     * Called when the icon button is clicked
+     */
+    onClick: (node: TreeNode, event: MouseEvent) => void;
+}
+
 export interface TreeViewConfig {
     /**
      * Called when a leaf node (node without children) is clicked
@@ -74,6 +91,16 @@ export interface TreeViewConfig {
      * Called when a drag operation ends
      */
     onDragEnd?: () => void;
+    
+    /**
+     * Icon buttons to display on the right side of leaf nodes
+     */
+    leafIconButtons?: (node: TreeNode) => TreeIconButton[];
+    
+    /**
+     * Icon buttons to display on the right side of branch/scope nodes
+     */
+    branchIconButtons?: (node: TreeNode) => TreeIconButton[];
 }
 
 /**
@@ -265,7 +292,44 @@ export class TreeView extends HTMLElement {
         details.open = true;
 
         const summary = document.createElement('summary');
-        summary.textContent = node.name;
+        
+        // Create a wrapper for content (text + icon buttons)
+        const summaryContent = document.createElement('div');
+        summaryContent.className = 'summary-content';
+        
+        // Add node name text
+        const textSpan = document.createElement('span');
+        textSpan.textContent = node.name;
+        summaryContent.appendChild(textSpan);
+        
+        // Add icon buttons if configured
+        if (this._config.branchIconButtons) {
+            const buttons = this._config.branchIconButtons(node);
+            if (buttons && buttons.length > 0) {
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = 'icon-button-container';
+                
+                buttons.forEach(btnConfig => {
+                    const button = document.createElement('button');
+                    button.className = 'tree-icon-button';
+                    button.innerHTML = btnConfig.icon;
+                    button.title = btnConfig.tooltip;
+                    button.setAttribute('aria-label', btnConfig.tooltip);
+                    
+                    // Stop propagation to prevent details toggle
+                    button.addEventListener('click', (e: MouseEvent) => {
+                        e.stopPropagation();
+                        btnConfig.onClick(node, e);
+                    });
+                    
+                    buttonContainer.appendChild(button);
+                });
+                
+                summaryContent.appendChild(buttonContainer);
+            }
+        }
+        
+        summary.appendChild(summaryContent);
         details.appendChild(summary);
 
         // Recursively add children
@@ -401,6 +465,33 @@ export class TreeView extends HTMLElement {
         const textSpan = document.createElement('span');
         textSpan.textContent = node.name;
         div.appendChild(textSpan);
+        
+        // Add icon buttons if configured
+        if (this._config.leafIconButtons) {
+            const buttons = this._config.leafIconButtons(node);
+            if (buttons && buttons.length > 0) {
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = 'icon-button-container';
+                
+                buttons.forEach(btnConfig => {
+                    const button = document.createElement('button');
+                    button.className = 'tree-icon-button';
+                    button.innerHTML = btnConfig.icon;
+                    button.title = btnConfig.tooltip;
+                    button.setAttribute('aria-label', btnConfig.tooltip);
+                    
+                    // Stop propagation to prevent leaf click
+                    button.addEventListener('click', (e: MouseEvent) => {
+                        e.stopPropagation();
+                        btnConfig.onClick(node, e);
+                    });
+                    
+                    buttonContainer.appendChild(button);
+                });
+                
+                div.appendChild(buttonContainer);
+            }
+        }
 
         if (this._config.onLeafClick) {
             div.addEventListener('click', () => {

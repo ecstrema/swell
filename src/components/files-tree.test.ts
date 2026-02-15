@@ -236,4 +236,127 @@ describe('FilesTree Component', () => {
     expect(shadowRoot?.textContent).not.toContain('reset');
     expect(shadowRoot?.textContent).not.toContain('data_out');
   });
+
+  it('should show icon button on scope nodes with direct signal children', () => {
+    const hierarchy: HierarchyRoot = {
+      name: 'top',
+      ref: 0,
+      vars: [],
+      scopes: [
+        {
+          name: 'module1',
+          ref: 1,
+          vars: [
+            { name: 'signal1', ref: 2 },
+            { name: 'signal2', ref: 3 }
+          ],
+          scopes: []
+        }
+      ]
+    };
+    
+    element.hierarchyData = hierarchy;
+    
+    const shadowRoot = element.shadowRoot;
+    const button = shadowRoot?.querySelector('.tree-icon-button') as HTMLButtonElement;
+    
+    expect(button).toBeTruthy();
+    expect(button.title).toBe('Add all signals in this group');
+  });
+
+  it('should dispatch checkbox-toggle events when "add all signals" button is clicked', async () => {
+    const hierarchy: HierarchyRoot = {
+      name: 'top',
+      ref: 0,
+      vars: [],
+      scopes: [
+        {
+          name: 'module1',
+          ref: 1,
+          vars: [
+            { name: 'signal1', ref: 2 },
+            { name: 'signal2', ref: 3 }
+          ],
+          scopes: []
+        }
+      ]
+    };
+    
+    element.filename = 'test.vcd';
+    element.hierarchyData = hierarchy;
+    
+    // Collect events
+    const events: CustomEvent[] = [];
+    const eventPromise = new Promise<void>((resolve) => {
+      let eventCount = 0;
+      element.addEventListener('checkbox-toggle', (e: Event) => {
+        events.push(e as CustomEvent);
+        eventCount++;
+        if (eventCount === 2) {
+          resolve();
+        }
+      });
+    });
+    
+    const shadowRoot = element.shadowRoot;
+    const button = shadowRoot?.querySelector('.tree-icon-button') as HTMLButtonElement;
+    
+    button.click();
+    
+    await eventPromise;
+    
+    expect(events.length).toBe(2);
+    expect(events[0].detail.name).toBe('signal1');
+    expect(events[0].detail.ref).toBe(2);
+    expect(events[0].detail.checked).toBe(true);
+    expect(events[1].detail.name).toBe('signal2');
+    expect(events[1].detail.ref).toBe(3);
+    expect(events[1].detail.checked).toBe(true);
+  });
+
+  it('should only add direct children, not recursive descendants', () => {
+    const hierarchy: HierarchyRoot = {
+      name: 'top',
+      ref: 0,
+      vars: [],
+      scopes: [
+        {
+          name: 'module1',
+          ref: 1,
+          vars: [
+            { name: 'signal1', ref: 2 }
+          ],
+          scopes: [
+            {
+              name: 'submodule',
+              ref: 3,
+              vars: [
+                { name: 'nested_signal', ref: 4 }
+              ],
+              scopes: []
+            }
+          ]
+        }
+      ]
+    };
+    
+    element.filename = 'test.vcd';
+    element.hierarchyData = hierarchy;
+    
+    // Collect events
+    const events: CustomEvent[] = [];
+    element.addEventListener('checkbox-toggle', (e: Event) => {
+      events.push(e as CustomEvent);
+    });
+    
+    const shadowRoot = element.shadowRoot;
+    const button = shadowRoot?.querySelector('.tree-icon-button') as HTMLButtonElement;
+    
+    button.click();
+    
+    // Should only have one event for signal1, not nested_signal
+    expect(events.length).toBe(1);
+    expect(events[0].detail.name).toBe('signal1');
+    expect(events[0].detail.ref).toBe(2);
+  });
 });

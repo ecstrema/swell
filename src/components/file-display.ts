@@ -184,16 +184,11 @@ export class FileDisplay extends HTMLElement {
   }
 
   private handleThemeChanged(event: Event) {
-    // When theme changes, repaint all signal canvases and timelines
+    // When theme changes, repaint all signal canvases
+    // Timelines handle their own theme changes via their own theme-changed listener
     this.selectedSignals.forEach(signal => {
       if (signal.canvas) {
         this.paintSignal(signal.canvas, signal.ref);
-      } else if (signal.timeline) {
-        // Timeline has its own canvas that needs to be updated
-        // The timeline component should handle repainting itself
-        // but we can force it by updating the range
-        const currentRange = signal.timeline.visibleRange;
-        signal.timeline.visibleRange = currentRange;
       }
     });
   }

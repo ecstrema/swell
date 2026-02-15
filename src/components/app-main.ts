@@ -101,7 +101,7 @@ export class AppMain extends HTMLElement {
         this.dockManager.registerContent('about', () => this.aboutPane);
         this.dockManager.registerContent('undo-tree', () => this.undoTreePanel);
 
-        // Set initial layout
+        // Set initial layout (sidebar will be added when files are opened)
         this.dockManager.layout = {
             root: {
                 type: 'box',
@@ -111,22 +111,8 @@ export class AppMain extends HTMLElement {
                 children: [
                     {
                         type: 'stack',
-                        id: 'sidebar-stack',
-                        weight: 20,
-                        activeId: 'signal-selection-pane',
-                        children: [
-                            {
-                                id: 'signal-selection-pane',
-                                title: 'Signal Selection',
-                                contentId: 'signal-selection',
-                                closable: false
-                            }
-                        ]
-                    },
-                    {
-                        type: 'stack',
                         id: 'main-stack',
-                        weight: 80,
+                        weight: 100,
                         activeId: null,
                         children: []
                     }

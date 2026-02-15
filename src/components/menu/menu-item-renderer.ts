@@ -96,7 +96,9 @@ export function renderMenuItems(
                     if (shortcuts.length > 0) {
                         const shortcutSpan = document.createElement('span');
                         shortcutSpan.className = 'menu-item-shortcut';
-                        shortcutSpan.textContent = ShortcutManager.formatShortcut(shortcuts[0]);
+                        // Replace "Control" with "Ctrl" for shorter display
+                        const formattedShortcut = ShortcutManager.formatShortcut(shortcuts[0]).replace('Control', 'Ctrl');
+                        shortcutSpan.textContent = formattedShortcut;
                         menuItemElement.appendChild(shortcutSpan);
                     }
                 }

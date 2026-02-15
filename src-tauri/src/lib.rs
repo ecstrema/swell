@@ -187,8 +187,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            // CLI plugin automatically handles --help and --version based on configuration
-            // Just log any parsing errors
+            // Initialize CLI plugin - this triggers parsing and automatic handling of --help and --version
             if let Err(e) = app.cli().matches() {
                 eprintln!("Error parsing CLI arguments: {}", e);
                 std::process::exit(1);

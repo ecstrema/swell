@@ -26,19 +26,7 @@
   },
   "plugins": {
     "cli": {
-      "description": "Swell - A waveform viewer application",
-      "args": [
-        {
-          "short": "v",
-          "name": "version",
-          "description": "Print version information"
-        },
-        {
-          "short": "h",
-          "name": "help",
-          "description": "Print help information"
-        }
-      ]
+      "description": "Swell - A waveform viewer application"
     }
   },
   "bundle": {

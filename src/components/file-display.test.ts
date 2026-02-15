@@ -174,4 +174,110 @@ describe('FileDisplay Component', () => {
     const waveformsContainer = element.shadowRoot!.querySelector('.waveforms-container');
     expect(waveformsContainer).not.toBeNull();
   });
+
+  it('should add signal when checkbox is checked', async () => {
+    element.filename = 'test.vcd';
+    
+    // Initially no signals selected (only the default timeline)
+    expect(element.getSelectedSignalRefs()).toEqual([]);
+    
+    // Dispatch a checkbox-toggle event with checked=true
+    const event = new CustomEvent('checkbox-toggle', {
+      detail: {
+        name: 'test_signal',
+        ref: 1,
+        filename: 'test.vcd',
+        checked: true
+      }
+    });
+    
+    document.dispatchEvent(event);
+    
+    // Wait for requestAnimationFrame to complete
+    await new Promise(resolve => requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve(undefined));
+    }));
+    
+    // Check that the signal was added
+    expect(element.getSelectedSignalRefs()).toContain(1);
+  });
+
+  it('should remove signal when checkbox is unchecked', async () => {
+    element.filename = 'test.vcd';
+    
+    // First add a signal
+    const addEvent = new CustomEvent('checkbox-toggle', {
+      detail: {
+        name: 'test_signal',
+        ref: 1,
+        filename: 'test.vcd',
+        checked: true
+      }
+    });
+    
+    document.dispatchEvent(addEvent);
+    
+    // Wait for requestAnimationFrame to complete
+    await new Promise(resolve => requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve(undefined));
+    }));
+    
+    // Verify signal was added
+    expect(element.getSelectedSignalRefs()).toContain(1);
+    
+    // Now uncheck the checkbox
+    const removeEvent = new CustomEvent('checkbox-toggle', {
+      detail: {
+        name: 'test_signal',
+        ref: 1,
+        filename: 'test.vcd',
+        checked: false
+      }
+    });
+    
+    document.dispatchEvent(removeEvent);
+    
+    // Wait for render to complete
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
+    // Check that the signal was removed
+    expect(element.getSelectedSignalRefs()).not.toContain(1);
+  });
+
+  it('should toggle multiple signals independently', async () => {
+    element.filename = 'test.vcd';
+    
+    // Add first signal
+    document.dispatchEvent(new CustomEvent('checkbox-toggle', {
+      detail: { name: 'signal1', ref: 1, filename: 'test.vcd', checked: true }
+    }));
+    
+    await new Promise(resolve => requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve(undefined));
+    }));
+    
+    // Add second signal
+    document.dispatchEvent(new CustomEvent('checkbox-toggle', {
+      detail: { name: 'signal2', ref: 2, filename: 'test.vcd', checked: true }
+    }));
+    
+    await new Promise(resolve => requestAnimationFrame(() => {
+      requestAnimationFrame(() => resolve(undefined));
+    }));
+    
+    // Both signals should be selected
+    expect(element.getSelectedSignalRefs()).toContain(1);
+    expect(element.getSelectedSignalRefs()).toContain(2);
+    
+    // Remove first signal
+    document.dispatchEvent(new CustomEvent('checkbox-toggle', {
+      detail: { name: 'signal1', ref: 1, filename: 'test.vcd', checked: false }
+    }));
+    
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
+    // Only second signal should remain
+    expect(element.getSelectedSignalRefs()).not.toContain(1);
+    expect(element.getSelectedSignalRefs()).toContain(2);
+  });
 });

@@ -44,6 +44,11 @@ export interface TreeViewConfig {
      * Whether to show a filter input field above the tree
      */
     showFilter?: boolean;
+    
+    /**
+     * Called when a checkbox is clicked
+     */
+    onCheckboxChange?: (node: TreeNode, checked: boolean) => void;
 }
 
 /**
@@ -264,6 +269,10 @@ export class TreeView extends HTMLElement {
             // Prevent checkbox click from triggering leaf click
             checkbox.addEventListener('click', (e) => {
                 e.stopPropagation();
+                // Call the checkbox change handler if provided
+                if (this._config.onCheckboxChange) {
+                    this._config.onCheckboxChange(node, checkbox.checked);
+                }
             });
             div.appendChild(checkbox);
         }

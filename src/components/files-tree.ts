@@ -53,6 +53,13 @@ export class FilesTree extends TreeView {
                     composed: true
                 }));
             },
+            onCheckboxChange: (node: TreeNode, checked: boolean) => {
+                this.dispatchEvent(new CustomEvent('checkbox-toggle', {
+                    detail: { name: node.name, ref: node.id, filename: this._filename, checked },
+                    bubbles: true,
+                    composed: true
+                }));
+            },
             leafNodeClass: 'var-node',
             scopeNodeClass: 'tree-node',
             showCheckboxes: true,

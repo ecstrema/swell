@@ -187,35 +187,11 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            // Handle CLI arguments
-            match app.cli().matches() {
-                Ok(matches) => {
-                    // Handle --version flag
-                    if matches.args.get("version").is_some() {
-                        let version = app.config().version.as_ref().map(|v| v.to_string()).unwrap_or_else(|| "unknown".to_string());
-                        println!("swell version {}", version);
-                        std::process::exit(0);
-                    }
-                    
-                    // Handle --help flag
-                    if matches.args.get("help").is_some() {
-                        println!("Swell - A waveform viewer application");
-                        println!();
-                        println!("USAGE:");
-                        println!("    swell [OPTIONS] [FILES...]");
-                        println!();
-                        println!("OPTIONS:");
-                        println!("    -h, --help       Print help information");
-                        println!("    -v, --version    Print version information");
-                        println!();
-                        println!("ARGS:");
-                        println!("    [FILES...]       Waveform files to open (.vcd, .fst, .ghw)");
-                        std::process::exit(0);
-                    }
-                }
-                Err(e) => {
-                    eprintln!("Error parsing CLI arguments: {}", e);
-                }
+            // CLI plugin automatically handles --help and --version based on configuration
+            // Just log any parsing errors
+            if let Err(e) = app.cli().matches() {
+                eprintln!("Error parsing CLI arguments: {}", e);
+                std::process::exit(1);
             }
             
             load_opened_files(&app.handle());

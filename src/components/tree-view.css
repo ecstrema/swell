@@ -47,6 +47,8 @@ details > summary {
     padding: 2px 4px;
     margin-left: calc(-1 * var(--tree-indent, 20px));
     user-select: none;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 details > summary::-webkit-details-marker {
@@ -78,6 +80,8 @@ details[open] > summary::before {
     gap: 6px;
     user-select: none;
     position: relative;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .leaf-node:hover {
@@ -164,4 +168,16 @@ details[open] > summary::before {
     align-items: center;
     gap: 6px;
     width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+/* Text content in leaf and branch nodes */
+.leaf-node > span,
+.summary-content > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
 }

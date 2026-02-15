@@ -49,6 +49,31 @@ export interface TreeViewConfig {
      * Called when a checkbox is clicked
      */
     onCheckboxChange?: (node: TreeNode, checked: boolean) => void;
+    
+    /**
+     * Whether leaf nodes should be draggable
+     */
+    draggableLeaves?: boolean;
+    
+    /**
+     * Called when a drag operation starts on a leaf node
+     */
+    onDragStart?: (node: TreeNode, element: HTMLElement) => void;
+    
+    /**
+     * Called when a dragged item is over another leaf node
+     */
+    onDragOver?: (draggedNode: TreeNode, targetNode: TreeNode, position: 'before' | 'after') => void;
+    
+    /**
+     * Called when a dragged item is dropped on another leaf node
+     */
+    onDrop?: (draggedNode: TreeNode, targetNode: TreeNode, position: 'before' | 'after') => void;
+    
+    /**
+     * Called when a drag operation ends
+     */
+    onDragEnd?: () => void;
 }
 
 /**
@@ -66,6 +91,7 @@ export class TreeView extends HTMLElement {
     private indentLoadPromise: Promise<void> | null = null;
     private boundSettingChangeHandler: (e: Event) => void;
     private boundFilterInputHandler: () => void;
+    private draggedNode: TreeNode | null = null;
 
     constructor() {
         super();
@@ -259,6 +285,100 @@ export class TreeView extends HTMLElement {
             ? `leaf-node ${this._config.leafNodeClass}`
             : 'leaf-node';
         div.dataset.id = String(node.id);
+
+        // Make the element draggable if configured
+        if (this._config.draggableLeaves) {
+            div.draggable = true;
+            
+            // Drag start
+            div.addEventListener('dragstart', (e: DragEvent) => {
+                this.draggedNode = node;
+                div.classList.add('dragging');
+                
+                if (e.dataTransfer) {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', String(node.id));
+                }
+                
+                if (this._config.onDragStart) {
+                    this._config.onDragStart(node, div);
+                }
+            });
+            
+            // Drag over
+            div.addEventListener('dragover', (e: DragEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (!this.draggedNode || this.draggedNode.id === node.id) {
+                    return;
+                }
+                
+                const rect = div.getBoundingClientRect();
+                const midpoint = rect.top + rect.height / 2;
+                const position = e.clientY < midpoint ? 'before' : 'after';
+                
+                // Remove previous indicators from all leaf nodes
+                const allLeaves = this.container.querySelectorAll('.leaf-node');
+                allLeaves.forEach(leaf => {
+                    (leaf as HTMLElement).classList.remove('drag-over-top', 'drag-over-bottom');
+                });
+                
+                // Add indicator
+                if (position === 'before') {
+                    div.classList.add('drag-over-top');
+                } else {
+                    div.classList.add('drag-over-bottom');
+                }
+                
+                if (this._config.onDragOver) {
+                    this._config.onDragOver(this.draggedNode, node, position);
+                }
+            });
+            
+            // Drag leave
+            div.addEventListener('dragleave', () => {
+                div.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
+            
+            // Drop
+            div.addEventListener('drop', (e: DragEvent) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (!this.draggedNode || this.draggedNode.id === node.id) {
+                    return;
+                }
+                
+                const rect = div.getBoundingClientRect();
+                const midpoint = rect.top + rect.height / 2;
+                const position = e.clientY < midpoint ? 'before' : 'after';
+                
+                // Remove indicators
+                div.classList.remove('drag-over-top', 'drag-over-bottom');
+                
+                if (this._config.onDrop) {
+                    this._config.onDrop(this.draggedNode, node, position);
+                }
+            });
+            
+            // Drag end
+            div.addEventListener('dragend', () => {
+                div.classList.remove('dragging', 'drag-over-top', 'drag-over-bottom');
+                
+                // Remove indicators from all leaf nodes
+                const allLeaves = this.container.querySelectorAll('.leaf-node');
+                allLeaves.forEach(leaf => {
+                    (leaf as HTMLElement).classList.remove('drag-over-top', 'drag-over-bottom');
+                });
+                
+                this.draggedNode = null;
+                
+                if (this._config.onDragEnd) {
+                    this._config.onDragEnd();
+                }
+            });
+        }
 
         // Add checkbox if enabled
         if (this._config.showCheckboxes) {

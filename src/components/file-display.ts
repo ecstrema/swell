@@ -25,6 +25,7 @@ export class FileDisplay extends HTMLElement {
   private boundHandleRangeChanged: (event: Event) => void;
   private boundHandleZoomCommand: (event: Event) => void;
   private boundHandleAddTimeline: () => void;
+  private boundHandleSignalsReordered: (event: Event) => void;
   private visibleStart: number = 0;
   private visibleEnd: number = 1000000;
   private timeRangeInitialized: boolean = false;
@@ -39,6 +40,7 @@ export class FileDisplay extends HTMLElement {
     this.boundHandleRangeChanged = this.handleRangeChanged.bind(this);
     this.boundHandleZoomCommand = this.handleZoomCommand.bind(this);
     this.boundHandleAddTimeline = this.handleAddTimeline.bind(this);
+    this.boundHandleSignalsReordered = this.handleSignalsReordered.bind(this);
 
     this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(fileDisplayCss)];
     
@@ -73,6 +75,9 @@ export class FileDisplay extends HTMLElement {
     // Listen for zoom commands
     this.addEventListener('zoom-command', this.boundHandleZoomCommand);
     
+    // Listen for signals reordered event from the tree
+    this.selectedSignalsTree.addEventListener('signals-reordered', this.boundHandleSignalsReordered);
+    
     // Set up ResizeObserver to watch for container size changes
     // This handles dock resizing and other layout changes
     this.resizeObserver = new ResizeObserver(() => {
@@ -88,6 +93,7 @@ export class FileDisplay extends HTMLElement {
     document.removeEventListener('checkbox-toggle', this.boundHandleCheckboxToggle);
     this.removeEventListener('range-changed', this.boundHandleRangeChanged);
     this.removeEventListener('zoom-command', this.boundHandleZoomCommand);
+    this.selectedSignalsTree.removeEventListener('signals-reordered', this.boundHandleSignalsReordered);
     
     // Clean up ResizeObserver
     if (this.resizeObserver) {
@@ -156,6 +162,17 @@ export class FileDisplay extends HTMLElement {
 
   private handleAddTimeline() {
     this.addTimelineSignal();
+    this.render();
+  }
+
+  private handleSignalsReordered(event: Event) {
+    const customEvent = event as CustomEvent;
+    const { signals } = customEvent.detail;
+    
+    // Update the internal signals array to match the new order
+    this.selectedSignals = signals;
+    
+    // Re-render the waveforms in the new order
     this.render();
   }
 

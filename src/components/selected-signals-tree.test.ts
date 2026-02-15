@@ -112,4 +112,28 @@ describe('SelectedSignalsTree Component', () => {
     expect(shadowRoot?.textContent).not.toContain('reset');
     expect(shadowRoot?.textContent).not.toContain('data_out');
   });
+
+  it('should render signals as draggable', () => {
+    const signals: SelectedSignal[] = [
+      { name: 'signal1', ref: 1 },
+      { name: 'signal2', ref: 2 }
+    ];
+    
+    element.signals = signals;
+    
+    const shadowRoot = element.shadowRoot;
+    const leafNodes = shadowRoot?.querySelectorAll('.leaf-node');
+    
+    // Check that leaf nodes have draggable attribute
+    expect(leafNodes?.length).toBe(2);
+    leafNodes?.forEach(node => {
+      expect((node as HTMLElement).draggable).toBe(true);
+    });
+  });
+
+  it('should have drag-and-drop handlers configured in tree config', () => {
+    // Check that the tree view config has drag-and-drop enabled
+    expect(element.config.draggableLeaves).toBe(true);
+    expect(element.config.onDrop).toBeDefined();
+  });
 });

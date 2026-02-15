@@ -88,6 +88,21 @@ export class FileManager {
     }
 
     /**
+     * Open a file from a path (Tauri only)
+     * @param path - The path to the file
+     * @returns The file ID if successful, null otherwise
+     */
+    async openFilePath(path: string): Promise<string | null> {
+        try {
+            const result = await addFile(path);
+            return result;
+        } catch (err) {
+            console.error("Error loading file from path:", path, err);
+            return null;
+        }
+    }
+
+    /**
      * Refresh files from backend and update file resources
      * @param onFileAdded Callback when a new file is added
      * @param onFileRemoved Callback when a file is removed

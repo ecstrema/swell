@@ -8,7 +8,28 @@ Swell is a modern waveform viewer application for digital design verification. I
 - Hierarchical signal browser
 - Signal value inspection
 - Cross-platform support (Desktop via Tauri, Web via WebAssembly)
+- **Command-line file opening** - Open waveform files directly from the command line
 - **Iconify integration (unplugin-icons)** - Build-time icon imports with tree-shaking from 150+ icon sets
+
+## Usage
+
+### Desktop Application (Tauri)
+
+You can open waveform files directly from the command line:
+
+```bash
+# Open a single file
+swell path/to/waveform.vcd
+
+# Open multiple files
+swell design.vcd testbench.fst signals.ghw
+```
+
+The application will automatically load all specified files on startup.
+
+### Web Application
+
+Access the web version at the deployed URL and use the "Open File" button to load waveform files from your local filesystem.
 
 ## Example Files
 

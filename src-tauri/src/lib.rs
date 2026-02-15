@@ -189,7 +189,8 @@ pub fn run() {
         .setup(|app| {
             // Initialize CLI plugin - this triggers parsing and automatic handling of --help and --version
             if let Err(e) = app.cli().matches() {
-                eprintln!("Error parsing CLI arguments: {}", e);
+                eprintln!("Failed to parse command line arguments: {}", e);
+                eprintln!("Run with --help for usage information");
                 std::process::exit(1);
             }
             

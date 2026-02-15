@@ -86,9 +86,22 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     border-bottom: 1px solid var(--color-border, #eeeeee);
     color: var(--color-text, #0f0f0f);
     background-color: var(--color-bg-surface, #ffffff);
+}
+
+.result-left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.result-shortcut {
+    flex-shrink: 0;
+    margin-left: auto;
 }
 
 .result-item:last-child {

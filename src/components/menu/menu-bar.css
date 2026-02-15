@@ -37,6 +37,20 @@
 .menu-item {
     padding: 8px 15px;
     cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.menu-item-text {
+    flex: 1;
+}
+
+.menu-item-shortcut {
+    margin-left: auto;
+    opacity: 0.7;
+    font-size: 0.9em;
 }
 .menu-item:hover {
     background: var(--menu-item-hover);

@@ -4,6 +4,9 @@
  */
 
 import { MenuItemConfig, SubmenuConfig } from "../../menu-api.js";
+import { renderShortcutWithIcons } from "../../shortcuts/shortcut-icons.js";
+import { ShortcutManager } from "../../shortcuts/shortcut-manager.js";
+import ShoSho from "shosho";
 
 export interface MenuItemElement {
     element: HTMLElement;
@@ -78,8 +81,28 @@ export function renderMenuItems(
             const menuItem = item as MenuItemConfig;
             const menuItemElement = document.createElement('div');
             menuItemElement.className = 'menu-item';
-            // Use text or fallback to empty string (separators handled above)
-            menuItemElement.textContent = menuItem.text ?? '';
+            
+            // Create text container
+            const textSpan = document.createElement('span');
+            textSpan.className = 'menu-item-text';
+            textSpan.textContent = menuItem.text ?? '';
+            menuItemElement.appendChild(textSpan);
+            
+            // Add shortcut display if available
+            if (menuItem.shortcut) {
+                const shortcutSpan = document.createElement('span');
+                shortcutSpan.className = 'menu-item-shortcut';
+                try {
+                    // Parse the shortcut string to a KeyboardShortcut object
+                    const shortcutObj = ShoSho.parse(menuItem.shortcut);
+                    const shortcutElement = renderShortcutWithIcons(shortcutObj);
+                    shortcutSpan.appendChild(shortcutElement);
+                } catch (e) {
+                    // If parsing fails, just show the shortcut text
+                    shortcutSpan.textContent = menuItem.shortcut;
+                }
+                menuItemElement.appendChild(shortcutSpan);
+            }
             
             if (menuItem.id) {
                 menuItemElement.dataset.id = menuItem.id;

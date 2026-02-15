@@ -39,7 +39,7 @@ export class CommandManager {
      * Initialize the command palette
      */
     initializeCommandPalette(): void {
-        this.commandPalette = new CommandPalette(this.commandRegistry);
+        this.commandPalette = new CommandPalette(this.commandRegistry, this.shortcutManager);
         document.body.appendChild(this.commandPalette);
     }
 

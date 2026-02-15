@@ -1,5 +1,7 @@
 import { Command } from "../shortcuts/types.js";
 import { CommandRegistry } from "../shortcuts/command-registry.js";
+import { ShortcutManager } from "../shortcuts/shortcut-manager.js";
+import { renderShortcutWithIcons, getShortcutStyles } from "../shortcuts/shortcut-icons.js";
 import { css } from "../utils/css-utils.js";
 import { scrollbarSheet } from "../styles/shared-sheets.js";
 import commandPaletteCss from "./command-palette.css?inline";
@@ -10,18 +12,23 @@ import commandPaletteCss from "./command-palette.css?inline";
  */
 export class CommandPalette extends HTMLElement {
     private commandRegistry: CommandRegistry;
+    private shortcutManager: ShortcutManager | null = null;
     private isOpen: boolean = false;
     private searchInput: HTMLInputElement | null = null;
     private resultsContainer: HTMLDivElement | null = null;
     private selectedIndex: number = 0;
     private filteredCommands: Command[] = [];
 
-    constructor(commandRegistry: CommandRegistry) {
+    constructor(commandRegistry: CommandRegistry, shortcutManager?: ShortcutManager) {
         super();
         this.commandRegistry = commandRegistry;
+        this.shortcutManager = shortcutManager || null;
 
         this.attachShadow({ mode: 'open' });
-        this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(commandPaletteCss)];
+        
+        // Add shortcut styles to the shadow root
+        const shortcutStyleSheet = css(commandPaletteCss + '\n' + getShortcutStyles());
+        this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, shortcutStyleSheet];
 
         this.shadowRoot!.innerHTML = `
             <div class="overlay"></div>
@@ -175,6 +182,9 @@ export class CommandPalette extends HTMLElement {
                 item.classList.add('selected');
             }
 
+            const leftSection = document.createElement('div');
+            leftSection.className = 'result-left';
+
             const label = document.createElement('div');
             label.className = 'label';
             label.textContent = command.label;
@@ -183,8 +193,21 @@ export class CommandPalette extends HTMLElement {
             id.className = 'id';
             id.textContent = command.id;
 
-            item.appendChild(label);
-            item.appendChild(id);
+            leftSection.appendChild(label);
+            leftSection.appendChild(id);
+            item.appendChild(leftSection);
+
+            // Add shortcut display if available
+            if (this.shortcutManager) {
+                const shortcuts = this.shortcutManager.getShortcutsForCommand(command.id);
+                if (shortcuts.length > 0) {
+                    const shortcutContainer = document.createElement('div');
+                    shortcutContainer.className = 'result-shortcut';
+                    const shortcutElement = renderShortcutWithIcons(shortcuts[0]);
+                    shortcutContainer.appendChild(shortcutElement);
+                    item.appendChild(shortcutContainer);
+                }
+            }
 
             // Click handler
             item.addEventListener('click', () => {

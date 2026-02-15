@@ -41,5 +41,10 @@ export {
     convertToShortcutBindings,
     ShortcutValidationError
 } from "./shortcut-validator.js";
+export { 
+    renderShortcutWithIcons, 
+    renderShortcutWithIconsAsHTML,
+    getShortcutStyles
+} from "./shortcut-icons.js";
 export type { Command, KeyboardShortcut, ShortcutBinding } from "./types.js";
 export type { RawShortcutBinding, ShortcutsConfig } from "./shortcut-validator.js";

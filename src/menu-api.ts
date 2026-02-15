@@ -11,6 +11,7 @@ export interface MenuItemConfig {
     text?: string;
     type?: MenuItemType;
     action?: () => void;
+    shortcut?: string; // e.g., "Ctrl+O", "Cmd+N"
 }
 
 // Submenu definition

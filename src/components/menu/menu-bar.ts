@@ -4,6 +4,7 @@ import { createMenu, MenuConfig, MenuItemConfig, SubmenuConfig } from "../../men
 import { css } from "../../utils/css-utils.js";
 import menuBarCss from "./menu-bar.css?inline";
 import { renderMenuItems, findAndExecuteAction } from "./menu-item-renderer.js";
+import { getShortcutStyles } from "../../shortcuts/shortcut-icons.js";
 
 export class MenuBar extends HTMLElement {
   private menuConfig: MenuConfig | null = null;
@@ -11,7 +12,8 @@ export class MenuBar extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: 'open' });
-    this.shadowRoot!.adoptedStyleSheets = [css(menuBarCss)];
+    const menuStyleSheet = css(menuBarCss + '\n' + getShortcutStyles());
+    this.shadowRoot!.adoptedStyleSheets = [menuStyleSheet];
   }
 
   async connectedCallback() {
@@ -31,6 +33,7 @@ export class MenuBar extends HTMLElement {
             {
                 id: 'open',
                 text: 'Open File...',
+                shortcut: 'Ctrl+O',
                 action: () => {
                     this.dispatchEvent(new CustomEvent('file-open-request', {
                         bubbles: true,
@@ -122,6 +125,7 @@ export class MenuBar extends HTMLElement {
                 {
                     id: 'quit',
                     text: 'Quit',
+                    shortcut: 'Ctrl+Q',
                     action: async () => {
                         const { getCurrentWindow } = await import('@tauri-apps/api/window');
                         await getCurrentWindow().close();
@@ -143,6 +147,7 @@ export class MenuBar extends HTMLElement {
                         {
                             id: 'undo',
                             text: 'Undo',
+                            shortcut: 'Ctrl+Z',
                             action: () => {
                                 this.dispatchEvent(new CustomEvent('menu-action', {
                                     bubbles: true,
@@ -159,6 +164,7 @@ export class MenuBar extends HTMLElement {
                         {
                             id: 'zoom-in',
                             text: 'Zoom In',
+                            shortcut: 'Ctrl+=',
                             action: () => {
                                 this.dispatchEvent(new CustomEvent('menu-action', {
                                     bubbles: true,
@@ -170,6 +176,7 @@ export class MenuBar extends HTMLElement {
                         {
                             id: 'zoom-out',
                             text: 'Zoom Out',
+                            shortcut: 'Ctrl+-',
                             action: () => {
                                 this.dispatchEvent(new CustomEvent('menu-action', {
                                     bubbles: true,

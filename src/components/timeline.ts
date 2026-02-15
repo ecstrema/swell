@@ -20,6 +20,7 @@ export class Timeline extends HTMLElement {
   private boundHandleScrollbarMouseMove: (e: MouseEvent) => void;
   private boundHandleScrollbarMouseUp: () => void;
   private boundHandleWheel: (e: WheelEvent) => void;
+  private boundHandleThemeChanged: (event: Event) => void;
   private resizeObserver: ResizeObserver | null = null;
 
   constructor() {
@@ -31,15 +32,22 @@ export class Timeline extends HTMLElement {
     this.boundHandleScrollbarMouseMove = this.handleScrollbarMouseMove.bind(this);
     this.boundHandleScrollbarMouseUp = this.handleScrollbarMouseUp.bind(this);
     this.boundHandleWheel = this.handleWheel.bind(this);
+    this.boundHandleThemeChanged = this.handleThemeChanged.bind(this);
   }
 
   connectedCallback() {
     this.render();
     this.setupEventListeners();
+    
+    // Listen for theme changes
+    window.addEventListener('theme-changed', this.boundHandleThemeChanged);
   }
 
   disconnectedCallback() {
     this.removeEventListeners();
+    
+    // Remove theme change listener
+    window.removeEventListener('theme-changed', this.boundHandleThemeChanged);
     
     // Clean up ResizeObserver
     if (this.resizeObserver) {
@@ -322,6 +330,11 @@ export class Timeline extends HTMLElement {
       this.canvas.height = rect.height;
       this.updateCanvas();
     }
+  }
+
+  private handleThemeChanged(event: Event) {
+    // Repaint the canvas when theme changes
+    this.updateCanvas();
   }
 
   private updateCanvas() {

@@ -50,6 +50,11 @@ export class ThemeManager {
       root.classList.add('theme-dark');
     }
     // If auto or system, no class is added and CSS media query takes over
+    
+    // Dispatch theme change event for components to listen to
+    window.dispatchEvent(new CustomEvent('theme-changed', {
+      detail: { theme: this.currentTheme }
+    }));
   }
 
   setTheme(theme: Theme): void {

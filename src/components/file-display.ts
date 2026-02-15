@@ -27,6 +27,7 @@ export class FileDisplay extends HTMLElement {
   private boundHandleZoomCommand: (event: Event) => void;
   private boundHandleAddTimeline: () => void;
   private boundHandleSignalsReordered: (event: Event) => void;
+  private boundHandleThemeChanged: (event: Event) => void;
   private visibleStart: number = 0;
   private visibleEnd: number = 1000000;
   private timeRangeInitialized: boolean = false;
@@ -42,6 +43,7 @@ export class FileDisplay extends HTMLElement {
     this.boundHandleZoomCommand = this.handleZoomCommand.bind(this);
     this.boundHandleAddTimeline = this.handleAddTimeline.bind(this);
     this.boundHandleSignalsReordered = this.handleSignalsReordered.bind(this);
+    this.boundHandleThemeChanged = this.handleThemeChanged.bind(this);
 
     this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(fileDisplayCss)];
     
@@ -79,6 +81,9 @@ export class FileDisplay extends HTMLElement {
     // Listen for signals reordered event from the tree
     this.selectedSignalsTree.addEventListener('signals-reordered', this.boundHandleSignalsReordered);
     
+    // Listen for theme changes
+    window.addEventListener('theme-changed', this.boundHandleThemeChanged);
+    
     // Set up ResizeObserver to watch for container size changes
     // This handles dock resizing and other layout changes
     this.resizeObserver = new ResizeObserver(() => {
@@ -95,6 +100,7 @@ export class FileDisplay extends HTMLElement {
     this.removeEventListener('range-changed', this.boundHandleRangeChanged);
     this.removeEventListener('zoom-command', this.boundHandleZoomCommand);
     this.selectedSignalsTree.removeEventListener('signals-reordered', this.boundHandleSignalsReordered);
+    window.removeEventListener('theme-changed', this.boundHandleThemeChanged);
     
     // Clean up ResizeObserver
     if (this.resizeObserver) {
@@ -175,6 +181,16 @@ export class FileDisplay extends HTMLElement {
     
     // Re-render the waveforms in the new order
     this.render();
+  }
+
+  private handleThemeChanged(event: Event) {
+    // When theme changes, repaint all signal canvases
+    // Timelines handle their own theme changes via their own theme-changed listener
+    this.selectedSignals.forEach(signal => {
+      if (signal.canvas) {
+        this.paintSignal(signal.canvas, signal.ref);
+      }
+    });
   }
 
   private handleSignalSelect(event: Event) {
@@ -469,20 +485,16 @@ export class FileDisplay extends HTMLElement {
       treeContainer.appendChild(addTimelineBtn);
     }
 
-    // Append timelines and canvases to the waveforms container
+    // Append timelines and canvases directly to the waveforms container
+    // No wrapper divs - just the canvas/timeline elements themselves
     this.signalsContainer = this.shadowRoot.querySelector('#waveforms-container');
     if (this.signalsContainer) {
       this.selectedSignals.forEach(signal => {
-        const signalItem = document.createElement('div');
-        signalItem.className = signal.isTimeline ? 'signal-item timeline-item' : 'signal-item';
-
         if (signal.isTimeline && signal.timeline) {
-          signalItem.appendChild(signal.timeline);
+          this.signalsContainer!.appendChild(signal.timeline);
         } else if (signal.canvas) {
-          signalItem.appendChild(signal.canvas);
+          this.signalsContainer!.appendChild(signal.canvas);
         }
-
-        this.signalsContainer!.appendChild(signalItem);
       });
     }
   }

@@ -126,6 +126,18 @@ fn get_startup_files() -> Vec<String> {
     files.take().unwrap_or_default()
 }
 
+#[tauri::command]
+fn write_text_file(path: String, content: String) -> Result<(), String> {
+    std::fs::write(&path, content)
+        .map_err(|e| format!("Failed to write file '{}': {}", path, e))
+}
+
+#[tauri::command]
+fn read_text_file(path: String) -> Result<String, String> {
+    std::fs::read_to_string(&path)
+        .map_err(|e| format!("Failed to read file '{}': {}", path, e))
+}
+
 fn get_nested_value(value: Option<&serde_json::Value>, path: &str) -> Option<serde_json::Value> {
     let parts: Vec<&str> = path.split('/').collect();
     let mut current = value?;
@@ -206,7 +218,9 @@ pub fn run() {
             get_setting,
             set_setting,
             get_all_settings,
-            get_startup_files
+            get_startup_files,
+            write_text_file,
+            read_text_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

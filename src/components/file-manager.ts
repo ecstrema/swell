@@ -47,6 +47,27 @@ export class FileManager {
     }
 
     /**
+     * Get file ID from filename (base name without path)
+     * This is useful when loading state files that reference the filename
+     */
+    getFileIdFromFilename(filename: string): string | null {
+        // The file ID is typically the full path or filename
+        // First try exact match
+        if (this.fileResources.has(filename)) {
+            return filename;
+        }
+        
+        // Try to find a file whose ID ends with the filename
+        for (const [id] of this.fileResources) {
+            if (id.endsWith(filename) || id.endsWith('/' + filename) || id.endsWith('\\' + filename)) {
+                return id;
+            }
+        }
+        
+        return null;
+    }
+
+    /**
      * Get all file resources
      */
     getAllFileResources() {

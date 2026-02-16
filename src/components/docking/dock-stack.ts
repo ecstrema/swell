@@ -171,7 +171,6 @@ export class DockStackComponent extends HTMLElement {
             // Handle dragover for tab reordering within same stack
             tabElement.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                e.stopPropagation();
                 
                 if (!this._manager) return;
                 const draggedPane = this._manager.getDraggedPane();
@@ -179,6 +178,9 @@ export class DockStackComponent extends HTMLElement {
 
                 // Check if we're dragging within the same stack
                 if (draggedPane.sourceStack.id === this._node!.id) {
+                    // Only stop propagation when handling same-stack reordering
+                    e.stopPropagation();
+                    
                     const rect = tabElement.getBoundingClientRect();
                     const midpoint = rect.left + rect.width / 2;
                     const isLeftSide = e.clientX < midpoint;
@@ -202,7 +204,6 @@ export class DockStackComponent extends HTMLElement {
             // Handle drop for tab reordering
             tabElement.addEventListener('drop', (e) => {
                 e.preventDefault();
-                e.stopPropagation();
                 
                 if (!this._manager) return;
                 const draggedPane = this._manager.getDraggedPane();
@@ -210,6 +211,9 @@ export class DockStackComponent extends HTMLElement {
 
                 // Check if we're dragging within the same stack
                 if (draggedPane.sourceStack.id === this._node!.id) {
+                    // Only stop propagation when handling same-stack reordering
+                    e.stopPropagation();
+                    
                     const targetId = tabElement.dataset.id!;
                     const targetIndex = this._node!.children.findIndex(p => p.id === targetId);
                     

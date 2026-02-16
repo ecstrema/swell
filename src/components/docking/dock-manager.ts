@@ -413,9 +413,22 @@ export class DockManager extends HTMLElement {
 
   private cleanupEmptyNodes(node: DockNode): boolean {
     if (node.type === "box") {
+      // Count how many non-empty stacks remain after filtering
+      const emptyStackCount = node.children.filter(
+        child => child.type === "stack" && child.children.length === 0
+      ).length;
+      const totalStackCount = node.children.filter(
+        child => child.type === "stack"
+      ).length;
+      const nonEmptyStackCount = totalStackCount - emptyStackCount;
+      
       // First, recursively clean children and filter out empty stacks/boxes
       node.children = node.children.filter((child) => {
-        if (child.type === "stack" && child.children.length === 0) return false;
+        // Don't remove the last empty stack in a box (to preserve root stack for placeholder)
+        if (child.type === "stack" && child.children.length === 0) {
+          // Keep this empty stack if removing it would leave no stacks at all
+          return nonEmptyStackCount === 0 && totalStackCount === 1;
+        }
         if (child.type === "box") return !this.cleanupEmptyNodes(child);
         return true;
       });
@@ -469,9 +482,10 @@ export class DockManager extends HTMLElement {
   /**
    * Public method to cleanup empty stacks and redistribute space.
    * Called when panes are closed to remove empty docks.
+   * @returns true if cleanup was performed, false otherwise
    */
-  public cleanupEmptyStacks(): void {
-    if (!this._layout) return;
+  public cleanupEmptyStacks(): boolean {
+    if (!this._layout) return false;
     if (this.shouldCleanupEmptyStacks()) {
       this.cleanupEmptyNodes(this._layout.root);
       // After cleanup, simplify boxes that have only one child
@@ -480,7 +494,9 @@ export class DockManager extends HTMLElement {
         this.simplifyBoxes(this._layout.root);
       }
       this.render();
+      return true;
     }
+    return false;
   }
 }
 customElements.define("dock-manager", DockManager);

@@ -90,9 +90,12 @@ export class PaneManager {
         this.removePaneFromNode(layout.root, paneId);
         
         // Clean up empty stacks and redistribute their space
-        this.dockManager.cleanupEmptyStacks();
+        const didCleanup = this.dockManager.cleanupEmptyStacks();
         
-        this.dockManager.layout = layout; // Trigger re-render
+        // If cleanup didn't happen, trigger re-render to show placeholder
+        if (!didCleanup) {
+            this.dockManager.layout = layout;
+        }
     }
 
     /**

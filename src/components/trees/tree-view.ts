@@ -314,6 +314,23 @@ export class TreeView extends HTMLElement {
     }
     
     /**
+     * Get normalized text and query based on case sensitivity
+     */
+    private getNormalizedTextAndQuery(text: string): { text: string; query: string } {
+        if (this.filterOptions.caseSensitive) {
+            return { text, query: this.filterQuery };
+        }
+        return { text: text.toLowerCase(), query: this.filterQuery.toLowerCase() };
+    }
+    
+    /**
+     * Get regex flags based on filter options
+     */
+    private getRegexFlags(): string {
+        return this.filterOptions.caseSensitive ? '' : 'i';
+    }
+    
+    /**
      * Check if a text matches the filter query based on current filter options
      */
     private matchesFilter(text: string): boolean {
@@ -324,28 +341,21 @@ export class TreeView extends HTMLElement {
         try {
             if (this.filterOptions.useRegex) {
                 // Use regex matching
-                const flags = this.filterOptions.caseSensitive ? '' : 'i';
-                const regex = new RegExp(this.filterQuery, flags);
+                const regex = new RegExp(this.filterQuery, this.getRegexFlags());
                 return regex.test(text);
             } else if (this.filterOptions.wholeWord) {
-                // Whole word matching
-                const searchText = this.filterOptions.caseSensitive ? text : text.toLowerCase();
-                const searchQuery = this.filterOptions.caseSensitive ? this.filterQuery : this.filterQuery.toLowerCase();
-                
-                // Use word boundary regex for whole word matching
-                const flags = this.filterOptions.caseSensitive ? '' : 'i';
-                const regex = new RegExp(`\\b${this.escapeRegex(searchQuery)}\\b`, flags);
+                // Whole word matching - use word boundary regex
+                const { query } = this.getNormalizedTextAndQuery(text);
+                const regex = new RegExp(`\\b${this.escapeRegex(query)}\\b`, this.getRegexFlags());
                 return regex.test(text);
             } else {
                 // Simple substring matching
-                const searchText = this.filterOptions.caseSensitive ? text : text.toLowerCase();
-                const searchQuery = this.filterOptions.caseSensitive ? this.filterQuery : this.filterQuery.toLowerCase();
+                const { text: searchText, query: searchQuery } = this.getNormalizedTextAndQuery(text);
                 return searchText.includes(searchQuery);
             }
         } catch (e) {
             // If regex is invalid, fall back to simple substring matching
-            const searchText = this.filterOptions.caseSensitive ? text : text.toLowerCase();
-            const searchQuery = this.filterOptions.caseSensitive ? this.filterQuery : this.filterQuery.toLowerCase();
+            const { text: searchText, query: searchQuery } = this.getNormalizedTextAndQuery(text);
             return searchText.includes(searchQuery);
         }
     }

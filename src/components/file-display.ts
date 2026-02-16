@@ -5,6 +5,7 @@ import fileDisplayCss from './file-display.css?inline';
 import { SelectedSignalsTree } from './selected-signals-tree.js';
 import { Timeline } from './timeline.js';
 import { saveFileState, loadFileState, FileState, Item, ItemSignal, ItemTimeline } from '../utils/file-state-storage.js';
+import { getSetting } from '../settings/settings-storage.js';
 import './selected-signals-tree.js';
 import './timeline.js';
 import './resizable-panel.js';
@@ -324,9 +325,9 @@ export class FileDisplay extends HTMLElement {
     this.render();
     
     // Repaint all signal canvases to ensure they display correctly in their new positions
-    this.selectedSignals.forEach(signal => {
+    this.selectedSignals.forEach((signal, index) => {
       if (signal.canvas) {
-        this.paintSignal(signal.canvas, signal.ref);
+        this.paintSignal(signal.canvas, signal.ref, index);
       }
     });
     
@@ -337,9 +338,9 @@ export class FileDisplay extends HTMLElement {
   private handleThemeChanged(event: Event) {
     // When theme changes, repaint all signal canvases
     // Timelines handle their own theme changes via their own theme-changed listener
-    this.selectedSignals.forEach(signal => {
+    this.selectedSignals.forEach((signal, index) => {
       if (signal.canvas) {
-        this.paintSignal(signal.canvas, signal.ref);
+        this.paintSignal(signal.canvas, signal.ref, index);
       }
     });
   }
@@ -443,19 +444,22 @@ export class FileDisplay extends HTMLElement {
       const displayWidth = canvas.clientWidth || 800;
       canvas.width = displayWidth;
       
+      // Find the index of this signal in the array
+      const signalIndex = this.selectedSignals.findIndex(s => s.ref === ref);
+      
       // Now paint with the correct dimensions
-      this.paintSignal(canvas, ref);
+      this.paintSignal(canvas, ref, signalIndex >= 0 ? signalIndex : 0);
     });
   }
 
   private handleContainerResize() {
     // When the container is resized (e.g., dock resize), update all canvas elements
-    this.selectedSignals.forEach(signal => {
+    this.selectedSignals.forEach((signal, index) => {
       if (signal.canvas) {
         const displayWidth = signal.canvas.clientWidth || 800;
         if (signal.canvas.width !== displayWidth) {
           signal.canvas.width = displayWidth;
-          this.paintSignal(signal.canvas, signal.ref);
+          this.paintSignal(signal.canvas, signal.ref, index);
         }
       }
     });
@@ -498,7 +502,7 @@ export class FileDisplay extends HTMLElement {
     }
   }
 
-  private async paintSignal(canvas: HTMLCanvasElement, signalRef: number) {
+  private async paintSignal(canvas: HTMLCanvasElement, signalRef: number, signalIndex: number = 0) {
     if (!this._filename) return;
 
     try {
@@ -519,8 +523,18 @@ export class FileDisplay extends HTMLElement {
       // Get computed styles once for performance
       const computedStyle = getComputedStyle(this);
 
-      // Clear canvas - use theme background color
-      ctx.fillStyle = computedStyle.getPropertyValue('--color-bg-surface') || '#ffffff';
+      // Get alternating row pattern setting (default: 3)
+      const pattern = await getSetting('Waveform/Alternating Row Pattern') as number || 3;
+      
+      // Determine if this row should have alternating background
+      const shouldAlternate = Math.floor(signalIndex / pattern) % 2 === 1;
+
+      // Clear canvas - use alternating background if applicable
+      if (shouldAlternate) {
+        ctx.fillStyle = computedStyle.getPropertyValue('--color-waveform-alt-bg') || '#f0f0f0';
+      } else {
+        ctx.fillStyle = computedStyle.getPropertyValue('--color-bg-surface') || '#ffffff';
+      }
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       if (changes.length === 0) return;
@@ -583,8 +597,9 @@ export class FileDisplay extends HTMLElement {
     // Repaint all non-timeline signals with the new range, awaiting all operations
     await Promise.all(
       this.selectedSignals
-        .filter(signal => !signal.isTimeline && signal.canvas)
-        .map(signal => this.paintSignal(signal.canvas!, signal.ref))
+        .map((signal, index) => ({ signal, index }))
+        .filter(({ signal }) => !signal.isTimeline && signal.canvas)
+        .map(({ signal, index }) => this.paintSignal(signal.canvas!, signal.ref, index))
     );
   }
 

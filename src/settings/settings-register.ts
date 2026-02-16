@@ -110,3 +110,13 @@ settingsRegister.register({
     type: 'boolean',
     defaultValue: true
 });
+
+settingsRegister.register({
+    path: 'Waveform/Alternating Row Pattern',
+    description: 'Number of rows in alternating background pattern (e.g., 3 means 3 on, 3 off)',
+    type: 'number',
+    defaultValue: 3,
+    min: 1,
+    max: 10,
+    step: 1
+});

@@ -220,16 +220,16 @@ ShortcutManager.register() → KeyboardEvent
          ↓
 CommandRegistry.execute()
          ↓
-Emits 'command-execute' event ──→ Event Listeners react
-         ↓                              ↓
-Command handler() executes        Application logic
+Emits command-specific event (e.g., 'file-open') ──→ Event Listeners react
+         ↓                                                  ↓
+Command handler() executes                          Application logic
 ```
 
 ### Event Details
 
-When a command is executed, the CommandRegistry emits a `command-execute` CustomEvent with:
-- **Type**: `'command-execute'`
-- **Detail**: `{ commandId: string }` - The ID of the command being executed
+When a command is executed, the CommandRegistry emits a CustomEvent with:
+- **Type**: The command ID itself (e.g., `'file-open'`, `'edit-undo'`)
+- **No detail needed** - The event type identifies the command
 - **Bubbles**: `true` - Event bubbles up the DOM
 - **Composed**: `true` - Event crosses shadow DOM boundaries
 
@@ -239,19 +239,17 @@ When a command is executed, the CommandRegistry emits a `command-execute` Custom
 // In app-main.ts or any component
 const commandRegistry = commandManager.getCommandRegistry();
 
-commandRegistry.addEventListener('command-execute', (event: Event) => {
-    const customEvent = event as CustomEvent<{ commandId: string }>;
-    const { commandId } = customEvent.detail;
-    
-    switch (commandId) {
-        case 'file-open':
-            this.handleFileOpen();
-            break;
-        case 'edit-undo':
-            this.undoManager.undo();
-            break;
-        // Handle other commands...
-    }
+// Listen to specific command events (no filtering needed!)
+commandRegistry.addEventListener('file-open', () => {
+    this.handleFileOpen();
+});
+
+commandRegistry.addEventListener('edit-undo', () => {
+    this.undoManager.undo();
+});
+
+commandRegistry.addEventListener('view-zoom-in', () => {
+    this.dispatchZoomCommand('zoom-in');
 });
 ```
 

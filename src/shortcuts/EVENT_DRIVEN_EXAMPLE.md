@@ -10,15 +10,10 @@ import { CommandRegistry, ShortcutManager } from './shortcuts/index.js';
 // 1. Create a command registry
 const registry = new CommandRegistry();
 
-// 2. Set up an event listener to react to commands
-registry.addEventListener('command-execute', (event: Event) => {
-    const customEvent = event as CustomEvent<{ commandId: string }>;
-    const { commandId } = customEvent.detail;
-    
-    if (commandId === 'save-file') {
-        console.log('Saving file...');
-        // Actual save logic here
-    }
+// 2. Set up an event listener to react to the specific command
+registry.addEventListener('save-file', () => {
+    console.log('Saving file...');
+    // Actual save logic here
 });
 
 // 3. Register the command (with a stub handler)
@@ -40,24 +35,17 @@ Multiple components can react to the same command event:
 
 ```typescript
 // Component A: Update UI
-registry.addEventListener('command-execute', (event: Event) => {
-    const customEvent = event as CustomEvent<{ commandId: string }>;
-    if (customEvent.detail.commandId === 'file-open') {
-        updateStatusBar('Opening file...');
-    }
+registry.addEventListener('file-open', () => {
+    updateStatusBar('Opening file...');
 });
 
 // Component B: Log analytics
-registry.addEventListener('command-execute', (event: Event) => {
-    const customEvent = event as CustomEvent<{ commandId: string }>;
-    if (customEvent.detail.commandId === 'file-open') {
-        analytics.track('file_open_command');
-    }
+registry.addEventListener('file-open', () => {
+    analytics.track('file_open_command');
 });
 
 // Component C: Perform actual file open
-registry.addEventListener('command-execute', (event: Event) => {
-    const customEvent = event as CustomEvent<{ commandId: string }>;
+registry.addEventListener('file-open', () => {
     if (customEvent.detail.commandId === 'file-open') {
         openFilePicker();
     }
@@ -103,25 +91,21 @@ class MyApp {
     }
     
     private setupEventListeners() {
-        // Set up a single event listener to route all commands
-        this.commandRegistry.addEventListener('command-execute', (event: Event) => {
-            const customEvent = event as CustomEvent<{ commandId: string }>;
-            const { commandId } = customEvent.detail;
-            
-            switch (commandId) {
-                case 'file-open':
-                    this.handleFileOpen();
-                    break;
-                case 'file-save':
-                    this.handleFileSave();
-                    break;
-                case 'edit-undo':
-                    this.handleUndo();
-                    break;
-                case 'edit-redo':
-                    this.handleRedo();
-                    break;
-            }
+        // Listen to specific command events
+        this.commandRegistry.addEventListener('file-open', () => {
+            this.handleFileOpen();
+        });
+        
+        this.commandRegistry.addEventListener('file-save', () => {
+            this.handleFileSave();
+        });
+        
+        this.commandRegistry.addEventListener('edit-undo', () => {
+            this.handleUndo();
+        });
+        
+        this.commandRegistry.addEventListener('edit-redo', () => {
+            this.handleRedo();
         });
     }
     

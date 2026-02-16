@@ -2,10 +2,12 @@
     display: block;
     height: 100%;
     overflow-y: auto;
+    overflow-x: hidden;
     background-color: var(--color-bg-surface);
     font-family: monospace;
     font-size: 14px;
     color: var(--color-text);
+    box-sizing: border-box;
 }
 
 .filter-container {
@@ -15,6 +17,7 @@
     position: sticky;
     top: 0;
     z-index: 1;
+    box-sizing: border-box;
 }
 
 .filter-input {
@@ -27,6 +30,7 @@
     background-color: var(--color-bg, #ffffff);
     color: var(--color-text, #0f0f0f);
     font-family: inherit;
+    box-sizing: border-box;
 }
 
 .filter-input:focus {

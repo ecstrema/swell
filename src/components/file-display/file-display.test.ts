@@ -329,11 +329,14 @@ describe('FileDisplay Component', () => {
     const directChildren = waveformsContainer?.children;
     expect(directChildren).toBeTruthy();
     
-    // First child should be the default timeline
-    expect(directChildren?.[0]?.tagName.toLowerCase()).toBe('timeline-view');
+    // First child should be the minimap
+    expect(directChildren?.[0]?.tagName.toLowerCase()).toBe('minimap-view');
     
-    // Second child should be the canvas for the signal we added
-    expect(directChildren?.[1]?.tagName.toLowerCase()).toBe('canvas');
+    // Second child should be the default timeline
+    expect(directChildren?.[1]?.tagName.toLowerCase()).toBe('timeline-view');
+    
+    // Third child should be the canvas for the signal we added
+    expect(directChildren?.[2]?.tagName.toLowerCase()).toBe('canvas');
     
     // There should be no wrapper divs with class 'signal-item'
     const signalItems = shadowRoot?.querySelectorAll('.signal-item');

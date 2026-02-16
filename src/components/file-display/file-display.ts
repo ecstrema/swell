@@ -5,10 +5,12 @@ import { scrollbarSheet } from '../../styles/shared-sheets.js';
 import fileDisplayCss from './file-display.css?inline';
 import { SelectedSignalsTree } from '../trees/selected-signals-tree.js';
 import { Timeline } from '../timeline/timeline.js';
+import { Minimap } from '../minimap/minimap.js';
 import { saveFileState, loadFileState, FileState, Item, ItemSignal, ItemTimeline } from '../../utils/file-state-storage.js';
 import { getSetting } from '../../settings/settings-storage.js';
 import '../trees/selected-signals-tree.js';
 import '../timeline/timeline.js';
+import '../minimap/minimap.js';
 import '../panels/resizable-panel.js';
 
 interface SelectedSignal {
@@ -30,9 +32,11 @@ export class FileDisplay extends HTMLElement {
   private selectedSignals: SelectedSignal[] = [];
   private signalsContainer: HTMLDivElement | null = null;
   private selectedSignalsTree: SelectedSignalsTree;
+  private minimap: Minimap;
   private boundHandleSignalSelect: (event: Event) => void;
   private boundHandleCheckboxToggle: (event: Event) => void;
   private boundHandleRangeChanged: (event: Event) => void;
+  private boundHandleMinimapRangeChanged: (event: Event) => void;
   private boundHandleZoomCommand: (event: Event) => void;
   private boundHandleAddTimeline: () => void;
   private boundHandleSignalsReordered: (event: Event) => void;
@@ -52,6 +56,7 @@ export class FileDisplay extends HTMLElement {
     this.boundHandleSignalSelect = this.handleSignalSelect.bind(this);
     this.boundHandleCheckboxToggle = this.handleCheckboxToggle.bind(this);
     this.boundHandleRangeChanged = this.handleRangeChanged.bind(this);
+    this.boundHandleMinimapRangeChanged = this.handleMinimapRangeChanged.bind(this);
     this.boundHandleZoomCommand = this.handleZoomCommand.bind(this);
     this.boundHandleAddTimeline = this.handleAddTimeline.bind(this);
     this.boundHandleSignalsReordered = this.handleSignalsReordered.bind(this);
@@ -61,6 +66,9 @@ export class FileDisplay extends HTMLElement {
     
     // Create the selected signals tree
     this.selectedSignalsTree = new SelectedSignalsTree();
+    
+    // Create the minimap
+    this.minimap = new Minimap();
     
     // Add a default timeline as the first signal
     this.addTimelineSignal();
@@ -174,8 +182,11 @@ export class FileDisplay extends HTMLElement {
         }
       }
       
-      // Update all timeline signals with the restored range
+      // Update minimap and all timeline signals with the restored range
       if (this.timeRangeInitialized) {
+        this.minimap.totalRange = { start: this.visibleStart, end: this.visibleEnd };
+        this.minimap.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
+        
         this.selectedSignals.forEach(signal => {
           if (signal.isTimeline && signal.timeline) {
             signal.timeline.totalRange = { start: this.visibleStart, end: this.visibleEnd };
@@ -204,6 +215,9 @@ export class FileDisplay extends HTMLElement {
     // Listen for timeline range changes
     this.addEventListener('range-changed', this.boundHandleRangeChanged);
     
+    // Listen for minimap range changes
+    this.minimap.addEventListener('range-changed', this.boundHandleMinimapRangeChanged);
+    
     // Listen for zoom commands
     this.addEventListener('zoom-command', this.boundHandleZoomCommand);
     
@@ -230,6 +244,7 @@ export class FileDisplay extends HTMLElement {
     document.removeEventListener('signal-select', this.boundHandleSignalSelect);
     document.removeEventListener('checkbox-toggle', this.boundHandleCheckboxToggle);
     this.removeEventListener('range-changed', this.boundHandleRangeChanged);
+    this.minimap.removeEventListener('range-changed', this.boundHandleMinimapRangeChanged);
     this.removeEventListener('zoom-command', this.boundHandleZoomCommand);
     this.selectedSignalsTree.removeEventListener('signals-reordered', this.boundHandleSignalsReordered);
     window.removeEventListener('theme-changed', this.boundHandleThemeChanged);
@@ -286,6 +301,22 @@ export class FileDisplay extends HTMLElement {
         }
       }
     });
+  }
+
+  private handleMinimapRangeChanged(event: Event) {
+    const customEvent = event as CustomEvent;
+    const { start, end } = customEvent.detail;
+    this.setVisibleRange(start, end);
+    
+    // Synchronize all timelines with minimap range
+    this.selectedSignals.forEach(signal => {
+      if (signal.isTimeline && signal.timeline) {
+        signal.timeline.visibleRange = { start, end };
+      }
+    });
+    
+    // Save state after range changes
+    this.debouncedSaveState();
   }
 
   private addTimelineSignal() {
@@ -517,6 +548,10 @@ export class FileDisplay extends HTMLElement {
         this.visibleEnd = changes[changes.length - 1].time;
         this.timeRangeInitialized = true;
         
+        // Update minimap with total range
+        this.minimap.totalRange = { start: this.visibleStart, end: this.visibleEnd };
+        this.minimap.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
+        
         // Update all timeline signals with total and visible ranges
         this.selectedSignals.forEach(signal => {
           if (signal.isTimeline && signal.timeline) {
@@ -633,6 +668,9 @@ export class FileDisplay extends HTMLElement {
 
     this.visibleStart = start;
     this.visibleEnd = end;
+    
+    // Update minimap visible range
+    this.minimap.visibleRange = { start, end };
     
     // Repaint all non-timeline signals with the new range, awaiting all operations
     await Promise.all(
@@ -787,8 +825,11 @@ export class FileDisplay extends HTMLElement {
         // Note: ItemGroup support can be added in future when needed
       }
       
-      // Update all timeline signals with the restored range
+      // Update minimap and all timeline signals with the restored range
       if (this.timeRangeInitialized) {
+        this.minimap.totalRange = { start: this.visibleStart, end: this.visibleEnd };
+        this.minimap.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
+        
         this.selectedSignals.forEach(signal => {
           if (signal.isTimeline && signal.timeline) {
             signal.timeline.totalRange = { start: this.visibleStart, end: this.visibleEnd };
@@ -837,10 +878,13 @@ export class FileDisplay extends HTMLElement {
       treeContainer.appendChild(addTimelineBtn);
     }
 
-    // Append timelines and canvases directly to the waveforms container
-    // No wrapper divs - just the canvas/timeline elements themselves
+    // Append minimap first, then timelines and canvases to the waveforms container
     this.signalsContainer = this.shadowRoot.querySelector('#waveforms-container');
     if (this.signalsContainer) {
+      // Add minimap at the top
+      this.signalsContainer.appendChild(this.minimap);
+      
+      // Then add all the signals
       this.selectedSignals.forEach(signal => {
         if (signal.isTimeline && signal.timeline) {
           this.signalsContainer!.appendChild(signal.timeline);

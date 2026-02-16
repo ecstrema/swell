@@ -1,8 +1,11 @@
 import { Command } from "../shortcuts/types.js";
 import { CommandRegistry } from "../shortcuts/command-registry.js";
+import { ShortcutManager } from "../shortcuts/shortcut-manager.js";
 import { css } from "../utils/css-utils.js";
 import { scrollbarSheet } from "../styles/shared-sheets.js";
 import commandPaletteCss from "./command-palette.css?inline";
+import "./shortcut-display.js";
+import { ShortcutDisplay } from "./shortcut-display.js";
 
 /**
  * Command Palette - A searchable command launcher
@@ -10,15 +13,17 @@ import commandPaletteCss from "./command-palette.css?inline";
  */
 export class CommandPalette extends HTMLElement {
     private commandRegistry: CommandRegistry;
+    private shortcutManager: ShortcutManager | null;
     private isOpen: boolean = false;
     private searchInput: HTMLInputElement | null = null;
     private resultsContainer: HTMLDivElement | null = null;
     private selectedIndex: number = 0;
     private filteredCommands: Command[] = [];
 
-    constructor(commandRegistry: CommandRegistry) {
+    constructor(commandRegistry: CommandRegistry, shortcutManager?: ShortcutManager) {
         super();
         this.commandRegistry = commandRegistry;
+        this.shortcutManager = shortcutManager || null;
 
         this.attachShadow({ mode: 'open' });
         this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(commandPaletteCss)];
@@ -179,12 +184,17 @@ export class CommandPalette extends HTMLElement {
             label.className = 'label';
             label.textContent = command.label;
 
-            const id = document.createElement('div');
-            id.className = 'id';
-            id.textContent = command.id;
-
             item.appendChild(label);
-            item.appendChild(id);
+
+            // Add shortcut if available
+            if (this.shortcutManager) {
+                const shortcuts = this.shortcutManager.getShortcutsForCommand(command.id);
+                if (shortcuts.length > 0) {
+                    const shortcutDisplay = document.createElement('app-shortcut-display') as ShortcutDisplay;
+                    shortcutDisplay.setAttribute('shortcut', ShortcutManager.formatShortcut(shortcuts[0]));
+                    item.appendChild(shortcutDisplay);
+                }
+            }
 
             // Click handler
             item.addEventListener('click', () => {

@@ -86,6 +86,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
     border-bottom: 1px solid var(--color-border, #eeeeee);
     color: var(--color-text, #0f0f0f);
     background-color: var(--color-bg-surface, #ffffff);
@@ -103,12 +104,7 @@
 .result-item .label {
     flex: 1;
     font-size: 14px;
-}
-
-.result-item .id {
-    font-size: 12px;
-    color: var(--color-text-muted, #666666);
-    font-family: monospace;
+    min-width: 0;
 }
 
 .empty-state {

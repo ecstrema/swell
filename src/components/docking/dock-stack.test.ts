@@ -61,6 +61,48 @@ describe('DockStack - Empty State Button', () => {
         expect(eventListener).toHaveBeenCalled();
     });
 
+    it('should show empty state with open example file button when no children exist', () => {
+        // Set an empty stack
+        dockStack.node = {
+            type: 'stack',
+            id: 'test-stack',
+            weight: 1,
+            activeId: null,
+            children: []
+        };
+
+        // Verify empty state is shown
+        const emptyPlaceholder = dockStack.shadowRoot!.querySelector('.empty-placeholder');
+        expect(emptyPlaceholder).toBeTruthy();
+
+        // Verify button exists
+        const openExampleBtn = dockStack.shadowRoot!.querySelector('#open-example-btn') as HTMLButtonElement;
+        expect(openExampleBtn).toBeTruthy();
+        expect(openExampleBtn.textContent).toBe('open example file');
+    });
+
+    it('should dispatch open-example-request event when open example button is clicked', () => {
+        // Set an empty stack
+        dockStack.node = {
+            type: 'stack',
+            id: 'test-stack',
+            weight: 1,
+            activeId: null,
+            children: []
+        };
+
+        // Listen for the event
+        const eventListener = vi.fn();
+        dockStack.addEventListener('open-example-request', eventListener);
+
+        // Click the button
+        const openExampleBtn = dockStack.shadowRoot!.querySelector('#open-example-btn') as HTMLButtonElement;
+        openExampleBtn.click();
+
+        // Verify event was dispatched
+        expect(eventListener).toHaveBeenCalled();
+    });
+
     it('should not show button when children exist', () => {
         // Set a stack with children
         dockStack.node = {
@@ -105,9 +147,11 @@ describe('DockStack - Empty State Button', () => {
         const emptyPlaceholder = dockStack.shadowRoot!.querySelector('.empty-placeholder');
         expect(emptyPlaceholder).toBeNull();
 
-        // Verify button does not exist
+        // Verify buttons do not exist
         const openFileBtn = dockStack.shadowRoot!.querySelector('#open-file-btn');
         expect(openFileBtn).toBeNull();
+        const openExampleBtn = dockStack.shadowRoot!.querySelector('#open-example-btn');
+        expect(openExampleBtn).toBeNull();
     });
 });
 

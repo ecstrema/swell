@@ -18,6 +18,16 @@ export interface Command {
 }
 
 /**
+ * Represents an option in a selection list
+ */
+export interface SelectOption<T = any> {
+    id: string;
+    label: string;
+    description?: string;
+    value: T;
+}
+
+/**
  * Maps shortcut definitions to command IDs
  */
 export interface ShortcutBinding {

@@ -155,10 +155,9 @@ export class AppMain extends HTMLElement {
         // Listeners
         this.addEventListener('file-open-request', () => this.handleFileOpen());
 
-        // Listen for open example request
-        this.addEventListener('open-example-request', (e: Event) => {
-            const customEvent = e as CustomEvent<string>;
-            this.handleOpenExample(customEvent.detail);
+        // Listen for open example request - execute the command which will show the selection palette
+        this.addEventListener('open-example-request', () => {
+            this.commandManager.getCommandRegistry().execute('open-example');
         });
 
         // Listen for file picker button click in empty state
@@ -333,14 +332,14 @@ export class AppMain extends HTMLElement {
             this.undoTreePanel.refresh();
         });
 
-        // Register example file commands
-        this.registerExampleCommands();
+        // Register "Open Example..." command that uses selection mode
+        this.registerOpenExampleCommand();
     }
 
     /**
-     * Register commands for opening example files
+     * Register command for opening example files using selection mode
      */
-    private registerExampleCommands() {
+    private registerOpenExampleCommand() {
         // Define example files with their descriptions
         const examples = [
             {
@@ -365,14 +364,33 @@ export class AppMain extends HTMLElement {
             }
         ];
 
-        // Register a command for each example
-        examples.forEach(example => {
-            this.commandManager.getCommandRegistry().register({
-                id: `open-example-${example.filename}`,
-                label: `Open Example: ${example.filename}`,
-                description: example.description,
-                handler: () => this.handleOpenExample(example.filename)
-            });
+        // Register a single command that opens the selection palette
+        this.commandManager.getCommandRegistry().register({
+            id: 'open-example',
+            label: 'Open Example...',
+            handler: async () => {
+                const commandPalette = this.commandManager.getCommandPalette();
+                if (!commandPalette) return;
+
+                try {
+                    const options = examples.map(ex => ({
+                        id: ex.filename,
+                        label: ex.filename,
+                        description: ex.description,
+                        value: ex.filename
+                    }));
+
+                    const selectedFilename = await commandPalette.showSelection(
+                        options,
+                        'Select an example file...'
+                    );
+
+                    await this.handleOpenExample(selectedFilename);
+                } catch (error) {
+                    // User cancelled or error occurred
+                    console.log('Example selection cancelled');
+                }
+            }
         });
     }
 

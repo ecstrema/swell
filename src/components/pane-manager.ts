@@ -28,28 +28,54 @@ export class PaneManager {
             return;
         }
 
+        // First check if the pane already exists anywhere in the layout
+        const existingStack = this.findStackContainingPane(layout.root, paneId);
+        if (existingStack) {
+            // Pane exists, just activate it
+            existingStack.activeId = paneId;
+            this.dockManager.layout = layout; // Trigger re-render
+            return;
+        }
+
+        // Pane doesn't exist, add it to the biggest stack
         const biggestStack = this.layoutHelper.findBiggestStack(layout.root);
         if (!biggestStack) {
             console.warn('Could not find any stack to activate pane');
             return;
         }
 
-        // Check if pane already exists in this stack
-        const paneExists = biggestStack.children.some(p => p.id === paneId);
-        
-        if (!paneExists) {
-            // Add pane to the biggest stack
-            biggestStack.children.push({
-                id: paneId,
-                title: title,
-                contentId: contentId,
-                closable: closable
-            });
-        }
+        // Add pane to the biggest stack
+        biggestStack.children.push({
+            id: paneId,
+            title: title,
+            contentId: contentId,
+            closable: closable
+        });
 
         // Activate the pane
         biggestStack.activeId = paneId;
         this.dockManager.layout = layout; // Trigger re-render
+    }
+
+    /**
+     * Find the stack containing a specific pane
+     */
+    private findStackContainingPane(node: DockNode, paneId: string): DockStack | null {
+        if (node.type === 'stack') {
+            if (node.children.some(p => p.id === paneId)) {
+                return node;
+            }
+            return null;
+        }
+        
+        if (node.type === 'box') {
+            for (const child of node.children) {
+                const result = this.findStackContainingPane(child, paneId);
+                if (result) return result;
+            }
+        }
+        
+        return null;
     }
 
     /**

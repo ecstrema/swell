@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import './file-display.js';
 import { FileDisplay } from './file-display.js';
 import { Timeline } from './timeline.js';
@@ -24,8 +24,18 @@ describe('FileDisplay Component', () => {
   let element: FileDisplay;
 
   beforeEach(() => {
+    // Clear localStorage to prevent state pollution between tests
+    // This prevents race conditions with restoreFileState()
+    localStorage.clear();
+    
     element = document.createElement('file-display') as FileDisplay;
     document.body.appendChild(element);
+  });
+
+  afterEach(() => {
+    // Clean up: remove element and clear localStorage
+    element.remove();
+    localStorage.clear();
   });
 
   it('should have default visible range', () => {

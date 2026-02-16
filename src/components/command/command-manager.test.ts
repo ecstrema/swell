@@ -24,7 +24,11 @@ describe('CommandManager', () => {
             onZoomIn: vi.fn(),
             onZoomOut: vi.fn(),
             onZoomFit: vi.fn(),
-            onToggleSignalSelection: vi.fn()
+            onToggleSignalSelection: vi.fn(),
+            onToggleUndoHistory: vi.fn(),
+            onShowSettings: vi.fn(),
+            onShowAbout: vi.fn(),
+            onShowUndoTree: vi.fn()
         };
         
         commandManager.initializeShortcuts(mockHandlers);
@@ -129,6 +133,7 @@ describe('CommandManager', () => {
             expect(registry.get('view-zoom-out')).toBeDefined();
             expect(registry.get('view-zoom-fit')).toBeDefined();
             expect(registry.get('view-toggle-signal-selection')).toBeDefined();
+            expect(registry.get('view-toggle-undo-history')).toBeDefined();
             expect(registry.get('command-palette-toggle')).toBeDefined();
         });
     });

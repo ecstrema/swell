@@ -20,6 +20,7 @@ export class MenuBar extends HTMLElement {
       'zoom-out': 'view-zoom-out',
       'zoom-fit': 'view-zoom-fit',
       'toggle-signal-selection': 'view-toggle-signal-selection',
+      'toggle-undo-history': 'view-toggle-undo-history',
   };
 
   constructor() {
@@ -215,6 +216,20 @@ export class MenuBar extends HTMLElement {
                                             bubbles: true,
                                             composed: true,
                                             detail: 'view-toggle-signal-selection'
+                                        }));
+                                    }
+                                },
+                                {
+                                    id: 'toggle-undo-history',
+                                    text: 'Undo History',
+                                    type: 'checkbox' as const,
+                                    // Initial state - will be updated dynamically
+                                    checked: false,
+                                    action: () => {
+                                        this.dispatchEvent(new CustomEvent('menu-action', {
+                                            bubbles: true,
+                                            composed: true,
+                                            detail: 'view-toggle-undo-history'
                                         }));
                                     }
                                 }

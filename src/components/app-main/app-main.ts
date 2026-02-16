@@ -299,6 +299,9 @@ export class AppMain extends HTMLElement {
             onToggleSignalSelection: () => {
                 this.toggleSignalSelection();
             },
+            onToggleUndoHistory: () => {
+                this.toggleUndoHistory();
+            },
             onShowSettings: () => {
                 this.activateSettingsPane();
             },
@@ -498,6 +501,7 @@ export class AppMain extends HTMLElement {
             // Update menu checkbox to reflect current state
             if (this.menuBar) {
                 this.menuBar.updateMenuItemChecked('toggle-signal-selection', this.dockLayoutHelper.isSidebarVisible());
+                this.menuBar.updateMenuItemChecked('toggle-undo-history', this.dockLayoutHelper.isUndoPaneVisible());
             }
         } else {
             // Hide sidebar when no files are open
@@ -698,6 +702,18 @@ export class AppMain extends HTMLElement {
             await setSetting(SETTING_SIGNAL_SELECTION_VISIBLE, newVisibility);
         } catch (error) {
             console.warn('Failed to persist signal selection visibility setting:', error);
+        }
+    }
+
+    /**
+     * Toggle the undo history pane visibility
+     */
+    private toggleUndoHistory() {
+        const newVisibility = this.dockLayoutHelper.toggleUndoPaneVisibility();
+        
+        // Update the menu checkbox state
+        if (this.menuBar) {
+            this.menuBar.updateMenuItemChecked('toggle-undo-history', newVisibility);
         }
     }
 }

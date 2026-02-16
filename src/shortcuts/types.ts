@@ -13,6 +13,7 @@ export type KeyboardShortcut = string;
 export interface Command {
     id: string;
     label: string;
+    description?: string;
     handler: () => void | Promise<void>;
 }
 

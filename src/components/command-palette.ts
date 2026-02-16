@@ -116,7 +116,8 @@ export class CommandPalette extends HTMLElement {
             this.filteredCommands = allCommands.filter(cmd => {
                 const labelMatch = cmd.label.toLowerCase().includes(query);
                 const idMatch = cmd.id.toLowerCase().includes(query);
-                return labelMatch || idMatch;
+                const descriptionMatch = cmd.description?.toLowerCase().includes(query) || false;
+                return labelMatch || idMatch || descriptionMatch;
             });
         }
 
@@ -180,11 +181,28 @@ export class CommandPalette extends HTMLElement {
                 item.classList.add('selected');
             }
 
-            const label = document.createElement('div');
-            label.className = 'label';
-            label.textContent = command.label;
+            // If command has a description, use a container
+            if (command.description) {
+                const labelContainer = document.createElement('div');
+                labelContainer.className = 'label-container';
 
-            item.appendChild(label);
+                const label = document.createElement('div');
+                label.className = 'label';
+                label.textContent = command.label;
+
+                const description = document.createElement('div');
+                description.className = 'description';
+                description.textContent = command.description;
+
+                labelContainer.appendChild(label);
+                labelContainer.appendChild(description);
+                item.appendChild(labelContainer);
+            } else {
+                const label = document.createElement('div');
+                label.className = 'label';
+                label.textContent = command.label;
+                item.appendChild(label);
+            }
 
             // Add shortcut if available
             if (this.shortcutManager) {

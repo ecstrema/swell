@@ -332,6 +332,48 @@ export class AppMain extends HTMLElement {
         this.undoManager.setOnChange(() => {
             this.undoTreePanel.refresh();
         });
+
+        // Register example file commands
+        this.registerExampleCommands();
+    }
+
+    /**
+     * Register commands for opening example files
+     */
+    private registerExampleCommands() {
+        // Define example files with their descriptions
+        const examples = [
+            {
+                filename: 'simple.vcd',
+                description: 'Basic VCD waveform example with simple signals'
+            },
+            {
+                filename: 'simple.ghw',
+                description: 'Basic GHDL waveform with simple signals'
+            },
+            {
+                filename: 'counter.vcd',
+                description: 'VCD waveform showing a counter circuit'
+            },
+            {
+                filename: 'example.fst',
+                description: 'FST (Fast Signal Trace) format example'
+            },
+            {
+                filename: 'time_test.ghw',
+                description: 'GHDL waveform for testing time-based features'
+            }
+        ];
+
+        // Register a command for each example
+        examples.forEach(example => {
+            this.commandManager.getCommandRegistry().register({
+                id: `open-example-${example.filename}`,
+                label: `Open Example: ${example.filename}`,
+                description: example.description,
+                handler: () => this.handleOpenExample(example.filename)
+            });
+        });
     }
 
     /**

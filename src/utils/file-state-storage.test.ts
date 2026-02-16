@@ -3,7 +3,7 @@ import { saveFileState, loadFileState, removeFileState, clearAllFileStates } fro
 import type { FileState } from './file-state-storage';
 
 // Mock the backend module
-vi.mock('../backend.js', () => ({
+vi.mock('../backend/index.js', () => ({
     isTauri: false
 }));
 

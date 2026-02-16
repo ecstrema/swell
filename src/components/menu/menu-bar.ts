@@ -1,6 +1,6 @@
-import { isTauri } from "../../backend.js";
-import { themeManager } from "../../theme-manager.js";
-import { createMenu, MenuConfig, MenuItemConfig, SubmenuConfig } from "../../menu-api.js";
+import { isTauri } from "../../backend/index.js";
+import { themeManager } from "../../theme/index.js";
+import { createMenu, MenuConfig, MenuItemConfig, SubmenuConfig } from "../../menu-api/index.js";
 import { css } from "../../utils/css-utils.js";
 import menuBarCss from "./menu-bar.css?inline";
 import { renderMenuItems, findAndExecuteAction } from "./menu-item-renderer.js";

@@ -3,7 +3,7 @@ import { saveStateToFile, loadStateFromFile } from './state-file-io';
 import type { FileState } from './file-state-storage';
 
 // Mock the backend module
-vi.mock('../backend.js', () => ({
+vi.mock('../backend/index.js', () => ({
     isTauri: false,
     saveStateFileDialog: vi.fn(),
     openStateFileDialog: vi.fn(),
@@ -18,7 +18,7 @@ describe('state-file-io', () => {
 
     describe('saveStateToFile', () => {
         it('should create app state with correct structure', async () => {
-            const { saveStateFileDialog, writeTextFile } = await import('../backend.js');
+            const { saveStateFileDialog, writeTextFile } = await import('../backend/index.js');
             
             // Mock dialog to return a path
             vi.mocked(saveStateFileDialog).mockResolvedValue('test.swellstate');
@@ -42,7 +42,7 @@ describe('state-file-io', () => {
         });
 
         it('should handle user cancellation', async () => {
-            const { saveStateFileDialog, writeTextFile } = await import('../backend.js');
+            const { saveStateFileDialog, writeTextFile } = await import('../backend/index.js');
             
             // Mock dialog to return null (user cancelled)
             vi.mocked(saveStateFileDialog).mockResolvedValue(null);
@@ -62,7 +62,7 @@ describe('state-file-io', () => {
         });
 
         it('should derive default filename from waveform filename', async () => {
-            const { saveStateFileDialog } = await import('../backend.js');
+            const { saveStateFileDialog } = await import('../backend/index.js');
             
             vi.mocked(saveStateFileDialog).mockResolvedValue('test.swellstate');
             
@@ -82,7 +82,7 @@ describe('state-file-io', () => {
 
     describe('loadStateFromFile', () => {
         it('should load and parse state file correctly', async () => {
-            const { openStateFileDialog, readTextFile } = await import('../backend.js');
+            const { openStateFileDialog, readTextFile } = await import('../backend/index.js');
             
             const mockFile = new File(['content'], 'test.swellstate');
             vi.mocked(openStateFileDialog).mockResolvedValue(mockFile);
@@ -112,7 +112,7 @@ describe('state-file-io', () => {
         });
 
         it('should handle user cancellation', async () => {
-            const { openStateFileDialog, readTextFile } = await import('../backend.js');
+            const { openStateFileDialog, readTextFile } = await import('../backend/index.js');
             
             vi.mocked(openStateFileDialog).mockResolvedValue(null);
 
@@ -123,7 +123,7 @@ describe('state-file-io', () => {
         });
 
         it('should validate state file format', async () => {
-            const { openStateFileDialog, readTextFile } = await import('../backend.js');
+            const { openStateFileDialog, readTextFile } = await import('../backend/index.js');
             
             const mockFile = new File(['content'], 'test.swellstate');
             vi.mocked(openStateFileDialog).mockResolvedValue(mockFile);
@@ -140,7 +140,7 @@ describe('state-file-io', () => {
         });
 
         it('should handle JSON parse errors', async () => {
-            const { openStateFileDialog, readTextFile } = await import('../backend.js');
+            const { openStateFileDialog, readTextFile } = await import('../backend/index.js');
             
             const mockFile = new File(['content'], 'test.swellstate');
             vi.mocked(openStateFileDialog).mockResolvedValue(mockFile);

@@ -2,7 +2,7 @@
 // These functions handle the serialization and I/O for explicit state file operations
 
 import { FileState } from './file-state-storage.js';
-import { saveStateFileDialog, openStateFileDialog, writeTextFile, readTextFile, isTauri } from '../backend.js';
+import { saveStateFileDialog, openStateFileDialog, writeTextFile, readTextFile, isTauri } from '../backend/index.js';
 
 /**
  * Current state file format version

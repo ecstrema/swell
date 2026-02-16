@@ -1,7 +1,7 @@
 // File state persistence for restoring per-file settings like selected signals and visible range
 // This allows the application to restore the exact state when reopening a file
 
-import { isTauri } from '../backend.js';
+import { isTauri } from '../backend/index.js';
 import { getSetting, setSetting } from '../settings/settings-storage.js';
 
 /**

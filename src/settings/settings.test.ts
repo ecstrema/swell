@@ -3,7 +3,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock backend before importing
-vi.mock('../backend.js', () => ({
+vi.mock('../backend/index.js', () => ({
     isTauri: false,
     invoke: vi.fn()
 }));

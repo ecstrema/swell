@@ -403,6 +403,18 @@ export class DockManager extends HTMLElement {
     if (!this._layout) return false;
     return this.countStacks(this._layout.root) > 1;
   }
+
+  /**
+   * Public method to cleanup empty stacks and redistribute space.
+   * Called when panes are closed to remove empty docks.
+   */
+  public cleanupEmptyStacks(): void {
+    if (!this._layout) return;
+    if (this.shouldCleanupEmptyStacks()) {
+      this.cleanupEmptyNodes(this._layout.root);
+      this.render();
+    }
+  }
 }
 customElements.define("dock-manager", DockManager);
 

@@ -88,6 +88,10 @@ export class PaneManager {
 
         // Find and remove pane from all stacks
         this.removePaneFromNode(layout.root, paneId);
+        
+        // Clean up empty stacks and redistribute their space
+        this.dockManager.cleanupEmptyStacks();
+        
         this.dockManager.layout = layout; // Trigger re-render
     }
 

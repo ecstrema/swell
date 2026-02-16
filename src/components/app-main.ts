@@ -224,6 +224,12 @@ export class AppMain extends HTMLElement {
                 return;
             }
             
+            // Handle undo tree pane close
+            if (paneId === 'undo-tree-pane') {
+                this.paneManager.closePane('undo-tree-pane');
+                return;
+            }
+            
             // Extract file ID from pane ID (format: "file-pane-{fileId}")
             if (paneId.startsWith('file-pane-')) {
                 const fileId = paneId.substring('file-pane-'.length);

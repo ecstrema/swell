@@ -203,6 +203,13 @@ button {
   outline: none;
 }
 
+/* Apply accent color from theme to native inputs */
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"] {
+  accent-color: var(--color-primary);
+}
+
 /* Scrollbar Styles */
 * {
   scrollbar-width: thin;

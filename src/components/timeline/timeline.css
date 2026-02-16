@@ -16,49 +16,11 @@
 
 .timeline-canvas {
   width: 100%;
-  height: 24px;
+  height: 32px;
   border: none;
   background-color: var(--color-bg, #1e1e1e);
   cursor: crosshair;
   display: block;
   margin: 0;
   padding: 0;
-}
-
-.scrollbar {
-  width: 100%;
-  height: 20px;
-  padding: 0;
-  margin: 0;
-  pointer-events: auto;
-}
-
-.scrollbar-track {
-  width: 100%;
-  height: 100%;
-  background-color: rgba(30, 30, 30, 0.8);
-  border: none;
-  position: relative;
-  pointer-events: auto;
-  margin: 0;
-  padding: 0;
-}
-
-.scrollbar-thumb {
-  position: absolute;
-  height: 100%;
-  background-color: var(--color-button-bg, #4a4a4a);
-  cursor: grab;
-  transition: background-color 0.2s;
-  margin: 0;
-  padding: 0;
-}
-
-.scrollbar-thumb:hover {
-  background-color: var(--color-bg-hover, #5a5a5a);
-}
-
-.scrollbar-thumb:active {
-  cursor: grabbing;
-  background-color: var(--color-bg-active, #666);
 }

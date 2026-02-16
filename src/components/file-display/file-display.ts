@@ -404,7 +404,7 @@ export class FileDisplay extends HTMLElement {
     const canvas = document.createElement('canvas');
     // Set a reasonable default width - will be updated after render
     canvas.width = 800;
-    canvas.height = 24;
+    canvas.height = 32;
 
     this.selectedSignals.push({ name, ref, canvas, isTimeline: false });
     
@@ -463,7 +463,7 @@ export class FileDisplay extends HTMLElement {
     requestAnimationFrame(() => {
       // Update canvas with high-DPI support to match its display width
       const displayWidth = canvas.clientWidth || 800;
-      const displayHeight = canvas.clientHeight || 24;
+      const displayHeight = canvas.clientHeight || 32;
       setupCanvasForHighDPI(canvas, displayWidth, displayHeight);
       
       // Find the index of this signal in the array
@@ -479,7 +479,7 @@ export class FileDisplay extends HTMLElement {
     this.selectedSignals.forEach((signal, index) => {
       if (signal.canvas) {
         const displayWidth = signal.canvas.clientWidth || 800;
-        const displayHeight = signal.canvas.clientHeight || 24;
+        const displayHeight = signal.canvas.clientHeight || 32;
         
         // Only update and repaint if dimensions have actually changed
         const currentStyleWidth = parseInt(signal.canvas.style.width) || 0;

@@ -84,7 +84,7 @@ details > .leaf-node:last-child::after {
 details > summary {
     cursor: pointer;
     list-style: none;
-    padding: 2px 4px;
+    padding: 4px;
     margin-left: calc(-1 * var(--tree-indent, 20px));
     user-select: none;
     white-space: nowrap;
@@ -93,6 +93,9 @@ details > summary {
     align-items: center;
     gap: 6px;
     position: relative;
+    height: 32px;
+    box-sizing: border-box;
+    line-height: 24px;
 }
 
 /* Horizontal guide line for branch/scope nodes (except root level) */
@@ -140,7 +143,7 @@ details[open] > summary > .tree-chevron {
 }
 
 .leaf-node {
-    padding: 2px 4px;
+    padding: 4px;
     cursor: pointer;
     color: var(--color-text-muted);
     display: flex;
@@ -152,6 +155,9 @@ details[open] > summary > .tree-chevron {
     overflow: hidden;
     justify-content: var(--tree-leaf-justify, flex-start);
     flex-direction: var(--tree-leaf-direction, row);
+    height: 32px;
+    box-sizing: border-box;
+    line-height: 24px;
 }
 
 /* Horizontal guide line connecting leaf nodes to parent's vertical line */

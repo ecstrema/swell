@@ -136,4 +136,13 @@ describe('SelectedSignalsTree Component', () => {
     expect(element.config.draggableLeaves).toBe(true);
     expect(element.config.onDrop).toBeDefined();
   });
+
+  it('should use right text alignment for selected signals', () => {
+    // Check that the tree view config has right alignment
+    expect(element.config.textAlign).toBe('right');
+    
+    // Check that the CSS variables are set correctly
+    expect(element.style.getPropertyValue('--tree-leaf-justify')).toBe('flex-end');
+    expect(element.style.getPropertyValue('--tree-leaf-direction')).toBe('row-reverse');
+  });
 });

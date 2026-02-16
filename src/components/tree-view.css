@@ -96,6 +96,8 @@ details[open] > summary > .tree-chevron {
     position: relative;
     white-space: nowrap;
     overflow: hidden;
+    justify-content: var(--tree-leaf-justify, flex-start);
+    flex-direction: var(--tree-leaf-direction, row);
 }
 
 .leaf-node:hover {

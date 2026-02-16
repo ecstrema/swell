@@ -417,4 +417,50 @@ describe('TreeView Component', () => {
     expect(buttonClicked).toBe(true);
     expect(leafClicked).toBe(false);
   });
+
+  it('should apply left text alignment by default', () => {
+    element.config = {};
+    
+    const nodes: TreeNode[] = [
+      { name: 'Test Node', id: 1 }
+    ];
+    
+    element.data = nodes;
+    
+    // Check that the CSS variable is set for left alignment
+    expect(element.style.getPropertyValue('--tree-leaf-justify')).toBe('flex-start');
+    expect(element.style.getPropertyValue('--tree-leaf-direction')).toBe('row');
+  });
+
+  it('should apply right text alignment when configured', () => {
+    element.config = {
+      textAlign: 'right'
+    };
+    
+    const nodes: TreeNode[] = [
+      { name: 'Test Node', id: 1 }
+    ];
+    
+    element.data = nodes;
+    
+    // Check that the CSS variable is set for right alignment
+    expect(element.style.getPropertyValue('--tree-leaf-justify')).toBe('flex-end');
+    expect(element.style.getPropertyValue('--tree-leaf-direction')).toBe('row-reverse');
+  });
+
+  it('should apply left text alignment when explicitly configured', () => {
+    element.config = {
+      textAlign: 'left'
+    };
+    
+    const nodes: TreeNode[] = [
+      { name: 'Test Node', id: 1 }
+    ];
+    
+    element.data = nodes;
+    
+    // Check that the CSS variable is set for left alignment
+    expect(element.style.getPropertyValue('--tree-leaf-justify')).toBe('flex-start');
+    expect(element.style.getPropertyValue('--tree-leaf-direction')).toBe('row');
+  });
 });

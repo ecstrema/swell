@@ -3,7 +3,7 @@ import { CommandManager } from './command-manager.js';
 
 describe('CommandManager', () => {
     let commandManager: CommandManager;
-    let reloadMock: any;
+    let reloadMock: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         // Mock window.location.reload

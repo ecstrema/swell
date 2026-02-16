@@ -123,7 +123,6 @@ export class CommandManager {
             handler: () => {
                 if (confirm('Are you sure you want to clear all local storage? This will reset all settings, theme preferences, and file states.')) {
                     localStorage.clear();
-                    console.log('Local storage cleared successfully');
                     alert('Local storage has been cleared. The page will now reload.');
                     window.location.reload();
                 }

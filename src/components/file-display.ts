@@ -322,8 +322,15 @@ export class FileDisplay extends HTMLElement {
     const customEvent = event as CustomEvent;
     const { signals } = customEvent.detail;
     
+    // Map the reordered signal refs to existing SelectedSignal objects (with canvas/timeline)
+    // The signals from the event only contain name and ref, not the DOM elements
+    const reorderedSignals = signals.map((s: { name: string; ref: number }) => {
+      const existingSignal = this.selectedSignals.find(sig => sig.ref === s.ref);
+      return existingSignal || s; // Fallback to basic signal if not found (shouldn't happen)
+    });
+    
     // Update the internal signals array to match the new order
-    this.selectedSignals = signals;
+    this.selectedSignals = reorderedSignals;
     
     // Re-render the waveforms in the new order
     this.render();

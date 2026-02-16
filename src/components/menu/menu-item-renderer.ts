@@ -89,10 +89,6 @@ export function renderMenuItems(
                 checkbox.type = 'checkbox';
                 checkbox.className = 'menu-item-checkbox';
                 checkbox.checked = menuItem.checked ?? false;
-                // Prevent default checkbox behavior since menu items handle clicks
-                checkbox.addEventListener('click', (e) => {
-                    e.preventDefault();
-                });
                 menuItemElement.appendChild(checkbox);
             }
             

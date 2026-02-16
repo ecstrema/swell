@@ -46,9 +46,11 @@
 }
 .menu-item-checkbox {
     width: 16px;
+    height: 16px;
     margin-right: 8px;
-    text-align: center;
     flex-shrink: 0;
+    /* Checkbox is decorative - menu item handles all interaction */
+    pointer-events: none;
 }
 .menu-item-label {
     flex: 1;

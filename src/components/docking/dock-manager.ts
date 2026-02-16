@@ -413,14 +413,60 @@ export class DockManager extends HTMLElement {
 
   private cleanupEmptyNodes(node: DockNode): boolean {
     if (node.type === "box") {
+      // Count stacks in a single pass for efficiency
+      let totalStackCount = 0;
+      let emptyStackCount = 0;
+      for (const child of node.children) {
+        if (child.type === "stack") {
+          totalStackCount++;
+          if (child.children.length === 0) {
+            emptyStackCount++;
+          }
+        }
+      }
+      const nonEmptyStackCount = totalStackCount - emptyStackCount;
+      
+      // First, recursively clean children and filter out empty stacks/boxes
       node.children = node.children.filter((child) => {
-        if (child.type === "stack" && child.children.length === 0) return false;
+        // Don't remove the last empty stack in a box (to preserve root stack for placeholder)
+        if (child.type === "stack" && child.children.length === 0) {
+          // Keep this empty stack if it's the only stack and there are no non-empty stacks
+          // This ensures the root dock shows the placeholder when all tabs are closed
+          const isLastEmptyStack = nonEmptyStackCount === 0 && totalStackCount === 1;
+          return isLastEmptyStack;
+        }
         if (child.type === "box") return !this.cleanupEmptyNodes(child);
         return true;
       });
       return node.children.length === 0;
     }
     return false;
+  }
+
+  /**
+   * Simplify the layout tree by collapsing boxes with only one child
+   * This should be called after cleanupEmptyNodes
+   */
+  private simplifyBoxes(node: DockNode): void {
+    if (node.type === "box") {
+      // First, recursively simplify all children (bottom-up approach)
+      for (let i = 0; i < node.children.length; i++) {
+        const child = node.children[i];
+        if (child.type === "box") {
+          this.simplifyBoxes(child);
+          
+          // After simplifying the child, check if it has only one child
+          // If so, replace it with its grandchild
+          if (child.children.length === 1) {
+            const grandchild = child.children[0];
+            // Transfer the child's weight to the grandchild
+            grandchild.weight = child.weight;
+            // Replace the child with the grandchild
+            node.children[i] = grandchild;
+          }
+        }
+      }
+    }
   }
 
   private countStacks(node: DockNode): number {
@@ -442,13 +488,21 @@ export class DockManager extends HTMLElement {
   /**
    * Public method to cleanup empty stacks and redistribute space.
    * Called when panes are closed to remove empty docks.
+   * @returns true if cleanup was performed, false otherwise
    */
-  public cleanupEmptyStacks(): void {
-    if (!this._layout) return;
+  public cleanupEmptyStacks(): boolean {
+    if (!this._layout) return false;
     if (this.shouldCleanupEmptyStacks()) {
       this.cleanupEmptyNodes(this._layout.root);
+      // After cleanup, simplify boxes that have only one child
+      // Unless the root is a stack (in which case it should remain even if empty)
+      if (this._layout.root.type === "box") {
+        this.simplifyBoxes(this._layout.root);
+      }
       this.render();
+      return true;
     }
+    return false;
   }
 }
 customElements.define("dock-manager", DockManager);

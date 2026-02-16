@@ -92,8 +92,10 @@ export class DockLayoutHelper {
             mainStack.activeId = mainStack.children.length > 0 ? mainStack.children[0].id : null;
         }
 
-        // Clean up empty stacks and redistribute their space (includes render)
-        this.dockManager.cleanupEmptyStacks();
+        // Just render - don't cleanup, as that might remove the main stack
+        // before the sidebar is hidden. The sidebar visibility update will 
+        // handle rendering after the final layout state is determined.
+        this.dockManager.render();
     }
 
     /**

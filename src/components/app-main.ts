@@ -93,6 +93,7 @@ export class AppMain extends HTMLElement {
                     <h1>Wave View</h1>
                     <div class="row">
                         <button id="file-picker-btn">Open File</button>
+                        <button id="example-picker-btn">or open example file</button>
                     </div>
                 </div>
                 <div id="files-container"></div>
@@ -155,6 +156,9 @@ export class AppMain extends HTMLElement {
         // Listeners
         this.addEventListener('file-open-request', () => this.handleFileOpen());
 
+        // Listen for open example picker request
+        this.addEventListener('open-example-picker-request', () => this.handleOpenExamplePicker());
+
         // Listen for open example request
         this.addEventListener('open-example-request', (e: Event) => {
             const customEvent = e as CustomEvent<string>;
@@ -165,6 +169,12 @@ export class AppMain extends HTMLElement {
         const filePickerBtn = this.fileViewContainer.querySelector('#file-picker-btn');
         if (filePickerBtn) {
             filePickerBtn.addEventListener('click', () => this.handleFileOpen());
+        }
+
+        // Listen for example picker button click in empty state
+        const examplePickerBtn = this.fileViewContainer.querySelector('#example-picker-btn');
+        if (examplePickerBtn) {
+            examplePickerBtn.addEventListener('click', () => this.handleOpenExamplePicker());
         }
 
         // Listen for settings open request - activate the settings tab
@@ -315,6 +325,9 @@ export class AppMain extends HTMLElement {
             }
         });
 
+        // Register example file commands
+        this.registerExampleFileCommands();
+
         // Register save/load state commands
         this.commandManager.getCommandRegistry().register({
             id: 'file-save-state',
@@ -332,6 +345,27 @@ export class AppMain extends HTMLElement {
         this.undoManager.setOnChange(() => {
             this.undoTreePanel.refresh();
         });
+    }
+
+    /**
+     * Register commands for opening example files
+     */
+    private registerExampleFileCommands() {
+        const exampleFiles = [
+            { filename: 'simple.vcd', label: 'simple.vcd' },
+            { filename: 'counter.vcd', label: 'counter.vcd' },
+            { filename: 'example.fst', label: 'example.fst' },
+            { filename: 'simple.ghw', label: 'simple.ghw' },
+            { filename: 'time_test.ghw', label: 'time_test.ghw' }
+        ];
+
+        for (const example of exampleFiles) {
+            this.commandManager.getCommandRegistry().register({
+                id: `open-example-${example.filename}`,
+                label: `Open Example: ${example.label}`,
+                handler: () => this.handleOpenExample(example.filename)
+            });
+        }
     }
 
     /**
@@ -458,6 +492,23 @@ export class AppMain extends HTMLElement {
         if (fileId) {
             await this.refreshFiles();
             this.setActiveFile(fileId);
+        }
+    }
+
+    /**
+     * Open the command palette with only example file commands
+     */
+    handleOpenExamplePicker() {
+        const commandPalette = this.commandManager.getCommandPalette();
+        if (commandPalette) {
+            const exampleCommandIds = [
+                'open-example-simple.vcd',
+                'open-example-counter.vcd',
+                'open-example-example.fst',
+                'open-example-simple.ghw',
+                'open-example-time_test.ghw'
+            ];
+            commandPalette.open(exampleCommandIds);
         }
     }
 

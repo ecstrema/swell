@@ -19,6 +19,7 @@ export class CommandPalette extends HTMLElement {
     private resultsContainer: HTMLDivElement | null = null;
     private selectedIndex: number = 0;
     private filteredCommands: Command[] = [];
+    private activeFilterCommandIds: string[] | undefined = undefined;
 
     constructor(commandRegistry: CommandRegistry, shortcutManager?: ShortcutManager) {
         super();
@@ -74,7 +75,7 @@ export class CommandPalette extends HTMLElement {
         });
     }
 
-    open() {
+    open(filterCommandIds?: string[]) {
         this.isOpen = true;
         this.classList.add('open');
         this.selectedIndex = 0;
@@ -85,14 +86,15 @@ export class CommandPalette extends HTMLElement {
             this.searchInput.focus();
         }
 
-        // Show all commands initially
-        this.handleSearch();
+        // Show all commands initially, optionally filtered
+        this.handleSearch(filterCommandIds);
     }
 
     close() {
         this.isOpen = false;
         this.classList.remove('open');
         this.filteredCommands = [];
+        this.activeFilterCommandIds = undefined;
         if (this.searchInput) {
             this.searchInput.value = '';
         }
@@ -106,9 +108,19 @@ export class CommandPalette extends HTMLElement {
         }
     }
 
-    private handleSearch() {
+    private handleSearch(filterCommandIds?: string[]) {
+        // Store or use the active filter
+        if (filterCommandIds !== undefined) {
+            this.activeFilterCommandIds = filterCommandIds;
+        }
+
         const query = this.searchInput?.value.toLowerCase() || '';
-        const allCommands = this.commandRegistry.getAll();
+        let allCommands = this.commandRegistry.getAll();
+
+        // Apply command ID filter if specified
+        if (this.activeFilterCommandIds && this.activeFilterCommandIds.length > 0) {
+            allCommands = allCommands.filter(cmd => this.activeFilterCommandIds!.includes(cmd.id));
+        }
 
         if (query === '') {
             this.filteredCommands = allCommands;

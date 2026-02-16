@@ -1,4 +1,5 @@
 import { css } from '../utils/css-utils.js';
+import { setupCanvasForHighDPI } from '../utils/canvas-utils.js';
 import timelineCss from './timeline.css?inline';
 
 /**
@@ -219,12 +220,11 @@ export class Timeline extends HTMLElement {
     this.scrollbarThumb = this.shadowRoot!.querySelector('.scrollbar-thumb');
     
     if (this.canvas) {
-      // Set canvas size to match container
+      // Set canvas size to match container with high-DPI support
       requestAnimationFrame(() => {
         if (this.canvas) {
           const rect = this.canvas.getBoundingClientRect();
-          this.canvas.width = rect.width;
-          this.canvas.height = rect.height;
+          setupCanvasForHighDPI(this.canvas, rect.width, rect.height);
           this.updateCanvas();
         }
       });
@@ -326,8 +326,7 @@ export class Timeline extends HTMLElement {
   private handleResize() {
     if (this.canvas) {
       const rect = this.canvas.getBoundingClientRect();
-      this.canvas.width = rect.width;
-      this.canvas.height = rect.height;
+      setupCanvasForHighDPI(this.canvas, rect.width, rect.height);
       this.updateCanvas();
     }
   }
@@ -343,8 +342,9 @@ export class Timeline extends HTMLElement {
     const ctx = this.canvas.getContext('2d');
     if (!ctx) return;
     
-    const width = this.canvas.width;
-    const height = this.canvas.height;
+    // Use CSS pixel dimensions for drawing calculations
+    const width = this.canvas.clientWidth;
+    const height = this.canvas.clientHeight;
     
     // Clear canvas
     ctx.fillStyle = getComputedStyle(this).getPropertyValue('--color-bg') || '#1e1e1e';

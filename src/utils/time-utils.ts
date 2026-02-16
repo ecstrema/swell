@@ -1,5 +1,7 @@
 /**
  * Formats a timestamp as a relative time string (e.g., "2 hours ago", "3 days ago")
+ * Uses approximate calculations (30-day months, 365-day years) which is standard for
+ * relative time displays. For exact timestamps, use formatDateTime() or check the tooltip.
  * @param timestamp ISO timestamp string
  * @returns Human-readable relative time string
  */
@@ -12,8 +14,8 @@ export function formatTimeAgo(timestamp: string): string {
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
     const days = Math.floor(hours / 24);
-    const months = Math.floor(days / 30);
-    const years = Math.floor(days / 365);
+    const months = Math.floor(days / 30); // Approximation - standard for relative time
+    const years = Math.floor(days / 365); // Approximation - doesn't account for leap years
     
     if (seconds < 60) {
         return seconds === 1 ? '1 second ago' : `${seconds} seconds ago`;

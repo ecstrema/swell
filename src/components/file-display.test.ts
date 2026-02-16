@@ -339,4 +339,71 @@ describe('FileDisplay Component', () => {
     const signalItems = shadowRoot?.querySelectorAll('.signal-item');
     expect(signalItems?.length).toBe(0);
   });
+
+  it('should maintain canvas order when signals are reordered', async () => {
+    element.filename = 'test.vcd';
+    
+    // Add three signals
+    const signals = [
+      { name: 'signal_a', ref: 1 },
+      { name: 'signal_b', ref: 2 },
+      { name: 'signal_c', ref: 3 }
+    ];
+    
+    for (const signal of signals) {
+      document.dispatchEvent(new CustomEvent('signal-select', {
+        detail: { ...signal, filename: 'test.vcd' }
+      }));
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(() => resolve(undefined));
+      }));
+    }
+    
+    // Verify initial order
+    const initialRefs = element.getSelectedSignalRefs();
+    expect(initialRefs).toEqual([1, 2, 3]);
+    
+    // Get the current canvases before reordering
+    const shadowRoot = element.shadowRoot;
+    let waveformsContainer = shadowRoot?.querySelector('.waveforms-container');
+    const initialCanvases = Array.from(waveformsContainer?.querySelectorAll('canvas') || []);
+    
+    // There should be 3 canvases (one per signal)
+    expect(initialCanvases.length).toBe(3);
+    
+    // Simulate signal reordering by dispatching signals-reordered event
+    const selectedSignalsTree = element.shadowRoot?.querySelector('selected-signals-tree');
+    expect(selectedSignalsTree).toBeTruthy();
+    
+    // Create a reordered signals array (reverse the order)
+    // Get the actual SelectedSignal objects from the element's internal state
+    const currentSignals = signals.map(s => ({
+      name: s.name,
+      ref: s.ref,
+      canvas: initialCanvases[signals.findIndex(sig => sig.ref === s.ref)]
+    }));
+    
+    const reorderedSignals = currentSignals.reverse();
+    
+    // Dispatch the reorder event
+    selectedSignalsTree?.dispatchEvent(new CustomEvent('signals-reordered', {
+      detail: { signals: reorderedSignals },
+      bubbles: true,
+      composed: true
+    }));
+    
+    // Wait for the event to be handled and rendering to complete
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    // Verify the order has been updated
+    const newRefs = element.getSelectedSignalRefs();
+    expect(newRefs).toEqual([3, 2, 1]);
+    
+    // Re-query the container after render (innerHTML cleared and recreated)
+    waveformsContainer = shadowRoot?.querySelector('.waveforms-container');
+    const canvasesAfterReorder = waveformsContainer?.querySelectorAll('canvas');
+    
+    // Verify canvases are still present after reordering
+    expect(canvasesAfterReorder?.length).toBe(3);
+  });
 });

@@ -564,10 +564,8 @@ describe('DockStack - Tab Reordering', () => {
         
         // Override stopPropagation to track if it's called
         const originalStopPropagation = dropEvent.stopPropagation;
-        let stopPropagationWasCalled = false;
         dropEvent.stopPropagation = function() {
             stopPropagationCalled = true;
-            stopPropagationWasCalled = true;
             originalStopPropagation.call(this);
         };
         

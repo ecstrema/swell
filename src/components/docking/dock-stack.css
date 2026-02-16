@@ -50,6 +50,7 @@
 .tab.dragging {
     opacity: 0.5;
     cursor: grabbing !important;
+    position: relative;
 }
 .tab.drag-over-left {
     border-left: 2px solid var(--dock-accent, #007acc);

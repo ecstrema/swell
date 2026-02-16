@@ -178,6 +178,7 @@ details[open] > summary > .tree-chevron {
 .leaf-node.dragging {
     opacity: 0.5;
     cursor: grabbing;
+    position: relative;
 }
 
 .leaf-node.drag-over-top {

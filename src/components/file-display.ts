@@ -43,6 +43,7 @@ export class FileDisplay extends HTMLElement {
   private resizeObserver: ResizeObserver | null = null;
   private saveStateTimeout: number | null = null;
   private stateRestored: boolean = false;
+  private alternatingRowPattern: number = 3;
 
   constructor() {
     super();
@@ -62,6 +63,9 @@ export class FileDisplay extends HTMLElement {
     
     // Add a default timeline as the first signal
     this.addTimelineSignal();
+    
+    // Load alternating row pattern setting
+    this.loadAlternatingRowPattern();
     
     this.render();
   }
@@ -502,6 +506,17 @@ export class FileDisplay extends HTMLElement {
     }
   }
 
+  private async loadAlternatingRowPattern() {
+    try {
+      const pattern = await getSetting('Waveform/Alternating Row Pattern') as number;
+      if (pattern !== undefined) {
+        this.alternatingRowPattern = pattern;
+      }
+    } catch (error) {
+      console.error('Failed to load alternating row pattern setting:', error);
+    }
+  }
+
   private async paintSignal(canvas: HTMLCanvasElement, signalRef: number, signalIndex: number = 0) {
     if (!this._filename) return;
 
@@ -523,11 +538,8 @@ export class FileDisplay extends HTMLElement {
       // Get computed styles once for performance
       const computedStyle = getComputedStyle(this);
 
-      // Get alternating row pattern setting (default: 3)
-      const pattern = await getSetting('Waveform/Alternating Row Pattern') as number || 3;
-      
       // Determine if this row should have alternating background
-      const shouldAlternate = Math.floor(signalIndex / pattern) % 2 === 1;
+      const shouldAlternate = Math.floor(signalIndex / this.alternatingRowPattern) % 2 === 1;
 
       // Clear canvas - use alternating background if applicable
       if (shouldAlternate) {

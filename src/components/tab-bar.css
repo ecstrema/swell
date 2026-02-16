@@ -19,14 +19,15 @@
     user-select: none;
     min-width: 100px;
     justify-content: space-between;
-    color: var(--color-text);
+    color: var(--color-text-muted);
 }
 .tab:hover {
     background-color: var(--color-bg-hover);
 }
 .tab.active {
-    background-color: var(--color-bg-hover);
+    background-color: var(--color-bg);
     border-bottom: 2px solid var(--color-primary);
+    color: var(--color-text);
 }
 .tab-close {
     margin-left: 8px;

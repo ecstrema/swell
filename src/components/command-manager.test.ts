@@ -44,13 +44,13 @@ describe('CommandManager', () => {
         }
     });
 
-    describe('Clear Local Storage Command', () => {
-        it('should register clear local storage command', () => {
+    describe('Reset to Factory Settings Command', () => {
+        it('should register reset to factory settings command', () => {
             const registry = commandManager.getCommandRegistry();
             const command = registry.get('settings-clear-local-storage');
             
             expect(command).toBeDefined();
-            expect(command?.label).toBe('Clear Local Storage');
+            expect(command?.label).toBe('Reset to Factory Settings');
         });
 
         it('should clear localStorage when confirmed', async () => {
@@ -72,9 +72,9 @@ describe('CommandManager', () => {
             
             // Verify confirm dialog was called with the right message
             expect(showSpy).toHaveBeenCalledWith({
-                title: 'Clear Local Storage',
-                message: 'Are you sure you want to clear all local storage? This will reset all settings, theme preferences, and file states.',
-                confirmLabel: 'Clear',
+                title: 'Reset to Factory Settings',
+                message: 'Are you sure you want to reset to factory settings? This will clear all settings, theme preferences, and file states.',
+                confirmLabel: 'Reset',
                 cancelLabel: 'Cancel',
                 danger: true
             });
@@ -85,7 +85,7 @@ describe('CommandManager', () => {
             // Verify alert was shown
             expect(alertShowSpy).toHaveBeenCalledWith({
                 title: 'Success',
-                message: 'Local storage has been cleared. The page will now reload.'
+                message: 'Settings have been reset. The page will now reload.'
             });
             
             // Verify page reload was triggered

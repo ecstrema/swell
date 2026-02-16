@@ -127,17 +127,17 @@ export class CommandManager {
             }
         });
 
-        // Register clear local storage command
+        // Register reset to factory settings command
         this.commandRegistry.register({
             id: 'settings-clear-local-storage',
-            label: 'Clear Local Storage',
+            label: 'Reset to Factory Settings',
             handler: async () => {
                 if (!this.confirmDialog) return;
                 
                 const confirmed = await this.confirmDialog.show({
-                    title: 'Clear Local Storage',
-                    message: 'Are you sure you want to clear all local storage? This will reset all settings, theme preferences, and file states.',
-                    confirmLabel: 'Clear',
+                    title: 'Reset to Factory Settings',
+                    message: 'Are you sure you want to reset to factory settings? This will clear all settings, theme preferences, and file states.',
+                    confirmLabel: 'Reset',
                     cancelLabel: 'Cancel',
                     danger: true
                 });
@@ -148,7 +148,7 @@ export class CommandManager {
                     if (this.alertDialog) {
                         await this.alertDialog.show({
                             title: 'Success',
-                            message: 'Local storage has been cleared. The page will now reload.'
+                            message: 'Settings have been reset. The page will now reload.'
                         });
                     }
                     

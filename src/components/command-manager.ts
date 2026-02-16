@@ -86,7 +86,20 @@ export class CommandManager {
             }
         });
 
-        // Load and register shortcuts from JSON configuration
+        // Register clear local storage command
+        this.commandRegistry.register({
+            id: 'settings-clear-local-storage',
+            label: 'Clear Local Storage',
+            handler: () => {
+                if (confirm('Are you sure you want to clear all local storage? This will reset all settings, theme preferences, and file states.')) {
+                    localStorage.clear();
+                    alert('Local storage has been cleared. The page will now reload.');
+                    window.location.reload();
+                }
+            }
+        });
+
+        // Register default shortcuts (currently empty, but ready for future use)
         this.shortcutManager.registerMany(defaultShortcuts);
 
         // Register keyboard shortcut to open command palette (Ctrl+K or Cmd+K)

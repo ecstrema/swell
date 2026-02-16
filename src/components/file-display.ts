@@ -1,5 +1,6 @@
 import { getSignalChanges, SignalChange, getHierarchy } from '../backend.js';
 import { css } from '../utils/css-utils.js';
+import { setupCanvasForHighDPI } from '../utils/canvas-utils.js';
 import { scrollbarSheet } from '../styles/shared-sheets.js';
 import fileDisplayCss from './file-display.css?inline';
 import { SelectedSignalsTree } from './selected-signals-tree.js';
@@ -460,9 +461,10 @@ export class FileDisplay extends HTMLElement {
   private setupAndPaintCanvas(canvas: HTMLCanvasElement, ref: number) {
     // Use requestAnimationFrame to ensure the canvas is laid out and sized
     requestAnimationFrame(() => {
-      // Update canvas width to match its display width
+      // Update canvas with high-DPI support to match its display width
       const displayWidth = canvas.clientWidth || 800;
-      canvas.width = displayWidth;
+      const displayHeight = canvas.clientHeight || 24;
+      setupCanvasForHighDPI(canvas, displayWidth, displayHeight);
       
       // Find the index of this signal in the array
       const signalIndex = this.selectedSignals.findIndex(s => s.ref === ref);
@@ -477,10 +479,9 @@ export class FileDisplay extends HTMLElement {
     this.selectedSignals.forEach((signal, index) => {
       if (signal.canvas) {
         const displayWidth = signal.canvas.clientWidth || 800;
-        if (signal.canvas.width !== displayWidth) {
-          signal.canvas.width = displayWidth;
-          this.paintSignal(signal.canvas, signal.ref, index);
-        }
+        const displayHeight = signal.canvas.clientHeight || 24;
+        setupCanvasForHighDPI(signal.canvas, displayWidth, displayHeight);
+        this.paintSignal(signal.canvas, signal.ref, index);
       }
     });
   }
@@ -551,6 +552,10 @@ export class FileDisplay extends HTMLElement {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
+      // Use CSS pixel dimensions for drawing calculations
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+
       // Get computed styles once for performance
       const computedStyle = getComputedStyle(this);
 
@@ -563,7 +568,7 @@ export class FileDisplay extends HTMLElement {
       } else {
         ctx.fillStyle = computedStyle.getPropertyValue('--color-bg-surface') || '#ffffff';
       }
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, width, height);
 
       if (changes.length === 0) return;
 
@@ -578,20 +583,20 @@ export class FileDisplay extends HTMLElement {
       ctx.beginPath();
 
       changes.forEach((change, index) => {
-        const x = ((change.time - minTime) / timeRange) * canvas.width;
+        const x = ((change.time - minTime) / timeRange) * width;
         const numValue = this.parseSignalValue(change.value);
 
         // Normalize to canvas height
-        const y = canvas.height - (numValue > 0 ? canvas.height * 0.8 : canvas.height * 0.2);
+        const y = height - (numValue > 0 ? height * 0.8 : height * 0.2);
 
         if (index === 0) {
           ctx.moveTo(x, y);
         } else {
           // Draw horizontal line to current time, then vertical to new value
           const prevChange = changes[index - 1];
-          const prevX = ((prevChange.time - minTime) / timeRange) * canvas.width;
+          const prevX = ((prevChange.time - minTime) / timeRange) * width;
           const prevNumValue = this.parseSignalValue(prevChange.value);
-          const prevY = canvas.height - (prevNumValue > 0 ? canvas.height * 0.8 : canvas.height * 0.2);
+          const prevY = height - (prevNumValue > 0 ? height * 0.8 : height * 0.2);
 
           ctx.lineTo(x, prevY); // Horizontal line
           ctx.lineTo(x, y);     // Vertical line

@@ -4,6 +4,8 @@ import { ShortcutManager } from "../shortcuts/shortcut-manager.js";
 import { css } from "../utils/css-utils.js";
 import { scrollbarSheet } from "../styles/shared-sheets.js";
 import commandPaletteCss from "./command-palette.css?inline";
+import "./shortcut-display.js";
+import { ShortcutDisplay } from "./shortcut-display.js";
 
 /**
  * Command Palette - A searchable command launcher
@@ -178,30 +180,19 @@ export class CommandPalette extends HTMLElement {
                 item.classList.add('selected');
             }
 
-            const leftContainer = document.createElement('div');
-            leftContainer.className = 'left-container';
-
             const label = document.createElement('div');
             label.className = 'label';
             label.textContent = command.label;
 
-            const id = document.createElement('div');
-            id.className = 'id';
-            id.textContent = command.id;
-
-            leftContainer.appendChild(label);
-            leftContainer.appendChild(id);
-
-            item.appendChild(leftContainer);
+            item.appendChild(label);
 
             // Add shortcut if available
             if (this.shortcutManager) {
                 const shortcuts = this.shortcutManager.getShortcutsForCommand(command.id);
                 if (shortcuts.length > 0) {
-                    const shortcutEl = document.createElement('div');
-                    shortcutEl.className = 'shortcut';
-                    shortcutEl.textContent = ShortcutManager.formatShortcut(shortcuts[0]);
-                    item.appendChild(shortcutEl);
+                    const shortcutDisplay = new ShortcutDisplay();
+                    shortcutDisplay.setShortcut(ShortcutManager.formatShortcut(shortcuts[0]));
+                    item.appendChild(shortcutDisplay);
                 }
             }
 

@@ -230,9 +230,13 @@ describe('CommandPalette', () => {
         
         expect(fileOpenItem).toBeTruthy();
         
-        // Check that it has a shortcut element
-        const shortcutEl = fileOpenItem!.querySelector('.shortcut');
-        expect(shortcutEl).toBeTruthy();
+        // Check that it has a shortcut display component
+        const shortcutDisplay = fileOpenItem!.querySelector('app-shortcut-display');
+        expect(shortcutDisplay).toBeTruthy();
+        
+        // Check the shortcut text in the shadow root of the component
+        const shortcutShadow = shortcutDisplay!.shadowRoot;
+        const shortcutEl = shortcutShadow!.querySelector('.shortcut');
         expect(shortcutEl!.textContent).toBe('Control+O');
     });
 
@@ -255,8 +259,8 @@ describe('CommandPalette', () => {
         
         expect(testCommandItem).toBeTruthy();
         
-        // Check that it does NOT have a shortcut element
-        const shortcutEl = testCommandItem!.querySelector('.shortcut');
-        expect(shortcutEl).toBeNull();
+        // Check that it does NOT have a shortcut display component
+        const shortcutDisplay = testCommandItem!.querySelector('app-shortcut-display');
+        expect(shortcutDisplay).toBeNull();
     });
 });

@@ -111,8 +111,8 @@ describe('TreeView Component', () => {
     };
     
     const shadowRoot = element.shadowRoot;
-    const filterContainer = shadowRoot?.querySelector('.filter-container') as HTMLElement;
-    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
+    const filterContainer = shadowRoot?.querySelector('#filter-container') as HTMLElement;
+    const filterInput = shadowRoot?.querySelector('filter-input');
     
     expect(filterContainer).toBeTruthy();
     expect(filterContainer.style.display).not.toBe('none');
@@ -125,7 +125,7 @@ describe('TreeView Component', () => {
     };
     
     const shadowRoot = element.shadowRoot;
-    const filterContainer = shadowRoot?.querySelector('.filter-container') as HTMLElement;
+    const filterContainer = shadowRoot?.querySelector('#filter-container') as HTMLElement;
     
     expect(filterContainer).toBeTruthy();
     expect(filterContainer.style.display).toBe('none');
@@ -145,7 +145,9 @@ describe('TreeView Component', () => {
     element.data = nodes;
     
     const shadowRoot = element.shadowRoot;
-    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
+    const filterInputEl = shadowRoot?.querySelector('filter-input');
+    const filterInputShadow = filterInputEl?.shadowRoot;
+    const filterInput = filterInputShadow?.querySelector('.filter-input') as HTMLInputElement;
     
     // Initially all nodes should be visible
     expect(shadowRoot?.textContent).toContain('Apple');
@@ -154,7 +156,7 @@ describe('TreeView Component', () => {
     
     // Filter for "an"
     filterInput.value = 'an';
-    filterInput.dispatchEvent(new Event('input'));
+    filterInput.dispatchEvent(new Event('input', { bubbles: true }));
     
     // Only Banana should be visible
     expect(shadowRoot?.textContent).not.toContain('Apple');
@@ -163,7 +165,7 @@ describe('TreeView Component', () => {
     
     // Filter for "e"
     filterInput.value = 'e';
-    filterInput.dispatchEvent(new Event('input'));
+    filterInput.dispatchEvent(new Event('input', { bubbles: true }));
     
     // Apple and Cherry should be visible
     expect(shadowRoot?.textContent).toContain('Apple');
@@ -198,11 +200,13 @@ describe('TreeView Component', () => {
     element.data = nodes;
     
     const shadowRoot = element.shadowRoot;
-    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
+    const filterInputEl = shadowRoot?.querySelector('filter-input');
+    const filterInputShadow = filterInputEl?.shadowRoot;
+    const filterInput = filterInputShadow?.querySelector('.filter-input') as HTMLInputElement;
     
     // Filter for "apple"
     filterInput.value = 'apple';
-    filterInput.dispatchEvent(new Event('input'));
+    filterInput.dispatchEvent(new Event('input', { bubbles: true }));
     
     // Should show Fruits parent and Apple child
     expect(shadowRoot?.textContent).toContain('Fruits');
@@ -212,7 +216,7 @@ describe('TreeView Component', () => {
     
     // Filter for "carr"
     filterInput.value = 'carr';
-    filterInput.dispatchEvent(new Event('input'));
+    filterInput.dispatchEvent(new Event('input', { bubbles: true }));
     
     // Should show Vegetables parent and Carrot child
     expect(shadowRoot?.textContent).not.toContain('Fruits');
@@ -240,11 +244,13 @@ describe('TreeView Component', () => {
     element.data = nodes;
     
     const shadowRoot = element.shadowRoot;
-    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
+    const filterInputEl = shadowRoot?.querySelector('filter-input');
+    const filterInputShadow = filterInputEl?.shadowRoot;
+    const filterInput = filterInputShadow?.querySelector('.filter-input') as HTMLInputElement;
     
     // Filter for "category"
     filterInput.value = 'category';
-    filterInput.dispatchEvent(new Event('input'));
+    filterInput.dispatchEvent(new Event('input', { bubbles: true }));
     
     // Should show parent and all children
     expect(shadowRoot?.textContent).toContain('Category A');
@@ -265,11 +271,13 @@ describe('TreeView Component', () => {
     element.data = nodes;
     
     const shadowRoot = element.shadowRoot;
-    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
+    const filterInputEl = shadowRoot?.querySelector('filter-input');
+    const filterInputShadow = filterInputEl?.shadowRoot;
+    const filterInput = filterInputShadow?.querySelector('.filter-input') as HTMLInputElement;
     
     // Filter for something that doesn't exist
     filterInput.value = 'xyz';
-    filterInput.dispatchEvent(new Event('input'));
+    filterInput.dispatchEvent(new Event('input', { bubbles: true }));
     
     expect(shadowRoot?.textContent).toContain('No matching items');
   });
@@ -288,17 +296,19 @@ describe('TreeView Component', () => {
     element.data = nodes;
     
     const shadowRoot = element.shadowRoot;
-    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
+    const filterInputEl = shadowRoot?.querySelector('filter-input');
+    const filterInputShadow = filterInputEl?.shadowRoot;
+    const filterInput = filterInputShadow?.querySelector('.filter-input') as HTMLInputElement;
     
     // Filter with lowercase
     filterInput.value = 'banana';
-    filterInput.dispatchEvent(new Event('input'));
+    filterInput.dispatchEvent(new Event('input', { bubbles: true }));
     
     expect(shadowRoot?.textContent).toContain('BANANA');
     
     // Filter with mixed case
     filterInput.value = 'ChErRy';
-    filterInput.dispatchEvent(new Event('input'));
+    filterInput.dispatchEvent(new Event('input', { bubbles: true }));
     
     expect(shadowRoot?.textContent).toContain('CheRRy');
   });

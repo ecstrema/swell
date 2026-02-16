@@ -3,6 +3,8 @@ import { scrollbarSheet } from "../../styles/shared-sheets.js";
 import treeViewCss from "./tree-view.css?inline";
 import { getSetting } from "../../settings/settings-storage.js";
 import ChevronRightIcon from '~icons/mdi/chevron-right?raw';
+import { FilterInput, FilterOptions, FilterChangeEvent } from "../primitives/filter-input.js";
+import "../primitives/filter-input.js";
 
 export interface TreeNode {
     name: string;
@@ -119,11 +121,16 @@ export class TreeView extends HTMLElement {
     private _data: TreeNode[] = [];
     private _config: TreeViewConfig = {};
     private container: HTMLDivElement;
-    private filterInput: HTMLInputElement | null = null;
+    private filterInput: FilterInput | null = null;
     private filterQuery: string = '';
+    private filterOptions: FilterOptions = {
+        caseSensitive: false,
+        wholeWord: false,
+        useRegex: false
+    };
     private indentLoadPromise: Promise<void> | null = null;
     private boundSettingChangeHandler: (e: Event) => void;
-    private boundFilterInputHandler: () => void;
+    private boundFilterChangeHandler: (e: Event) => void;
     private draggedNode: TreeNode | null = null;
 
     constructor() {
@@ -133,18 +140,20 @@ export class TreeView extends HTMLElement {
         this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(treeViewCss)];
 
         this.shadowRoot!.innerHTML = `
-        <div id="filter-container" class="filter-container" style="display: none;">
-            <input type="text" id="filter-input" class="filter-input" placeholder="Filter..." />
+        <div id="filter-container" style="display: none;">
+            <filter-input></filter-input>
         </div>
         <div id="tree-container"></div>
         `;
 
         this.container = this.shadowRoot!.querySelector('#tree-container') as HTMLDivElement;
-        this.filterInput = this.shadowRoot!.querySelector('#filter-input') as HTMLInputElement;
+        this.filterInput = this.shadowRoot!.querySelector('filter-input') as FilterInput;
         
-        // Bind filter input handler
-        this.boundFilterInputHandler = () => {
-            this.filterQuery = this.filterInput?.value.toLowerCase() || '';
+        // Bind filter change handler
+        this.boundFilterChangeHandler = (e: Event) => {
+            const event = e as CustomEvent<FilterChangeEvent>;
+            this.filterQuery = event.detail.query;
+            this.filterOptions = event.detail.options;
             this.render();
         };
         
@@ -162,7 +171,7 @@ export class TreeView extends HTMLElement {
     connectedCallback() {
         // Add event listeners when connected
         this.addEventListener('setting-changed', this.boundSettingChangeHandler);
-        this.filterInput?.addEventListener('input', this.boundFilterInputHandler);
+        this.filterInput?.addEventListener('filter-change', this.boundFilterChangeHandler);
         
         // Initialize text alignment based on config (do this after element is connected)
         // This ensures the element has been properly initialized before we try to set styles
@@ -181,7 +190,7 @@ export class TreeView extends HTMLElement {
     disconnectedCallback() {
         // Remove event listeners when disconnected to prevent memory leaks
         this.removeEventListener('setting-changed', this.boundSettingChangeHandler);
-        this.filterInput?.removeEventListener('input', this.boundFilterInputHandler);
+        this.filterInput?.removeEventListener('filter-change', this.boundFilterChangeHandler);
         
         // Clear promise to allow reloading when reconnected
         this.indentLoadPromise = null;
@@ -233,7 +242,7 @@ export class TreeView extends HTMLElement {
         
         // Reset filter when config changes
         if (this.filterInput) {
-            this.filterInput.value = '';
+            this.filterInput.clear();
             this.filterQuery = '';
         }
         
@@ -272,14 +281,14 @@ export class TreeView extends HTMLElement {
     }
 
     /**
-     * Filter nodes recursively based on the query
+     * Filter nodes recursively based on the query and filter options
      * Returns nodes that match or have matching descendants
      */
     private filterNodes(nodes: TreeNode[]): TreeNode[] {
         const filtered: TreeNode[] = [];
 
         for (const node of nodes) {
-            const nameMatches = node.name.toLowerCase().includes(this.filterQuery);
+            const nameMatches = this.matchesFilter(node.name);
             const hasChildren = this._config.hasChildren 
                 ? this._config.hasChildren(node)
                 : (node.children && node.children.length > 0);
@@ -302,6 +311,50 @@ export class TreeView extends HTMLElement {
         }
 
         return filtered;
+    }
+    
+    /**
+     * Check if a text matches the filter query based on current filter options
+     */
+    private matchesFilter(text: string): boolean {
+        if (!this.filterQuery) {
+            return true;
+        }
+        
+        try {
+            if (this.filterOptions.useRegex) {
+                // Use regex matching
+                const flags = this.filterOptions.caseSensitive ? '' : 'i';
+                const regex = new RegExp(this.filterQuery, flags);
+                return regex.test(text);
+            } else if (this.filterOptions.wholeWord) {
+                // Whole word matching
+                const searchText = this.filterOptions.caseSensitive ? text : text.toLowerCase();
+                const searchQuery = this.filterOptions.caseSensitive ? this.filterQuery : this.filterQuery.toLowerCase();
+                
+                // Use word boundary regex for whole word matching
+                const flags = this.filterOptions.caseSensitive ? '' : 'i';
+                const regex = new RegExp(`\\b${this.escapeRegex(searchQuery)}\\b`, flags);
+                return regex.test(text);
+            } else {
+                // Simple substring matching
+                const searchText = this.filterOptions.caseSensitive ? text : text.toLowerCase();
+                const searchQuery = this.filterOptions.caseSensitive ? this.filterQuery : this.filterQuery.toLowerCase();
+                return searchText.includes(searchQuery);
+            }
+        } catch (e) {
+            // If regex is invalid, fall back to simple substring matching
+            const searchText = this.filterOptions.caseSensitive ? text : text.toLowerCase();
+            const searchQuery = this.filterOptions.caseSensitive ? this.filterQuery : this.filterQuery.toLowerCase();
+            return searchText.includes(searchQuery);
+        }
+    }
+    
+    /**
+     * Escape special regex characters for literal matching
+     */
+    private escapeRegex(str: string): string {
+        return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
     private createNodeElement(node: TreeNode): HTMLElement {

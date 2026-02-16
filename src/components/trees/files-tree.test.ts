@@ -168,9 +168,9 @@ describe('FilesTree Component', () => {
     const shadowRoot = element.shadowRoot;
     
     // Check filter input is visible by default
-    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
-    expect(filterInput).toBeTruthy();
-    const filterContainer = shadowRoot?.querySelector('.filter-container') as HTMLElement;
+    const filterInputEl = shadowRoot?.querySelector('filter-input');
+    expect(filterInputEl).toBeTruthy();
+    const filterContainer = shadowRoot?.querySelector('#filter-container') as HTMLElement;
     expect(filterContainer.style.display).not.toBe('none');
   });
 
@@ -207,8 +207,10 @@ describe('FilesTree Component', () => {
     const shadowRoot = element.shadowRoot;
     
     // Check filter input is visible
-    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
-    expect(filterInput).toBeTruthy();
+    const filterInputEl = shadowRoot?.querySelector('filter-input');
+    const filterInputShadow = filterInputEl?.shadowRoot;
+    const filterInput = filterInputShadow?.querySelector('.filter-input') as HTMLInputElement;
+    expect(filterInputEl).toBeTruthy();
     
     // Initially all signals visible
     expect(shadowRoot?.textContent).toContain('clk');
@@ -218,7 +220,7 @@ describe('FilesTree Component', () => {
     
     // Filter for "data"
     filterInput.value = 'data';
-    filterInput.dispatchEvent(new Event('input'));
+    filterInput.dispatchEvent(new Event('input', { bubbles: true }));
     
     // Only data signals should be visible
     expect(shadowRoot?.textContent).not.toContain('clk');
@@ -229,7 +231,7 @@ describe('FilesTree Component', () => {
     
     // Filter for "clk"
     filterInput.value = 'clk';
-    filterInput.dispatchEvent(new Event('input'));
+    filterInput.dispatchEvent(new Event('input', { bubbles: true }));
     
     // Only clk should be visible
     expect(shadowRoot?.textContent).toContain('clk');

@@ -11,7 +11,14 @@ vi.mock('../backend.js', () => ({
     removeFile: vi.fn(),
     restoreSession: vi.fn(() => Promise.resolve()),
     getStartupFiles: vi.fn(() => Promise.resolve([])),
-    isTauri: false
+    isTauri: false,
+    loadExampleFile: vi.fn()
+}));
+
+// Mock settings storage
+vi.mock('../settings/settings-storage.js', () => ({
+    getSetting: vi.fn(() => Promise.resolve(true)),
+    setSetting: vi.fn(() => Promise.resolve())
 }));
 
 describe('AppMain - Sidebar Visibility', () => {
@@ -108,5 +115,75 @@ describe('AppMain - Empty State File Picker', () => {
         await vi.waitFor(() => {
             expect(backend.openFileDialog).toHaveBeenCalled();
         });
+    });
+});
+
+describe('AppMain - File Opening', () => {
+    let appMain: AppMain;
+
+    beforeEach(() => {
+        appMain = new AppMain();
+        document.body.appendChild(appMain);
+        vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        if (appMain.parentNode) {
+            appMain.parentNode.removeChild(appMain);
+        }
+    });
+
+    it('should successfully open example files without settings errors', async () => {
+        // Wait for initial setup
+        await vi.waitFor(() => {
+            const dockManager = appMain.shadowRoot!.querySelector('dock-manager');
+            return dockManager && (dockManager as any).layout;
+        });
+
+        // Mock that a file is opened
+        const mockFile = 'test.vcd';
+        vi.mocked(backend.loadExampleFile).mockResolvedValue(mockFile);
+        vi.mocked(backend.getFiles).mockResolvedValue([mockFile]);
+        vi.mocked(backend.getHierarchy).mockResolvedValue({
+            name: 'root',
+            children: []
+        });
+
+        // Trigger file open via event
+        const event = new CustomEvent('open-example-request', { detail: 'test.vcd' });
+        appMain.dispatchEvent(event);
+
+        // Wait for the file to be processed
+        await vi.waitFor(() => {
+            expect(backend.loadExampleFile).toHaveBeenCalledWith('test.vcd');
+        }, { timeout: 1000 });
+
+        // Verify no errors were thrown and the method completed
+        expect(backend.getFiles).toHaveBeenCalled();
+    });
+
+    it('should handle refreshFiles after opening a file', async () => {
+        // Wait for initial setup
+        await vi.waitFor(() => {
+            const dockManager = appMain.shadowRoot!.querySelector('dock-manager');
+            return dockManager && (dockManager as any).layout;
+        });
+
+        // Mock that a file is opened
+        const mockFile = 'test.vcd';
+        vi.mocked(backend.addFile).mockResolvedValue(mockFile);
+        vi.mocked(backend.getFiles).mockResolvedValue([mockFile]);
+        vi.mocked(backend.getHierarchy).mockResolvedValue({
+            name: 'root',
+            children: []
+        });
+
+        // Call handleFileOpen
+        await (appMain as any).handleFileOpen();
+
+        // Verify the files were refreshed successfully
+        await vi.waitFor(() => {
+            expect(backend.getFiles).toHaveBeenCalled();
+        }, { timeout: 1000 });
     });
 });

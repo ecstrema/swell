@@ -415,8 +415,8 @@ export class AppMain extends HTMLElement {
             // Get user preference for signal selection visibility
             let signalSelectionVisible = true;
             try {
-                const { settingsStorage } = await import('../settings/settings-storage.js');
-                signalSelectionVisible = (await settingsStorage.getSetting(SETTING_SIGNAL_SELECTION_VISIBLE)) ?? true;
+                const { getSetting } = await import('../settings/settings-storage.js');
+                signalSelectionVisible = (await getSetting(SETTING_SIGNAL_SELECTION_VISIBLE)) ?? true;
             } catch (error) {
                 console.warn('Failed to load signal selection visibility setting:', error);
             }
@@ -625,8 +625,8 @@ export class AppMain extends HTMLElement {
         
         // Persist the setting
         try {
-            const { settingsStorage } = await import('../settings/settings-storage.js');
-            await settingsStorage.setSetting(SETTING_SIGNAL_SELECTION_VISIBLE, newVisibility);
+            const { setSetting } = await import('../settings/settings-storage.js');
+            await setSetting(SETTING_SIGNAL_SELECTION_VISIBLE, newVisibility);
         } catch (error) {
             console.warn('Failed to persist signal selection visibility setting:', error);
         }

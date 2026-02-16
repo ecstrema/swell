@@ -149,16 +149,12 @@ describe('AppMain - File Opening', () => {
             children: []
         });
 
-        // Trigger file open via event
-        const event = new CustomEvent('open-example-request', { detail: 'test.vcd' });
-        appMain.dispatchEvent(event);
+        // Directly call handleOpenExample instead of triggering the event
+        // (since the event now opens the selection palette)
+        await (appMain as any).handleOpenExample('test.vcd');
 
-        // Wait for the file to be processed
-        await vi.waitFor(() => {
-            expect(backend.loadExampleFile).toHaveBeenCalledWith('test.vcd');
-        }, { timeout: 1000 });
-
-        // Verify no errors were thrown and the method completed
+        // Verify the file was loaded
+        expect(backend.loadExampleFile).toHaveBeenCalledWith('test.vcd');
         expect(backend.getFiles).toHaveBeenCalled();
     });
 

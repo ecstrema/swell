@@ -13,7 +13,18 @@ export type KeyboardShortcut = string;
 export interface Command {
     id: string;
     label: string;
+    description?: string;
     handler: () => void | Promise<void>;
+}
+
+/**
+ * Represents an option in a selection list
+ */
+export interface SelectOption<T = any> {
+    id: string;
+    label: string;
+    description?: string;
+    value: T;
 }
 
 /**

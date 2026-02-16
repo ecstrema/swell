@@ -8,6 +8,11 @@
     font-size: 14px;
     color: var(--color-text);
     box-sizing: border-box;
+    
+    /* Tree guide line styling variables */
+    --tree-guide-offset: -12px;
+    --tree-guide-line-width: 8px;
+    --tree-guide-opacity: 0.5;
 }
 
 .filter-container {
@@ -50,12 +55,12 @@ details {
 details::before {
     content: '';
     position: absolute;
-    left: 8px;
+    left: var(--tree-guide-line-width);
     top: 24px;
     bottom: 0;
     width: 1px;
     background-color: var(--color-border, #cccccc);
-    opacity: 0.5;
+    opacity: var(--tree-guide-opacity);
 }
 
 /* Hide the vertical line when details is closed */
@@ -68,7 +73,7 @@ details > details:last-child::after,
 details > .leaf-node:last-child::after {
     content: '';
     position: absolute;
-    left: -12px;
+    left: var(--tree-guide-offset);
     bottom: 0;
     top: 50%;
     width: 1px;
@@ -93,12 +98,12 @@ details > summary {
 details > summary::before {
     content: '';
     position: absolute;
-    left: -12px;
+    left: var(--tree-guide-offset);
     top: 50%;
-    width: 8px;
+    width: var(--tree-guide-line-width);
     height: 1px;
     background-color: var(--color-border, #cccccc);
-    opacity: 0.5;
+    opacity: var(--tree-guide-opacity);
 }
 
 /* Hide horizontal line for root-level nodes */
@@ -152,12 +157,12 @@ details[open] > summary > .tree-chevron {
 .leaf-node::before {
     content: '';
     position: absolute;
-    left: -12px;
+    left: var(--tree-guide-offset);
     top: 50%;
-    width: 8px;
+    width: var(--tree-guide-line-width);
     height: 1px;
     background-color: var(--color-border, #cccccc);
-    opacity: 0.5;
+    opacity: var(--tree-guide-opacity);
 }
 
 .leaf-node:hover {

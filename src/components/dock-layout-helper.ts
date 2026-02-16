@@ -131,12 +131,6 @@ export class DockLayoutHelper {
                             title: 'Undo History',
                             contentId: 'undo-tree',
                             closable: true
-                        },
-                        {
-                            id: 'settings-pane',
-                            title: 'Settings',
-                            contentId: 'settings',
-                            closable: true
                         }
                     ]
                 };
@@ -194,12 +188,6 @@ export class DockLayoutHelper {
                         id: 'undo-tree-pane',
                         title: 'Undo History',
                         contentId: 'undo-tree',
-                        closable: true
-                    },
-                    {
-                        id: 'settings-pane',
-                        title: 'Settings',
-                        contentId: 'settings',
                         closable: true
                     }
                 ]

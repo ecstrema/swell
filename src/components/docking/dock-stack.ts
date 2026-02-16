@@ -129,6 +129,8 @@ export class DockStackComponent extends HTMLElement {
                     this._manager.handleStackDragStart(this._node);
                     if (e.dataTransfer) {
                         e.dataTransfer.effectAllowed = 'move';
+                        // Add custom type identifier for dock headers
+                        e.dataTransfer.setData('application/x-swell-dock', this._node.id);
                         e.dataTransfer.setData('text/plain', this._node.id);
                     }
                     header.classList.add('dragging');
@@ -156,6 +158,8 @@ export class DockStackComponent extends HTMLElement {
                     // Set drag data for browser compatibility
                     if (e.dataTransfer) {
                         e.dataTransfer.effectAllowed = 'move';
+                        // Add custom type identifier for tabs
+                        e.dataTransfer.setData('application/x-swell-tab', id);
                         e.dataTransfer.setData('text/plain', id);
                     }
                     tabElement.classList.add('dragging');
@@ -170,11 +174,20 @@ export class DockStackComponent extends HTMLElement {
 
             // Handle dragover for tab reordering within same stack
             tabElement.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                
                 if (!this._manager) return;
                 const draggedPane = this._manager.getDraggedPane();
                 if (!draggedPane) return;
+                
+                // Only accept tab drags (check types if available)
+                const hasTypes = e.dataTransfer?.types !== undefined;
+                if (hasTypes) {
+                    const isTab = e.dataTransfer?.types.includes('application/x-swell-tab') ?? false;
+                    if (!isTab) {
+                        return;
+                    }
+                }
+                
+                e.preventDefault();
 
                 // Check if we're dragging within the same stack
                 if (draggedPane.sourceStack.id === this._node!.id) {
@@ -203,11 +216,20 @@ export class DockStackComponent extends HTMLElement {
 
             // Handle drop for tab reordering
             tabElement.addEventListener('drop', (e) => {
-                e.preventDefault();
-                
                 if (!this._manager) return;
                 const draggedPane = this._manager.getDraggedPane();
                 if (!draggedPane) return;
+                
+                // Only accept tab drags (check types if available)
+                const hasTypes = e.dataTransfer?.types !== undefined;
+                if (hasTypes) {
+                    const isTab = e.dataTransfer?.types.includes('application/x-swell-tab') ?? false;
+                    if (!isTab) {
+                        return;
+                    }
+                }
+                
+                e.preventDefault();
 
                 // Check if we're dragging within the same stack
                 if (draggedPane.sourceStack.id === this._node!.id) {

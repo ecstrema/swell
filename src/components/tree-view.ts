@@ -397,6 +397,8 @@ export class TreeView extends HTMLElement {
                 
                 if (e.dataTransfer) {
                     e.dataTransfer.effectAllowed = 'move';
+                    // Add custom type identifier for tree items
+                    e.dataTransfer.setData('application/x-swell-tree-item', String(node.id));
                     e.dataTransfer.setData('text/plain', String(node.id));
                 }
                 
@@ -407,12 +409,21 @@ export class TreeView extends HTMLElement {
             
             // Drag over
             div.addEventListener('dragover', (e: DragEvent) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
                 if (!this.draggedNode || this.draggedNode.id === node.id) {
                     return;
                 }
+                
+                // Only accept tree item drags (check types if available)
+                const hasTypes = e.dataTransfer?.types !== undefined;
+                if (hasTypes) {
+                    const isTreeItem = e.dataTransfer?.types.includes('application/x-swell-tree-item') ?? false;
+                    if (!isTreeItem) {
+                        return;
+                    }
+                }
+                
+                e.preventDefault();
+                e.stopPropagation();
                 
                 const rect = div.getBoundingClientRect();
                 const midpoint = rect.top + rect.height / 2;
@@ -443,12 +454,21 @@ export class TreeView extends HTMLElement {
             
             // Drop
             div.addEventListener('drop', (e: DragEvent) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
                 if (!this.draggedNode || this.draggedNode.id === node.id) {
                     return;
                 }
+                
+                // Only accept tree item drags (check types if available)
+                const hasTypes = e.dataTransfer?.types !== undefined;
+                if (hasTypes) {
+                    const isTreeItem = e.dataTransfer?.types.includes('application/x-swell-tree-item') ?? false;
+                    if (!isTreeItem) {
+                        return;
+                    }
+                }
+                
+                e.preventDefault();
+                e.stopPropagation();
                 
                 const rect = div.getBoundingClientRect();
                 const midpoint = rect.top + rect.height / 2;

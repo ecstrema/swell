@@ -43,7 +43,20 @@ export class DockManager extends HTMLElement {
 
   connectedCallback() {
     this.render();
-    this.addEventListener("dragover", (e) => e.preventDefault());
+    this.addEventListener("dragover", (e) => {
+      // Only prevent default for tab or dock drags (check types if available)
+      const hasTypes = e.dataTransfer?.types !== undefined;
+      if (hasTypes) {
+        const isTab = e.dataTransfer?.types.includes('application/x-swell-tab') ?? false;
+        const isDock = e.dataTransfer?.types.includes('application/x-swell-dock') ?? false;
+        if (isTab || isDock) {
+          e.preventDefault();
+        }
+      } else {
+        // In test environments, types might not be set, allow all
+        e.preventDefault();
+      }
+    });
   }
 
   render() {
@@ -121,6 +134,17 @@ export class DockManager extends HTMLElement {
     targetElement: HTMLElement,
   ) {
     if (!this._draggedPane && !this._draggedStack) return;
+    
+    // Only accept tab or dock drags, reject tree items (check types if available)
+    const hasTypes = e.dataTransfer?.types !== undefined;
+    if (hasTypes) {
+      const isTab = e.dataTransfer?.types.includes('application/x-swell-tab') ?? false;
+      const isDock = e.dataTransfer?.types.includes('application/x-swell-dock') ?? false;
+      if (!isTab && !isDock) {
+        return;
+      }
+    }
+    
     e.preventDefault();
 
     const rect = targetElement.getBoundingClientRect();
@@ -138,6 +162,17 @@ export class DockManager extends HTMLElement {
 
   handleDrop(e: DragEvent, targetStack: DockStack, targetElement: HTMLElement) {
     if (!this._draggedPane && !this._draggedStack) return;
+    
+    // Only accept tab or dock drags, reject tree items (check types if available)
+    const hasTypes = e.dataTransfer?.types !== undefined;
+    if (hasTypes) {
+      const isTab = e.dataTransfer?.types.includes('application/x-swell-tab') ?? false;
+      const isDock = e.dataTransfer?.types.includes('application/x-swell-dock') ?? false;
+      if (!isTab && !isDock) {
+        return;
+      }
+    }
+    
     this.handleDragLeave();
 
     const rect = targetElement.getBoundingClientRect();

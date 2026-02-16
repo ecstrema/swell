@@ -84,8 +84,10 @@ describe('SelectedSignalsTree Component', () => {
     const shadowRoot = element.shadowRoot;
     
     // Check filter input is visible
-    const filterInput = shadowRoot?.querySelector('.filter-input') as HTMLInputElement;
-    expect(filterInput).toBeTruthy();
+    const filterInputEl = shadowRoot?.querySelector('filter-input');
+    const filterInputShadow = filterInputEl?.shadowRoot;
+    const filterInput = filterInputShadow?.querySelector('.filter-input') as HTMLInputElement;
+    expect(filterInputEl).toBeTruthy();
     
     // Initially all signals visible
     expect(shadowRoot?.textContent).toContain('clk');
@@ -95,7 +97,7 @@ describe('SelectedSignalsTree Component', () => {
     
     // Filter for "data"
     filterInput.value = 'data';
-    filterInput.dispatchEvent(new Event('input'));
+    filterInput.dispatchEvent(new Event('input', { bubbles: true }));
     
     // Only data signals should be visible
     expect(shadowRoot?.textContent).not.toContain('clk');

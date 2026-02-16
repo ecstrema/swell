@@ -1,0 +1,80 @@
+:host {
+    display: block;
+    width: 100%;
+}
+
+.filter-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    border-bottom: 1px solid var(--color-border, #cccccc);
+    background-color: var(--color-bg-surface);
+    box-sizing: border-box;
+}
+
+.filter-input {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 13px;
+    border: 1px solid var(--color-border, #cccccc);
+    border-radius: 4px;
+    outline: none;
+    background-color: var(--color-bg, #ffffff);
+    color: var(--color-text, #0f0f0f);
+    font-family: inherit;
+    box-sizing: border-box;
+    min-width: 0;
+}
+
+.filter-input:focus {
+    border-color: var(--color-accent, #0066cc);
+}
+
+.filter-input::placeholder {
+    color: var(--color-text-muted, #666666);
+}
+
+.filter-options {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.filter-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--color-border, #cccccc);
+    background-color: var(--color-bg, #ffffff);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--color-text-muted, #666666);
+    transition: all 0.15s;
+}
+
+.filter-toggle:hover {
+    background-color: var(--color-bg-hover, #f0f0f0);
+    color: var(--color-text, #0f0f0f);
+}
+
+.filter-toggle.active {
+    background-color: var(--color-accent, #0066cc);
+    border-color: var(--color-accent, #0066cc);
+    color: #ffffff;
+}
+
+.filter-toggle.active:hover {
+    background-color: var(--color-accent-hover, #0052a3);
+    border-color: var(--color-accent-hover, #0052a3);
+}
+
+.filter-toggle svg {
+    width: 18px;
+    height: 18px;
+    display: block;
+}

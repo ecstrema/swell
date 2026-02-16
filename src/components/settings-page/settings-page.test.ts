@@ -196,8 +196,8 @@ describe('SettingsPage', () => {
         expect(treeView).not.toBeNull();
         
         // Check that the tree view has filter enabled
-        const filterInput = treeView!.shadowRoot!.querySelector('#filter-input');
-        expect(filterInput).not.toBeNull();
+        const filterInputEl = treeView!.shadowRoot!.querySelector('filter-input');
+        expect(filterInputEl).not.toBeNull();
         
         const filterContainer = treeView!.shadowRoot!.querySelector('#filter-container');
         expect(filterContainer).not.toBeNull();

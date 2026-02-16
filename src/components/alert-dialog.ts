@@ -146,8 +146,8 @@ export class AlertDialog extends HTMLElement {
 
         // Set button label
         const okBtn = this.shadowRoot!.querySelector('.ok-btn');
-        if (okBtn && options.okLabel) {
-            okBtn.textContent = options.okLabel;
+        if (okBtn) {
+            okBtn.textContent = options.okLabel || 'OK';
         }
 
         // Show the dialog as modal

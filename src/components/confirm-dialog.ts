@@ -178,15 +178,13 @@ export class ConfirmDialog extends HTMLElement {
 
         // Set button labels
         const cancelBtn = this.shadowRoot!.querySelector('.cancel-btn');
-        if (cancelBtn && options.cancelLabel) {
-            cancelBtn.textContent = options.cancelLabel;
+        if (cancelBtn) {
+            cancelBtn.textContent = options.cancelLabel || 'Cancel';
         }
 
         const confirmBtn = this.shadowRoot!.querySelector('.confirm-btn');
         if (confirmBtn) {
-            if (options.confirmLabel) {
-                confirmBtn.textContent = options.confirmLabel;
-            }
+            confirmBtn.textContent = options.confirmLabel || 'Confirm';
             // Add or remove danger class
             if (options.danger) {
                 confirmBtn.classList.add('danger');

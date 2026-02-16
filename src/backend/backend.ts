@@ -217,8 +217,9 @@ export const getSignalChanges = async (filename: string, signalId: number, start
     }
     // wasm-bindgen uses direct args
     // However, JS numbers for u64 might be risky. BigInt might be required.
-    // Let's assume passed as number/BigInt works.
-    return wasm.get_signal_changes_wasm(filename, signalId, BigInt(start), BigInt(end));
+    // Round to integers before converting to BigInt since time values may be floating-point
+    // from zoom/pan operations
+    return wasm.get_signal_changes_wasm(filename, signalId, BigInt(Math.round(start)), BigInt(Math.round(end)));
 };
 
 /**

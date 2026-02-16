@@ -17,6 +17,7 @@ vi.mock('../../backend/pkg/backend', () => ({
     get_files: vi.fn(),
     remove_file: vi.fn(),
     get_hierarchy: vi.fn(),
+    get_signal_changes_wasm: vi.fn(),
 }));
 
 // Need to access the mocks to assert on them, but since we are testing `backend.ts` logic
@@ -97,6 +98,45 @@ describe('Backend Interface', () => {
              const result = await backend.getStartupFiles();
              expect(result).toEqual([]);
              expect(invoke).not.toHaveBeenCalled();
+         });
+
+         it('getSignalChanges should round floating-point values before converting to BigInt', async () => {
+             const mockChanges = [
+                 { time: 0, value: '0' },
+                 { time: 100, value: '1' }
+             ];
+             vi.mocked(wasm.get_signal_changes_wasm).mockReturnValue(mockChanges);
+
+             // Call with floating-point start and end values (as happens during zoom operations)
+             const result = await backend.getSignalChanges('test.vcd', 1, 57120269.84417316, 114240539.68834633);
+
+             // Should round the values before converting to BigInt
+             expect(wasm.get_signal_changes_wasm).toHaveBeenCalledWith(
+                 'test.vcd',
+                 1,
+                 BigInt(57120270), // 57120269.84417316 rounded
+                 BigInt(114240540)  // 114240539.68834633 rounded
+             );
+             expect(result).toEqual(mockChanges);
+         });
+
+         it('getSignalChanges should handle integer values correctly', async () => {
+             const mockChanges = [
+                 { time: 0, value: '0' },
+                 { time: 1000, value: '1' }
+             ];
+             vi.mocked(wasm.get_signal_changes_wasm).mockReturnValue(mockChanges);
+
+             // Call with integer values
+             const result = await backend.getSignalChanges('test.vcd', 1, 0, 1000);
+
+             expect(wasm.get_signal_changes_wasm).toHaveBeenCalledWith(
+                 'test.vcd',
+                 1,
+                 BigInt(0),
+                 BigInt(1000)
+             );
+             expect(result).toEqual(mockChanges);
          });
     });
 });

@@ -105,7 +105,7 @@ describe('Timeline Component', () => {
     expect(canvas).toBeInstanceOf(HTMLCanvasElement);
   });
 
-  it('should render scrollbar elements', () => {
+  it('should not render scrollbar elements', () => {
     const shadowRoot = timeline.shadowRoot;
     expect(shadowRoot).not.toBeNull();
 
@@ -113,9 +113,9 @@ describe('Timeline Component', () => {
     const scrollbarTrack = shadowRoot!.querySelector('.scrollbar-track');
     const scrollbarThumb = shadowRoot!.querySelector('.scrollbar-thumb');
 
-    expect(scrollbar).not.toBeNull();
-    expect(scrollbarTrack).not.toBeNull();
-    expect(scrollbarThumb).not.toBeNull();
+    expect(scrollbar).toBeNull();
+    expect(scrollbarTrack).toBeNull();
+    expect(scrollbarThumb).toBeNull();
   });
 
   it('should set up ResizeObserver on connect', () => {

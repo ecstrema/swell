@@ -480,8 +480,15 @@ export class FileDisplay extends HTMLElement {
       if (signal.canvas) {
         const displayWidth = signal.canvas.clientWidth || 800;
         const displayHeight = signal.canvas.clientHeight || 24;
-        setupCanvasForHighDPI(signal.canvas, displayWidth, displayHeight);
-        this.paintSignal(signal.canvas, signal.ref, index);
+        
+        // Only update and repaint if dimensions have actually changed
+        const currentStyleWidth = parseInt(signal.canvas.style.width) || 0;
+        const currentStyleHeight = parseInt(signal.canvas.style.height) || 0;
+        
+        if (currentStyleWidth !== displayWidth || currentStyleHeight !== displayHeight) {
+          setupCanvasForHighDPI(signal.canvas, displayWidth, displayHeight);
+          this.paintSignal(signal.canvas, signal.ref, index);
+        }
       }
     });
   }

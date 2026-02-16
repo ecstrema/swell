@@ -47,6 +47,7 @@ export default defineConfig({
   define: {
     'import.meta.env.VITE_BUILD_COMMIT': JSON.stringify(getGitCommit()),
     'import.meta.env.VITE_VERSION': JSON.stringify(getVersion()),
+    'import.meta.env.VITE_BUILD_TIMESTAMP': JSON.stringify(new Date().toISOString()),
   },
   test: {
     globals: true,

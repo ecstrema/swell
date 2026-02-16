@@ -68,3 +68,7 @@
 .github-link:hover {
     text-decoration: underline;
 }
+
+.build-time {
+    cursor: help;
+}

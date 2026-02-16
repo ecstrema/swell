@@ -1,6 +1,7 @@
 import { css } from "../../utils/css-utils.js";
 import aboutPaneCss from "./about-pane.css?inline";
 import { formatTimeAgo, formatDateTime } from "../../utils/time-utils.js";
+import GithubIcon from '~icons/mdi/github?raw';
 
 export class AboutPane extends HTMLElement {
     constructor() {
@@ -52,10 +53,113 @@ export class AboutPane extends HTMLElement {
                                class="github-link" 
                                target="_blank" 
                                rel="noopener noreferrer">
+                                <span class="icon">${GithubIcon}</span>
                                 ecstrema/swell
                             </a>
                         </span>
                     </div>
+                </div>
+                
+                <div class="dependencies-section">
+                    <p class="appreciation">
+                        This work wouldn't be possible without these amazing open source projects:
+                    </p>
+                    
+                    <details class="dependencies-details" open>
+                        <summary>Libraries & Tools Used</summary>
+                        <div class="dependencies-list">
+                            <div class="dependency-item">
+                                <a href="https://github.com/ekiwi/wellen" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="dependency-link">
+                                    <span class="icon">${GithubIcon}</span>
+                                    <span class="dependency-info">
+                                        <strong>wellen</strong>
+                                        <span class="dependency-desc">Waveform parsing library (VCD, FST, GHW)</span>
+                                    </span>
+                                </a>
+                            </div>
+                            
+                            <div class="dependency-item">
+                                <a href="https://github.com/ekiwi/shosho" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="dependency-link">
+                                    <span class="icon">${GithubIcon}</span>
+                                    <span class="dependency-info">
+                                        <strong>ShoSho</strong>
+                                        <span class="dependency-desc">Canvas-based waveform rendering library</span>
+                                    </span>
+                                </a>
+                            </div>
+                            
+                            <div class="dependency-item">
+                                <a href="https://github.com/tauri-apps/tauri" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="dependency-link">
+                                    <span class="icon">${GithubIcon}</span>
+                                    <span class="dependency-info">
+                                        <strong>Tauri</strong>
+                                        <span class="dependency-desc">Cross-platform desktop app framework</span>
+                                    </span>
+                                </a>
+                            </div>
+                            
+                            <div class="dependency-item">
+                                <a href="https://github.com/oven-sh/bun" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="dependency-link">
+                                    <span class="icon">${GithubIcon}</span>
+                                    <span class="dependency-info">
+                                        <strong>Bun</strong>
+                                        <span class="dependency-desc">Fast JavaScript runtime and toolkit</span>
+                                    </span>
+                                </a>
+                            </div>
+                            
+                            <div class="dependency-item">
+                                <a href="https://github.com/rustwasm/wasm-pack" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="dependency-link">
+                                    <span class="icon">${GithubIcon}</span>
+                                    <span class="dependency-info">
+                                        <strong>wasm-pack</strong>
+                                        <span class="dependency-desc">Build tool for Rust + WebAssembly</span>
+                                    </span>
+                                </a>
+                            </div>
+                            
+                            <div class="dependency-item">
+                                <a href="https://github.com/vitejs/vite" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="dependency-link">
+                                    <span class="icon">${GithubIcon}</span>
+                                    <span class="dependency-info">
+                                        <strong>Vite</strong>
+                                        <span class="dependency-desc">Next generation frontend build tool</span>
+                                    </span>
+                                </a>
+                            </div>
+                            
+                            <div class="dependency-item">
+                                <a href="https://github.com/rustwasm/wasm-bindgen" 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   class="dependency-link">
+                                    <span class="icon">${GithubIcon}</span>
+                                    <span class="dependency-info">
+                                        <strong>wasm-bindgen</strong>
+                                        <span class="dependency-desc">Bindings between Rust and JavaScript</span>
+                                    </span>
+                                </a>
+                            </div>
+                        </div>
+                    </details>
                 </div>
             </div>
         `;

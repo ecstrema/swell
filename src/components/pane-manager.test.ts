@@ -227,16 +227,15 @@ describe('PaneManager - Close Empty Docks', () => {
         expect(updatedLayout!.root.type).toBe('box');
         
         const rootBox = updatedLayout!.root as DockBox;
-        // Should have nested-box (with stack-2) and stack-3
+        // Should have stack-2 (from collapsed nested-box) and stack-3
         expect(rootBox.children.length).toBe(2);
         
-        // Check that nested-box still has stack-2
-        const nestedBox = rootBox.children[0];
-        expect(nestedBox.type).toBe('box');
-        if (nestedBox.type === 'box') {
-            expect(nestedBox.children.length).toBe(1);
-            expect(nestedBox.children[0].id).toBe('stack-2');
-        }
+        // Check that nested-box was collapsed to stack-2
+        const firstChild = rootBox.children[0];
+        expect(firstChild.type).toBe('stack');
+        expect(firstChild.id).toBe('stack-2');
+        // stack-2 should inherit nested-box's weight
+        expect(firstChild.weight).toBe(1);
         
         // Check that stack-3 is still there
         expect(rootBox.children[1].id).toBe('stack-3');

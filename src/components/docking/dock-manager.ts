@@ -413,6 +413,7 @@ export class DockManager extends HTMLElement {
 
   private cleanupEmptyNodes(node: DockNode): boolean {
     if (node.type === "box") {
+      // First, recursively clean children and filter out empty stacks/boxes
       node.children = node.children.filter((child) => {
         if (child.type === "stack" && child.children.length === 0) return false;
         if (child.type === "box") return !this.cleanupEmptyNodes(child);
@@ -421,6 +422,32 @@ export class DockManager extends HTMLElement {
       return node.children.length === 0;
     }
     return false;
+  }
+
+  /**
+   * Simplify the layout tree by collapsing boxes with only one child
+   * This should be called after cleanupEmptyNodes
+   */
+  private simplifyBoxes(node: DockNode): void {
+    if (node.type === "box") {
+      // First, recursively simplify all children (bottom-up approach)
+      for (let i = 0; i < node.children.length; i++) {
+        const child = node.children[i];
+        if (child.type === "box") {
+          this.simplifyBoxes(child);
+          
+          // After simplifying the child, check if it has only one child
+          // If so, replace it with its grandchild
+          if (child.children.length === 1) {
+            const grandchild = child.children[0];
+            // Transfer the child's weight to the grandchild
+            grandchild.weight = child.weight;
+            // Replace the child with the grandchild
+            node.children[i] = grandchild;
+          }
+        }
+      }
+    }
   }
 
   private countStacks(node: DockNode): number {
@@ -447,6 +474,11 @@ export class DockManager extends HTMLElement {
     if (!this._layout) return;
     if (this.shouldCleanupEmptyStacks()) {
       this.cleanupEmptyNodes(this._layout.root);
+      // After cleanup, simplify boxes that have only one child
+      // Unless the root is a stack (in which case it should remain even if empty)
+      if (this._layout.root.type === "box") {
+        this.simplifyBoxes(this._layout.root);
+      }
       this.render();
     }
   }

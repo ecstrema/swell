@@ -39,7 +39,7 @@ export class CommandManager {
      * Initialize the command palette
      */
     initializeCommandPalette(): void {
-        this.commandPalette = new CommandPalette(this.commandRegistry);
+        this.commandPalette = new CommandPalette(this.commandRegistry, this.shortcutManager);
         document.body.appendChild(this.commandPalette);
     }
 
@@ -54,7 +54,10 @@ export class CommandManager {
         onZoomIn: () => void,
         onZoomOut: () => void,
         onZoomFit: () => void,
-        onToggleSignalSelection: () => void
+        onToggleSignalSelection: () => void,
+        onShowSettings: () => void,
+        onShowAbout: () => void,
+        onShowUndoTree: () => void
     }): void {
         // Register commands that can be triggered by shortcuts or menu items
         this.commandRegistry.register({
@@ -105,6 +108,27 @@ export class CommandManager {
             handler: commandHandlers.onToggleSignalSelection
         });
 
+        // Register show settings command
+        this.commandRegistry.register({
+            id: 'view-show-settings',
+            label: 'Show Settings',
+            handler: commandHandlers.onShowSettings
+        });
+
+        // Register show about command
+        this.commandRegistry.register({
+            id: 'view-show-about',
+            label: 'Show About',
+            handler: commandHandlers.onShowAbout
+        });
+
+        // Register show undo tree command
+        this.commandRegistry.register({
+            id: 'view-show-undo-tree',
+            label: 'Show Undo Tree',
+            handler: commandHandlers.onShowUndoTree
+        });
+
         // Register command palette command
         this.commandRegistry.register({
             id: 'command-palette-toggle',
@@ -123,6 +147,12 @@ export class CommandManager {
         this.shortcutManager.register({
             shortcut: 'Ctrl+K',
             commandId: 'command-palette-toggle'
+        });
+
+        // Register keyboard shortcut to open settings (Ctrl+, or Cmd+,)
+        this.shortcutManager.register({
+            shortcut: 'Ctrl+,',
+            commandId: 'view-show-settings'
         });
 
         // Activate the shortcut system

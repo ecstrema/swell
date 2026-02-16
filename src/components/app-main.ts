@@ -293,6 +293,19 @@ export class AppMain extends HTMLElement {
             },
             onToggleSignalSelection: () => {
                 this.toggleSignalSelection();
+            },
+            onShowSettings: () => {
+                this.activateSettingsPane();
+            },
+            onShowAbout: () => {
+                this.activateAboutPane();
+            },
+            onShowUndoTree: () => {
+                // Populate with demo data if empty
+                if (this.undoManager.getUndoTree().size() === 0) {
+                    this.populateDemoUndoTree();
+                }
+                this.activateUndoTreePane();
             }
         });
 
@@ -327,18 +340,8 @@ export class AppMain extends HTMLElement {
      * This demonstrates the branching undo functionality
      */
     private initializeDemoUndoTree() {
-        // Register a command to populate demo data
-        this.commandManager.getCommandRegistry().register({
-            id: 'view-undo-tree',
-            label: 'View Undo History',
-            handler: () => {
-                // Populate with demo data if empty
-                if (this.undoManager.getUndoTree().size() === 0) {
-                    this.populateDemoUndoTree();
-                }
-                this.activateUndoTreePane();
-            }
-        });
+        // The command is now registered in command-manager as 'view-show-undo-tree'
+        // No need to register it here
     }
 
     /**

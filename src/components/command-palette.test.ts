@@ -1,13 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CommandRegistry } from '../shortcuts/command-registry.js';
+import { ShortcutManager } from '../shortcuts/shortcut-manager.js';
 import { CommandPalette } from './command-palette.js';
 
 describe('CommandPalette', () => {
     let registry: CommandRegistry;
+    let shortcutManager: ShortcutManager;
     let palette: CommandPalette;
 
     beforeEach(() => {
         registry = new CommandRegistry();
+        shortcutManager = new ShortcutManager(registry);
         
         // Register some test commands
         registry.register({
@@ -28,7 +31,13 @@ describe('CommandPalette', () => {
             handler: () => {}
         });
 
-        palette = new CommandPalette(registry);
+        // Register a shortcut for file-open
+        shortcutManager.register({
+            shortcut: 'Ctrl+O',
+            commandId: 'file-open'
+        });
+
+        palette = new CommandPalette(registry, shortcutManager);
         document.body.appendChild(palette);
     });
 
@@ -135,7 +144,7 @@ describe('CommandPalette', () => {
         if (palette.parentNode) {
             palette.parentNode.removeChild(palette);
         }
-        palette = new CommandPalette(registry);
+        palette = new CommandPalette(registry, shortcutManager);
         document.body.appendChild(palette);
         
         palette.open();
@@ -181,7 +190,7 @@ describe('CommandPalette', () => {
         if (palette.parentNode) {
             palette.parentNode.removeChild(palette);
         }
-        palette = new CommandPalette(registry);
+        palette = new CommandPalette(registry, shortcutManager);
         document.body.appendChild(palette);
         
         palette.open();
@@ -200,5 +209,54 @@ describe('CommandPalette', () => {
         
         expect(executed).toBe(true);
         expect(palette.classList.contains('open')).toBe(false);
+    });
+
+    it('should display shortcuts next to commands that have them', () => {
+        palette.open();
+        
+        const shadowRoot = palette.shadowRoot;
+        expect(shadowRoot).toBeTruthy();
+        
+        // Find the file-open command result item
+        const resultItems = shadowRoot!.querySelectorAll('.result-item');
+        let fileOpenItem: Element | null = null;
+        
+        for (const item of Array.from(resultItems)) {
+            if (item.textContent?.includes('Open File')) {
+                fileOpenItem = item;
+                break;
+            }
+        }
+        
+        expect(fileOpenItem).toBeTruthy();
+        
+        // Check that it has a shortcut element
+        const shortcutEl = fileOpenItem!.querySelector('.shortcut');
+        expect(shortcutEl).toBeTruthy();
+        expect(shortcutEl!.textContent).toBe('Control+O');
+    });
+
+    it('should not display shortcuts for commands without them', () => {
+        palette.open();
+        
+        const shadowRoot = palette.shadowRoot;
+        expect(shadowRoot).toBeTruthy();
+        
+        // Find the test-command-1 result item (which has no shortcut)
+        const resultItems = shadowRoot!.querySelectorAll('.result-item');
+        let testCommandItem: Element | null = null;
+        
+        for (const item of Array.from(resultItems)) {
+            if (item.textContent?.includes('Test Command 1')) {
+                testCommandItem = item;
+                break;
+            }
+        }
+        
+        expect(testCommandItem).toBeTruthy();
+        
+        // Check that it does NOT have a shortcut element
+        const shortcutEl = testCommandItem!.querySelector('.shortcut');
+        expect(shortcutEl).toBeNull();
     });
 });

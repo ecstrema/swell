@@ -1,5 +1,6 @@
 import { Command } from "../shortcuts/types.js";
 import { CommandRegistry } from "../shortcuts/command-registry.js";
+import { ShortcutManager } from "../shortcuts/shortcut-manager.js";
 import { css } from "../utils/css-utils.js";
 import { scrollbarSheet } from "../styles/shared-sheets.js";
 import commandPaletteCss from "./command-palette.css?inline";
@@ -10,15 +11,17 @@ import commandPaletteCss from "./command-palette.css?inline";
  */
 export class CommandPalette extends HTMLElement {
     private commandRegistry: CommandRegistry;
+    private shortcutManager: ShortcutManager | null;
     private isOpen: boolean = false;
     private searchInput: HTMLInputElement | null = null;
     private resultsContainer: HTMLDivElement | null = null;
     private selectedIndex: number = 0;
     private filteredCommands: Command[] = [];
 
-    constructor(commandRegistry: CommandRegistry) {
+    constructor(commandRegistry: CommandRegistry, shortcutManager?: ShortcutManager) {
         super();
         this.commandRegistry = commandRegistry;
+        this.shortcutManager = shortcutManager || null;
 
         this.attachShadow({ mode: 'open' });
         this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(commandPaletteCss)];
@@ -175,6 +178,9 @@ export class CommandPalette extends HTMLElement {
                 item.classList.add('selected');
             }
 
+            const leftContainer = document.createElement('div');
+            leftContainer.className = 'left-container';
+
             const label = document.createElement('div');
             label.className = 'label';
             label.textContent = command.label;
@@ -183,8 +189,21 @@ export class CommandPalette extends HTMLElement {
             id.className = 'id';
             id.textContent = command.id;
 
-            item.appendChild(label);
-            item.appendChild(id);
+            leftContainer.appendChild(label);
+            leftContainer.appendChild(id);
+
+            item.appendChild(leftContainer);
+
+            // Add shortcut if available
+            if (this.shortcutManager) {
+                const shortcuts = this.shortcutManager.getShortcutsForCommand(command.id);
+                if (shortcuts.length > 0) {
+                    const shortcutEl = document.createElement('div');
+                    shortcutEl.className = 'shortcut';
+                    shortcutEl.textContent = ShortcutManager.formatShortcut(shortcuts[0]);
+                    item.appendChild(shortcutEl);
+                }
+            }
 
             // Click handler
             item.addEventListener('click', () => {

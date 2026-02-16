@@ -34,7 +34,7 @@
     display: block;
 }
 .menu-item {
-    padding: 8px 15px;
+    padding: 6px 15px;
     cursor: pointer;
     display: flex;
     justify-content: space-between;
@@ -68,7 +68,7 @@
     position: relative;
 }
 .submenu-title {
-    padding: 8px 15px;
+    padding: 6px 15px;
     cursor: pointer;
     display: flex;
     justify-content: space-between;

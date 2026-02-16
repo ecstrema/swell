@@ -46,9 +46,12 @@
 }
 .menu-item-checkbox {
     width: 16px;
+    height: 16px;
     margin-right: 8px;
-    text-align: center;
     flex-shrink: 0;
+    cursor: pointer;
+    /* Prevent checkbox click from bubbling */
+    pointer-events: none;
 }
 .menu-item-label {
     flex: 1;

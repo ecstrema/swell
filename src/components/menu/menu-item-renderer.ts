@@ -85,10 +85,15 @@ export function renderMenuItems(
             
             // Add checkbox indicator if this is a checkbox type
             if (menuItem.type === 'checkbox') {
-                const checkboxSpan = document.createElement('span');
-                checkboxSpan.className = 'menu-item-checkbox';
-                checkboxSpan.textContent = menuItem.checked ? '✓' : '';
-                menuItemElement.appendChild(checkboxSpan);
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'menu-item-checkbox';
+                checkbox.checked = menuItem.checked ?? false;
+                // Prevent default checkbox behavior since menu items handle clicks
+                checkbox.addEventListener('click', (e) => {
+                    e.preventDefault();
+                });
+                menuItemElement.appendChild(checkbox);
             }
             
             // Create label span

@@ -92,7 +92,8 @@ export class DockLayoutHelper {
             mainStack.activeId = mainStack.children.length > 0 ? mainStack.children[0].id : null;
         }
 
-        this.dockManager.render();
+        // Clean up empty stacks and redistribute their space (includes render)
+        this.dockManager.cleanupEmptyStacks();
     }
 
     /**

@@ -123,6 +123,9 @@ describe('state-file-io', () => {
         });
 
         it('should validate state file format', async () => {
+            // Suppress console.error for this test since we expect errors
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
             const { openStateFileDialog, readTextFile } = await import('../backend/index.js');
             
             const mockFile = new File(['content'], 'test.swellstate');
@@ -137,9 +140,17 @@ describe('state-file-io', () => {
             vi.mocked(readTextFile).mockResolvedValue(mockContent);
 
             await expect(loadStateFromFile()).rejects.toThrow('Invalid state file format');
+            
+            // Verify console.error was called
+            expect(consoleErrorSpy).toHaveBeenCalled();
+            
+            consoleErrorSpy.mockRestore();
         });
 
         it('should handle JSON parse errors', async () => {
+            // Suppress console.error for this test since we expect errors
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
             const { openStateFileDialog, readTextFile } = await import('../backend/index.js');
             
             const mockFile = new File(['content'], 'test.swellstate');
@@ -148,6 +159,11 @@ describe('state-file-io', () => {
             vi.mocked(readTextFile).mockResolvedValue('invalid json{');
 
             await expect(loadStateFromFile()).rejects.toThrow();
+            
+            // Verify console.error was called
+            expect(consoleErrorSpy).toHaveBeenCalled();
+            
+            consoleErrorSpy.mockRestore();
         });
     });
 });

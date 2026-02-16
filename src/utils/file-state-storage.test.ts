@@ -211,6 +211,9 @@ describe('file-state-storage', () => {
 
     describe('error handling', () => {
         it('should handle localStorage errors gracefully', async () => {
+            // Suppress console.error for this test since we expect errors
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
             // Mock localStorage.setItem to throw
             const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
             setItemSpy.mockImplementation(() => {
@@ -231,16 +234,34 @@ describe('file-state-storage', () => {
             // Should not throw
             await expect(saveFileState('test.vcd', fileState)).resolves.not.toThrow();
 
+            // Verify console.error was called with the expected error message
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'Failed to save file states to localStorage:',
+                expect.any(Error)
+            );
+
             setItemSpy.mockRestore();
+            consoleErrorSpy.mockRestore();
         });
 
         it('should handle JSON parse errors gracefully', async () => {
+            // Suppress console.error for this test since we expect errors
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
             // Corrupt the localStorage data
             localStorage.setItem('FileStates', 'invalid json{');
 
             // Should not throw and return null
             const loaded = await loadFileState('test.vcd');
             expect(loaded).toBeNull();
+
+            // Verify console.error was called
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'Failed to get file states from localStorage:',
+                expect.any(Error)
+            );
+
+            consoleErrorSpy.mockRestore();
         });
     });
 });

@@ -12,6 +12,8 @@ A central registry for all application commands. Commands can be triggered by:
 - Menu items
 - Direct programmatic calls
 
+**Event-Driven Architecture**: When commands are executed, the CommandRegistry emits `command-execute` events that can be listened to by any component. This allows for loose coupling between the command system and command handlers.
+
 ```typescript
 import { CommandRegistry } from './shortcuts/index.js';
 
@@ -24,7 +26,13 @@ registry.register({
   handler: () => console.log('Opening file...')
 });
 
-// Execute a command
+// Listen to command execution events
+registry.addEventListener('command-execute', (event: Event) => {
+  const customEvent = event as CustomEvent<{ commandId: string }>;
+  console.log(`Command executed: ${customEvent.detail.commandId}`);
+});
+
+// Execute a command (this will emit an event and call the handler)
 await registry.execute('file-open');
 ```
 
@@ -91,9 +99,12 @@ If validation fails, an error is logged and the application continues with an em
 
 ## Adding New Shortcuts
 
-To add new shortcuts:
+The event-driven architecture allows you to add shortcuts in two ways:
 
-1. **Register a command** in `app-main.ts`:
+### Method 1: Traditional Handler (Simple)
+
+For self-contained commands, register both the command and its handler:
+
 ```typescript
 this.commandRegistry.register({
     id: 'my-action',
@@ -102,7 +113,7 @@ this.commandRegistry.register({
 });
 ```
 
-2. **Add a shortcut binding** in `default-shortcuts.json`:
+Then add the shortcut in `default-shortcuts.json`:
 ```json
 {
   "shortcuts": [
@@ -114,6 +125,51 @@ this.commandRegistry.register({
   ]
 }
 ```
+
+### Method 2: Event Listener (Decoupled)
+
+For commands that need to integrate with other systems or require complex coordination:
+
+1. **Register a command with a stub handler**:
+```typescript
+this.commandRegistry.register({
+    id: 'my-action',
+    label: 'My Action',
+    handler: () => {
+        // Minimal or no logic here
+        // The real work happens in event listeners
+    }
+});
+```
+
+2. **Listen to the command execution event**:
+```typescript
+this.commandRegistry.addEventListener('command-execute', (event: Event) => {
+    const customEvent = event as CustomEvent<{ commandId: string }>;
+    if (customEvent.detail.commandId === 'my-action') {
+        this.myActionHandler();
+    }
+});
+```
+
+3. **Add the shortcut** in `default-shortcuts.json`:
+```json
+{
+  "shortcuts": [
+    {
+      "shortcut": "Ctrl+M",
+      "commandId": "my-action",
+      "description": "My custom action"
+    }
+  ]
+}
+```
+
+**Benefits of the event-driven approach**:
+- Multiple listeners can react to the same command
+- Loose coupling between command registration and handling
+- Easier to test and mock
+- Similar to VSCode's command architecture
 
 ## Keyboard Shortcut Format
 
@@ -149,6 +205,60 @@ The shortcut system is integrated with the existing menu system. Menu actions au
 1. Menu items dispatch `menu-action` events with their action ID
 2. The AppMain component routes these events to the CommandRegistry
 3. The same commands can be triggered by shortcuts or menu clicks
+
+## Event-Driven Architecture
+
+The command system uses an event-driven architecture inspired by VSCode:
+
+### Command Execution Flow
+
+```
+User Action (Shortcut/Menu)
+         ↓
+ShortcutManager.register() → KeyboardEvent
+         ↓
+CommandRegistry.execute()
+         ↓
+Emits 'command-execute' event ──→ Event Listeners react
+         ↓                              ↓
+Command handler() executes        Application logic
+```
+
+### Event Details
+
+When a command is executed, the CommandRegistry emits a `command-execute` CustomEvent with:
+- **Type**: `'command-execute'`
+- **Detail**: `{ commandId: string }` - The ID of the command being executed
+- **Bubbles**: `true` - Event bubbles up the DOM
+- **Composed**: `true` - Event crosses shadow DOM boundaries
+
+### Example: Setting up event listeners
+
+```typescript
+// In app-main.ts or any component
+const commandRegistry = commandManager.getCommandRegistry();
+
+commandRegistry.addEventListener('command-execute', (event: Event) => {
+    const customEvent = event as CustomEvent<{ commandId: string }>;
+    const { commandId } = customEvent.detail;
+    
+    switch (commandId) {
+        case 'file-open':
+            this.handleFileOpen();
+            break;
+        case 'edit-undo':
+            this.undoManager.undo();
+            break;
+        // Handle other commands...
+    }
+});
+```
+
+This approach allows:
+- **Decoupling**: Command registration is separate from handling
+- **Flexibility**: Multiple components can react to the same command
+- **Testability**: Easy to mock and test event listeners
+- **Extensibility**: Plugins or extensions can listen to commands without modifying core code
 
 ## Future Enhancements
 

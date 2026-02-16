@@ -15,6 +15,7 @@
   --color-primary-hover: #535bf2;
 
   --color-waveform: #4CAF50;
+  --color-waveform-alt-bg: #f0f0f0;
 
   --color-button-bg: #ffffff;
   --color-button-border: transparent;
@@ -63,6 +64,7 @@
   --color-primary-hover: #535bf2;
 
   --color-waveform: #4CAF50;
+  --color-waveform-alt-bg: #f0f0f0;
 
   --color-button-bg: #ffffff;
   --color-button-border: transparent;
@@ -96,6 +98,7 @@
   --color-primary: #646cff;
 
   --color-waveform: #66BB6A;
+  --color-waveform-alt-bg: #252525;
 
   --color-button-bg: #1a1a1a;
   --color-button-border: transparent;
@@ -130,6 +133,7 @@
     --color-primary: #646cff;
 
     --color-waveform: #66BB6A;
+    --color-waveform-alt-bg: #252525;
 
     --color-button-bg: #1a1a1a;
     --color-button-border: transparent;

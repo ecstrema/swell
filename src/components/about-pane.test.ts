@@ -59,4 +59,23 @@ describe('AboutPane', () => {
         expect(version).not.toBeNull();
         expect(version!.textContent).toContain('Version');
     });
+
+    it('should display build time information when available', () => {
+        const shadowRoot = pane.shadowRoot;
+        expect(shadowRoot).not.toBeNull();
+        
+        // If build timestamp is available, should display build time info
+        if (import.meta.env.VITE_BUILD_TIMESTAMP) {
+            const infoRows = shadowRoot!.querySelectorAll('.info-row');
+            const buildTimeRow = Array.from(infoRows).find(row => 
+                row.textContent?.includes('Built')
+            );
+            expect(buildTimeRow).not.toBeNull();
+            
+            // Should have a tooltip with the exact date
+            const buildTimeValue = buildTimeRow!.querySelector('.build-time');
+            expect(buildTimeValue).not.toBeNull();
+            expect(buildTimeValue!.getAttribute('title')).toBeTruthy();
+        }
+    });
 });

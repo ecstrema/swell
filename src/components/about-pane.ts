@@ -1,5 +1,6 @@
 import { css } from "../utils/css-utils.js";
 import aboutPaneCss from "./about-pane.css?inline";
+import { formatTimeAgo, formatDateTime } from "../utils/time-utils.js";
 
 export class AboutPane extends HTMLElement {
     constructor() {
@@ -16,6 +17,20 @@ export class AboutPane extends HTMLElement {
         // Get build commit from environment variable (injected at build time)
         const buildCommit = import.meta.env.VITE_BUILD_COMMIT || 'development';
         const version = import.meta.env.VITE_VERSION || '0.1.0';
+        const buildTimestamp = import.meta.env.VITE_BUILD_TIMESTAMP;
+
+        // Calculate time ago text and tooltip
+        let buildTimeHtml = '';
+        if (buildTimestamp) {
+            const timeAgo = formatTimeAgo(buildTimestamp);
+            const exactDate = formatDateTime(buildTimestamp);
+            buildTimeHtml = `
+                <div class="info-row">
+                    <span class="info-label">Built:</span>
+                    <span class="info-value build-time" title="${exactDate}">${timeAgo}</span>
+                </div>
+            `;
+        }
 
         this.shadowRoot!.innerHTML = `
             <div class="about-container">
@@ -29,6 +44,7 @@ export class AboutPane extends HTMLElement {
                         <span class="info-label">Build Commit:</span>
                         <span class="info-value">${buildCommit.substring(0, 8)}</span>
                     </div>
+                    ${buildTimeHtml}
                     <div class="info-row">
                         <span class="info-label">GitHub:</span>
                         <span class="info-value">

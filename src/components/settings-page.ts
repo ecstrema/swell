@@ -209,7 +209,7 @@ export class SettingsPage extends HTMLElement {
                     this.scrollToSetting(node.id);
                 }
             },
-            showFilter: false,
+            showFilter: true,
             showCheckboxes: false
         };
 

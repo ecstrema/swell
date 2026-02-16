@@ -12,6 +12,7 @@
     /* Tree guide line styling variables */
     --tree-guide-offset: -12px;
     --tree-guide-line-width: 8px;
+    --tree-guide-vertical-position: calc(var(--tree-guide-offset) + var(--tree-guide-line-width));
     --tree-guide-opacity: 0.5;
 }
 
@@ -55,7 +56,7 @@ details {
 details::before {
     content: '';
     position: absolute;
-    left: var(--tree-guide-line-width);
+    left: var(--tree-guide-vertical-position);
     top: 24px;
     bottom: 0;
     width: 1px;

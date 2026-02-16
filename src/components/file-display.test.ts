@@ -359,21 +359,31 @@ describe('FileDisplay Component', () => {
       }));
     }
     
-    // Get the selected signals
-    const refs = element.getSelectedSignalRefs();
-    expect(refs).toEqual([1, 2, 3]);
+    // Verify initial order
+    const initialRefs = element.getSelectedSignalRefs();
+    expect(initialRefs).toEqual([1, 2, 3]);
+    
+    // Get the current canvases before reordering
+    const shadowRoot = element.shadowRoot;
+    let waveformsContainer = shadowRoot?.querySelector('.waveforms-container');
+    const initialCanvases = Array.from(waveformsContainer?.querySelectorAll('canvas') || []);
+    
+    // There should be 3 canvases (one per signal)
+    expect(initialCanvases.length).toBe(3);
     
     // Simulate signal reordering by dispatching signals-reordered event
-    // The selected-signals-tree component would normally do this
     const selectedSignalsTree = element.shadowRoot?.querySelector('selected-signals-tree');
     expect(selectedSignalsTree).toBeTruthy();
     
     // Create a reordered signals array (reverse the order)
-    const reorderedSignals = [...signals].reverse().map(s => ({
+    // Get the actual SelectedSignal objects from the element's internal state
+    const currentSignals = signals.map(s => ({
       name: s.name,
       ref: s.ref,
-      canvas: element.shadowRoot?.querySelectorAll('canvas')[signals.length - signals.findIndex(sig => sig.ref === s.ref) - 1]
+      canvas: initialCanvases[signals.findIndex(sig => sig.ref === s.ref)]
     }));
+    
+    const reorderedSignals = currentSignals.reverse();
     
     // Dispatch the reorder event
     selectedSignalsTree?.dispatchEvent(new CustomEvent('signals-reordered', {
@@ -382,19 +392,18 @@ describe('FileDisplay Component', () => {
       composed: true
     }));
     
-    // Wait for the event to be handled
-    await new Promise(resolve => setTimeout(resolve, 0));
+    // Wait for the event to be handled and rendering to complete
+    await new Promise(resolve => setTimeout(resolve, 50));
     
-    // Check that the order has been updated
+    // Verify the order has been updated
     const newRefs = element.getSelectedSignalRefs();
     expect(newRefs).toEqual([3, 2, 1]);
     
-    // Check that canvases are in the correct order in the DOM
-    const shadowRoot = element.shadowRoot;
-    const waveformsContainer = shadowRoot?.querySelector('.waveforms-container');
-    const canvases = waveformsContainer?.querySelectorAll('canvas');
+    // Re-query the container after render (innerHTML cleared and recreated)
+    waveformsContainer = shadowRoot?.querySelector('.waveforms-container');
+    const canvasesAfterReorder = waveformsContainer?.querySelectorAll('canvas');
     
-    // Note: There's also a timeline element, so canvas count might differ
-    expect(canvases).toBeDefined();
+    // Verify canvases are still present after reordering
+    expect(canvasesAfterReorder?.length).toBe(3);
   });
 });

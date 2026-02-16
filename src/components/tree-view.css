@@ -10,10 +10,6 @@
     box-sizing: border-box;
 }
 
-*, *::before, *::after {
-    box-sizing: border-box;
-}
-
 .filter-container {
     padding: 8px;
     border-bottom: 1px solid var(--color-border, #cccccc);
@@ -21,6 +17,7 @@
     position: sticky;
     top: 0;
     z-index: 1;
+    box-sizing: border-box;
 }
 
 .filter-input {
@@ -33,6 +30,7 @@
     background-color: var(--color-bg, #ffffff);
     color: var(--color-text, #0f0f0f);
     font-family: inherit;
+    box-sizing: border-box;
 }
 
 .filter-input:focus {

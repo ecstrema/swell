@@ -41,7 +41,7 @@
     position: relative;
 }
 .tab.active {
-    background: var(--dock-tab-active-bg);
+    background: var(--dock-bg-color);
     color: var(--dock-tab-active-text);
 }
 .tab:hover:not(.active) {

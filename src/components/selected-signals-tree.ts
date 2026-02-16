@@ -33,6 +33,7 @@ export class SelectedSignalsTree extends TreeView {
             leafNodeClass: 'signal-node',
             scopeNodeClass: 'tree-node',
             draggableLeaves: true,
+            textAlign: 'right',
             onDrop: (draggedNode: TreeNode, targetNode: TreeNode, position: 'before' | 'after') => {
                 this.handleSignalReorder(draggedNode, targetNode, position);
             }

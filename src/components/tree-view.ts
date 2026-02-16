@@ -102,6 +102,11 @@ export interface TreeViewConfig {
      * Icon buttons to display on the right side of branch/scope nodes
      */
     branchIconButtons?: (node: TreeNode) => TreeIconButton[];
+    
+    /**
+     * Text alignment for leaf nodes. Defaults to 'left'
+     */
+    textAlign?: 'left' | 'right';
 }
 
 /**
@@ -159,6 +164,10 @@ export class TreeView extends HTMLElement {
         this.addEventListener('setting-changed', this.boundSettingChangeHandler);
         this.filterInput?.addEventListener('input', this.boundFilterInputHandler);
         
+        // Initialize text alignment based on config (do this after element is connected)
+        // This ensures the element has been properly initialized before we try to set styles
+        this.updateTextAlign(this._config.textAlign || 'left');
+        
         // Load indent setting when component is connected to the DOM
         if (!this.indentLoadPromise) {
             this.indentLoadPromise = this.loadIndentSetting();
@@ -189,6 +198,16 @@ export class TreeView extends HTMLElement {
     private updateIndent(value: number) {
         this.style.setProperty('--tree-indent', `${value}px`);
     }
+    
+    private updateTextAlign(value: 'left' | 'right') {
+        if (value === 'right') {
+            this.style.setProperty('--tree-leaf-justify', 'flex-end');
+            this.style.setProperty('--tree-leaf-direction', 'row-reverse');
+        } else {
+            this.style.setProperty('--tree-leaf-justify', 'flex-start');
+            this.style.setProperty('--tree-leaf-direction', 'row');
+        }
+    }
 
     set data(data: TreeNode[]) {
         this._data = data;
@@ -212,6 +231,12 @@ export class TreeView extends HTMLElement {
         if (this.filterInput) {
             this.filterInput.value = '';
             this.filterQuery = '';
+        }
+        
+        // Update text alignment - but only if element is connected
+        // Otherwise, it will be set in connectedCallback
+        if (this.isConnected) {
+            this.updateTextAlign(this._config.textAlign || 'left');
         }
         
         this.render();

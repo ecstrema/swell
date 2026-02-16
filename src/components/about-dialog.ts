@@ -59,6 +59,18 @@ export class AboutDialog extends HTMLElement {
                             </a>
                         </span>
                     </div>
+                    <details class="libraries-section">
+                        <summary>Libraries Used</summary>
+                        <ul class="libraries-list">
+                            <li><a href="https://tauri.app/" target="_blank" rel="noopener noreferrer">Tauri</a> - Desktop application framework</li>
+                            <li><a href="https://vite.dev/" target="_blank" rel="noopener noreferrer">Vite</a> - Frontend build tool</li>
+                            <li><a href="https://bun.sh/" target="_blank" rel="noopener noreferrer">Bun</a> - JavaScript runtime and package manager</li>
+                            <li><a href="https://rustwasm.github.io/wasm-pack/" target="_blank" rel="noopener noreferrer">wasm-pack</a> - Rust to WebAssembly compiler</li>
+                            <li><a href="https://github.com/ekiwi/wellen" target="_blank" rel="noopener noreferrer">wellen</a> - Waveform parsing library</li>
+                            <li><a href="https://github.com/SalvatorePreviti/shosho" target="_blank" rel="noopener noreferrer">ShoSho</a> - Keyboard shortcuts library</li>
+                            <li><a href="https://rustwasm.github.io/wasm-bindgen/" target="_blank" rel="noopener noreferrer">wasm-bindgen</a> - Rust and WebAssembly bindings</li>
+                        </ul>
+                    </details>
                 </div>
                 <div class="dialog-footer">
                     <button class="close-btn">Close</button>

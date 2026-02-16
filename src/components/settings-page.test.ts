@@ -190,4 +190,20 @@ describe('SettingsPage', () => {
             expect(treeSettingIds).toContain(setting.path);
         });
     });
+
+    it('should show filter input in tree view', () => {
+        const treeView = settingsPage.shadowRoot!.querySelector('tree-view');
+        expect(treeView).not.toBeNull();
+        
+        // Check that the tree view has filter enabled
+        const filterInput = treeView!.shadowRoot!.querySelector('#filter-input');
+        expect(filterInput).not.toBeNull();
+        
+        const filterContainer = treeView!.shadowRoot!.querySelector('#filter-container');
+        expect(filterContainer).not.toBeNull();
+        
+        // Filter container should be visible (display: block)
+        const computedStyle = window.getComputedStyle(filterContainer as Element);
+        expect(computedStyle.display).not.toBe('none');
+    });
 });

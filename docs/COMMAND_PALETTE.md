@@ -7,7 +7,8 @@ The command palette provides a searchable UI for quickly accessing commands in t
 ## Features
 
 - **Quick Access**: Open with keyboard shortcut (`Ctrl+K` or `Cmd+K`)
-- **Fuzzy Search**: Type to filter commands by label or ID
+- **Fuzzy Search**: Type to filter commands by label, ID, or description
+- **Command Descriptions**: Commands can optionally include descriptions for better context
 - **Keyboard Navigation**: 
   - Arrow keys (`↑`/`↓`) to navigate through results
   - `Enter` to execute the selected command
@@ -32,7 +33,7 @@ The command palette is automatically integrated into the application. When the a
 ### Searching for Commands
 
 - Start typing in the search box
-- Commands are filtered by label or ID
+- Commands are filtered by label, ID, or description
 - The first matching command is automatically selected
 
 ### Executing Commands
@@ -85,6 +86,7 @@ const registry = new CommandRegistry();
 registry.register({
     id: 'my-command',
     label: 'My Awesome Command',
+    description: 'This command does something amazing', // Optional description
     handler: () => {
         console.log('Command executed!');
     }
@@ -100,8 +102,10 @@ The command palette respects the application's CSS variables for theming:
 - `--color-bg-surface` - Background color
 - `--color-border` - Border colors
 - `--color-text` - Text color
-- `--color-text-muted` - Muted text (e.g., command IDs)
+- `--color-text-muted` - Muted text (e.g., descriptions, command IDs)
 - `--color-bg-hover` - Hover state background
+
+Command descriptions are displayed in a smaller, muted font below the command label.
 
 ## Testing
 
@@ -159,8 +163,8 @@ Potential improvements for the command palette:
 
 1. **Recent Commands**: Show recently used commands at the top
 2. **Command Categories**: Group commands by category
-3. **Fuzzy Matching**: More sophisticated search algorithm
+3. **Fuzzy Matching**: More sophisticated search algorithm (e.g., fuzzy matching)
 4. **Command Arguments**: Support commands with parameters
-5. **Keyboard Shortcuts Display**: Show shortcuts next to commands
+5. ~~**Command Descriptions**: Support optional descriptions for commands~~ ✅ Implemented
 6. **Command History**: Navigate through previously executed commands
 7. **Custom Styling**: Allow themes to customize palette appearance

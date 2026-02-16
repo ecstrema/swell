@@ -30,7 +30,6 @@ runs:
       uses: dtolnay/rust-toolchain@stable
       with:
         targets: ${{ inputs.rust-targets }}
-      shell: bash
 
     - name: Rust cache
       if: ${{ inputs.rust-cache == 'true' }}

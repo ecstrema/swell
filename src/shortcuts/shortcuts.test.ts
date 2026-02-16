@@ -24,6 +24,58 @@ describe('Shortcuts System', () => {
             const result = await registry.execute('fake-cmd');
             expect(result).toBe(false);
         });
+
+        it('should emit command-execute event when command is executed', async () => {
+            const registry = new CommandRegistry();
+            let eventFired = false;
+            let eventCommandId = '';
+
+            // Register event listener
+            registry.addEventListener('command-execute', (event: Event) => {
+                eventFired = true;
+                const customEvent = event as CustomEvent<{ commandId: string }>;
+                eventCommandId = customEvent.detail.commandId;
+            });
+
+            // Register command
+            registry.register({
+                id: 'test-cmd',
+                label: 'Test Command',
+                handler: () => { }
+            });
+
+            // Execute command
+            await registry.execute('test-cmd');
+
+            // Verify event was emitted
+            expect(eventFired).toBe(true);
+            expect(eventCommandId).toBe('test-cmd');
+        });
+
+        it('should emit event before executing handler', async () => {
+            const registry = new CommandRegistry();
+            const callOrder: string[] = [];
+
+            // Register event listener
+            registry.addEventListener('command-execute', () => {
+                callOrder.push('event');
+            });
+
+            // Register command
+            registry.register({
+                id: 'test-cmd',
+                label: 'Test Command',
+                handler: () => { 
+                    callOrder.push('handler');
+                }
+            });
+
+            // Execute command
+            await registry.execute('test-cmd');
+
+            // Verify event fired before handler
+            expect(callOrder).toEqual(['event', 'handler']);
+        });
     });
 
     describe('ShortcutManager', () => {

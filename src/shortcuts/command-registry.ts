@@ -3,8 +3,9 @@ import { Command } from "./types.js";
 /**
  * Central registry for all application commands.
  * Commands can be triggered by shortcuts, menu items, or programmatically.
+ * Emits 'command-execute' events when commands are triggered.
  */
-export class CommandRegistry {
+export class CommandRegistry extends EventTarget {
     private commands: Map<string, Command> = new Map();
 
     /**
@@ -23,6 +24,7 @@ export class CommandRegistry {
 
     /**
      * Execute a command by ID
+     * Emits a 'command-execute' event before executing the command
      */
     async execute(commandId: string): Promise<boolean> {
         const command = this.commands.get(commandId);
@@ -31,6 +33,13 @@ export class CommandRegistry {
             // to avoid noise in logs. Callers can check the return value.
             return false;
         }
+
+        // Emit event before executing command
+        this.dispatchEvent(new CustomEvent('command-execute', {
+            detail: { commandId },
+            bubbles: true,
+            composed: true
+        }));
 
         try {
             await command.handler();

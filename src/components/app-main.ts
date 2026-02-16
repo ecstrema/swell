@@ -136,6 +136,9 @@ export class AppMain extends HTMLElement {
         // Initialize shortcut system
         this.initializeShortcuts();
 
+        // Set up command event listeners
+        this.setupCommandListeners();
+
         // Pass shortcut manager to menu bar and store reference
         const menuBar = this.shadowRoot!.querySelector('app-menu-bar');
         if (menuBar instanceof MenuBar) {
@@ -263,40 +266,10 @@ export class AppMain extends HTMLElement {
      * Initialize the shortcut system with commands and bindings
      */
     private initializeShortcuts() {
-        this.commandManager.initializeShortcuts({
-            onFileOpen: () => this.handleFileOpen(),
-            onFileQuit: async () => {
-                // Only available in Tauri, not on web
-                const { isTauri } = await import('../backend.js');
-                if (isTauri) {
-                    const { getCurrentWindow } = await import('@tauri-apps/api/window');
-                    await getCurrentWindow().close();
-                }
-            },
-            onEditUndo: () => {
-                this.undoManager.undo();
-            },
-            onEditRedo: () => {
-                this.undoManager.redo();
-            },
-            onZoomIn: () => {
-                // Dispatch zoom-in event for the active file display
-                this.dispatchZoomCommand('zoom-in');
-            },
-            onZoomOut: () => {
-                // Dispatch zoom-out event for the active file display
-                this.dispatchZoomCommand('zoom-out');
-            },
-            onZoomFit: () => {
-                // Dispatch zoom-fit event for the active file display
-                this.dispatchZoomCommand('zoom-fit');
-            },
-            onToggleSignalSelection: () => {
-                this.toggleSignalSelection();
-            }
-        });
+        // Initialize the command manager with shortcuts from JSON
+        this.commandManager.initializeShortcuts();
 
-        // Register save/load state commands
+        // Register additional commands not in the default shortcuts
         this.commandManager.getCommandRegistry().register({
             id: 'file-save-state',
             label: 'Save State As...',
@@ -313,6 +286,58 @@ export class AppMain extends HTMLElement {
         this.undoManager.setOnChange(() => {
             this.undoTreePanel.refresh();
         });
+    }
+
+    /**
+     * Set up event listeners for command execution events.
+     * This is the event-driven approach: when commands are triggered,
+     * they emit events that we listen to and handle.
+     */
+    private setupCommandListeners() {
+        const commandRegistry = this.commandManager.getCommandRegistry();
+
+        // Listen for all command execution events
+        commandRegistry.addEventListener('command-execute', (event: Event) => {
+            const customEvent = event as CustomEvent<{ commandId: string }>;
+            const { commandId } = customEvent.detail;
+
+            // Handle each command based on its ID
+            switch (commandId) {
+                case 'file-open':
+                    this.handleFileOpen();
+                    break;
+                case 'file-quit':
+                    this.handleFileQuit();
+                    break;
+                case 'edit-undo':
+                    this.undoManager.undo();
+                    break;
+                case 'edit-redo':
+                    this.undoManager.redo();
+                    break;
+                case 'view-zoom-in':
+                    this.dispatchZoomCommand('zoom-in');
+                    break;
+                case 'view-zoom-out':
+                    this.dispatchZoomCommand('zoom-out');
+                    break;
+                case 'view-zoom-fit':
+                    this.dispatchZoomCommand('zoom-fit');
+                    break;
+                case 'view-toggle-signal-selection':
+                    this.toggleSignalSelection();
+                    break;
+            }
+        });
+    }
+
+    private async handleFileQuit() {
+        // Only available in Tauri, not on web
+        const { isTauri } = await import('../backend.js');
+        if (isTauri) {
+            const { getCurrentWindow } = await import('@tauri-apps/api/window');
+            await getCurrentWindow().close();
+        }
     }
 
     /**

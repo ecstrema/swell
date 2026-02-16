@@ -44,68 +44,38 @@ export class CommandManager {
     }
 
     /**
-     * Initialize the shortcut system with commands and bindings
+     * Initialize the shortcut system by loading shortcuts from JSON.
+     * Commands are registered and emit events when triggered.
+     * Consumers should listen to 'command-execute' events on the CommandRegistry.
      */
-    initializeShortcuts(commandHandlers: {
-        onFileOpen: () => void,
-        onFileQuit: () => Promise<void>,
-        onEditUndo: () => void,
-        onEditRedo: () => void,
-        onZoomIn: () => void,
-        onZoomOut: () => void,
-        onZoomFit: () => void,
-        onToggleSignalSelection: () => void
-    }): void {
-        // Register commands that can be triggered by shortcuts or menu items
-        this.commandRegistry.register({
-            id: 'file-open',
-            label: 'Open File',
-            handler: commandHandlers.onFileOpen
-        });
+    initializeShortcuts(): void {
+        // Register commands with stub handlers
+        // Most commands just emit events; consumers listen and react
+        const commandDefinitions = [
+            { id: 'file-open', label: 'Open File' },
+            { id: 'file-close', label: 'Close File' },
+            { id: 'file-quit', label: 'Quit' },
+            { id: 'edit-undo', label: 'Undo' },
+            { id: 'edit-redo', label: 'Redo' },
+            { id: 'view-zoom-in', label: 'Zoom In' },
+            { id: 'view-zoom-out', label: 'Zoom Out' },
+            { id: 'view-zoom-fit', label: 'Zoom to Fit' },
+            { id: 'view-toggle-signal-selection', label: 'Toggle Signal Selection View' }
+        ];
 
-        this.commandRegistry.register({
-            id: 'file-quit',
-            label: 'Quit',
-            handler: commandHandlers.onFileQuit
-        });
+        // Register all commands - they emit events when executed via CommandRegistry
+        for (const cmd of commandDefinitions) {
+            this.commandRegistry.register({
+                id: cmd.id,
+                label: cmd.label,
+                handler: () => {
+                    // CommandRegistry.execute() already emits 'command-execute' event
+                    // This stub handler allows the command to be registered and found
+                }
+            });
+        }
 
-        this.commandRegistry.register({
-            id: 'edit-undo',
-            label: 'Undo',
-            handler: commandHandlers.onEditUndo
-        });
-
-        this.commandRegistry.register({
-            id: 'edit-redo',
-            label: 'Redo',
-            handler: commandHandlers.onEditRedo
-        });
-
-        this.commandRegistry.register({
-            id: 'view-zoom-in',
-            label: 'Zoom In',
-            handler: commandHandlers.onZoomIn
-        });
-
-        this.commandRegistry.register({
-            id: 'view-zoom-out',
-            label: 'Zoom Out',
-            handler: commandHandlers.onZoomOut
-        });
-
-        this.commandRegistry.register({
-            id: 'view-zoom-fit',
-            label: 'Zoom to Fit',
-            handler: commandHandlers.onZoomFit
-        });
-
-        this.commandRegistry.register({
-            id: 'view-toggle-signal-selection',
-            label: 'Toggle Signal Selection View',
-            handler: commandHandlers.onToggleSignalSelection
-        });
-
-        // Register command palette command
+        // Register command palette command with its specific handler
         this.commandRegistry.register({
             id: 'command-palette-toggle',
             label: 'Open Command Palette',
@@ -116,7 +86,7 @@ export class CommandManager {
             }
         });
 
-        // Register default shortcuts (currently empty, but ready for future use)
+        // Load and register shortcuts from JSON configuration
         this.shortcutManager.registerMany(defaultShortcuts);
 
         // Register keyboard shortcut to open command palette (Ctrl+K or Cmd+K)

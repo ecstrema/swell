@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Tree View Alignment Demo</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background-color: #1e1e1e;
+            color: #ffffff;
+        }
+        .demo-container {
+            display: flex;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .demo-section {
+            flex: 1;
+            background-color: #252526;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #569cd6;
+        }
+        tree-view, selected-signals-tree {
+            display: block;
+            height: 400px;
+            background-color: #1e1e1e;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tree View Alignment Demo</h1>
+    <div class="demo-container">
+        <div class="demo-section">
+            <h2>Left Aligned (Default)</h2>
+            <tree-view id="left-tree"></tree-view>
+        </div>
+        <div class="demo-section">
+            <h2>Right Aligned</h2>
+            <tree-view id="right-tree"></tree-view>
+        </div>
+        <div class="demo-section">
+            <h2>Selected Signals (Right Aligned)</h2>
+            <selected-signals-tree id="signals-tree"></selected-signals-tree>
+        </div>
+    </div>
+
+    <script type="module">
+        import './src/components/tree-view.js';
+        import './src/components/selected-signals-tree.js';
+
+        // Set up left-aligned tree
+        const leftTree = document.getElementById('left-tree');
+        leftTree.config = {
+            textAlign: 'left'
+        };
+        leftTree.data = [
+            { name: 'clk', id: 1 },
+            { name: 'reset', id: 2 },
+            { name: 'data_in', id: 3 },
+            { name: 'data_out', id: 4 },
+            { name: 'enable', id: 5 }
+        ];
+
+        // Set up right-aligned tree
+        const rightTree = document.getElementById('right-tree');
+        rightTree.config = {
+            textAlign: 'right'
+        };
+        rightTree.data = [
+            { name: 'clk', id: 1 },
+            { name: 'reset', id: 2 },
+            { name: 'data_in', id: 3 },
+            { name: 'data_out', id: 4 },
+            { name: 'enable', id: 5 }
+        ];
+
+        // Set up selected signals tree (automatically right-aligned)
+        const signalsTree = document.getElementById('signals-tree');
+        signalsTree.signals = [
+            { name: 'clk', ref: 1 },
+            { name: 'reset', ref: 2 },
+            { name: 'data_in', ref: 3 },
+            { name: 'data_out', ref: 4 },
+            { name: 'enable', ref: 5 }
+        ];
+    </script>
+</body>
+</html>

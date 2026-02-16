@@ -166,7 +166,11 @@ export class TreeView extends HTMLElement {
         
         // Initialize text alignment based on config (do this after element is connected)
         // This ensures the element has been properly initialized before we try to set styles
-        this.updateTextAlign(this._config.textAlign || 'left');
+        if (this._config) {
+            this.updateTextAlign(this._config.textAlign || 'left');
+        } else {
+            this.updateTextAlign('left'); // Default if config hasn't been set yet
+        }
         
         // Load indent setting when component is connected to the DOM
         if (!this.indentLoadPromise) {
@@ -224,7 +228,7 @@ export class TreeView extends HTMLElement {
         // Update filter visibility
         const filterContainer = this.shadowRoot!.querySelector('#filter-container') as HTMLDivElement;
         if (filterContainer) {
-            filterContainer.style.display = this._config.showFilter ? 'block' : 'none';
+            filterContainer.style.display = this._config?.showFilter ? 'block' : 'none';
         }
         
         // Reset filter when config changes
@@ -235,7 +239,7 @@ export class TreeView extends HTMLElement {
         
         // Update text alignment - but only if element is connected
         // Otherwise, it will be set in connectedCallback
-        if (this.isConnected) {
+        if (this.isConnected && this._config) {
             this.updateTextAlign(this._config.textAlign || 'left');
         }
         

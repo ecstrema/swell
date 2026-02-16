@@ -1,0 +1,71 @@
+name: Setup Swell Development Environment
+description: Install Rust, Bun, wasm-pack, and project dependencies with caching
+
+inputs:
+  bun-version:
+    description: 'Bun version to install'
+    required: false
+    default: 'latest'
+  wasm-pack-version:
+    description: 'wasm-pack version to install'
+    required: false
+    default: 'latest'
+  rust-cache:
+    description: 'Enable Rust caching'
+    required: false
+    default: 'true'
+  rust-targets:
+    description: 'Additional Rust targets to install (comma-separated)'
+    required: false
+    default: ''
+  rust-workspaces:
+    description: 'Rust workspaces for caching'
+    required: false
+    default: 'backend -> target'
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Rust
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ inputs.rust-targets }}
+      shell: bash
+
+    - name: Rust cache
+      if: ${{ inputs.rust-cache == 'true' }}
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: ${{ inputs.rust-workspaces }}
+
+    - name: Install wasm-pack
+      uses: jetli/wasm-pack-action@v0.4.0
+      with:
+        version: ${{ inputs.wasm-pack-version }}
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: ${{ inputs.bun-version }}
+
+    - name: Cache node modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          node_modules
+          ~/.bun/install/cache
+        key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-bun-
+
+    - name: Cache WASM build
+      uses: actions/cache@v4
+      with:
+        path: backend/pkg
+        key: ${{ runner.os }}-wasm-${{ hashFiles('backend/src/**', 'backend/Cargo.toml', 'backend/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-wasm-
+
+    - name: Install dependencies
+      run: bun install --frozen-lockfile
+      shell: bash

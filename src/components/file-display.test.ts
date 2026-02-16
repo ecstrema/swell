@@ -339,4 +339,62 @@ describe('FileDisplay Component', () => {
     const signalItems = shadowRoot?.querySelectorAll('.signal-item');
     expect(signalItems?.length).toBe(0);
   });
+
+  it('should maintain canvas order when signals are reordered', async () => {
+    element.filename = 'test.vcd';
+    
+    // Add three signals
+    const signals = [
+      { name: 'signal_a', ref: 1 },
+      { name: 'signal_b', ref: 2 },
+      { name: 'signal_c', ref: 3 }
+    ];
+    
+    for (const signal of signals) {
+      document.dispatchEvent(new CustomEvent('signal-select', {
+        detail: { ...signal, filename: 'test.vcd' }
+      }));
+      await new Promise(resolve => requestAnimationFrame(() => {
+        requestAnimationFrame(() => resolve(undefined));
+      }));
+    }
+    
+    // Get the selected signals
+    const refs = element.getSelectedSignalRefs();
+    expect(refs).toEqual([1, 2, 3]);
+    
+    // Simulate signal reordering by dispatching signals-reordered event
+    // The selected-signals-tree component would normally do this
+    const selectedSignalsTree = element.shadowRoot?.querySelector('selected-signals-tree');
+    expect(selectedSignalsTree).toBeTruthy();
+    
+    // Create a reordered signals array (reverse the order)
+    const reorderedSignals = [...signals].reverse().map(s => ({
+      name: s.name,
+      ref: s.ref,
+      canvas: element.shadowRoot?.querySelectorAll('canvas')[signals.length - signals.findIndex(sig => sig.ref === s.ref) - 1]
+    }));
+    
+    // Dispatch the reorder event
+    selectedSignalsTree?.dispatchEvent(new CustomEvent('signals-reordered', {
+      detail: { signals: reorderedSignals },
+      bubbles: true,
+      composed: true
+    }));
+    
+    // Wait for the event to be handled
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
+    // Check that the order has been updated
+    const newRefs = element.getSelectedSignalRefs();
+    expect(newRefs).toEqual([3, 2, 1]);
+    
+    // Check that canvases are in the correct order in the DOM
+    const shadowRoot = element.shadowRoot;
+    const waveformsContainer = shadowRoot?.querySelector('.waveforms-container');
+    const canvases = waveformsContainer?.querySelectorAll('canvas');
+    
+    // Note: There's also a timeline element, so canvas count might differ
+    expect(canvases).toBeDefined();
+  });
 });

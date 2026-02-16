@@ -323,6 +323,13 @@ export class FileDisplay extends HTMLElement {
     // Re-render the waveforms in the new order
     this.render();
     
+    // Repaint all signal canvases to ensure they display correctly in their new positions
+    this.selectedSignals.forEach(signal => {
+      if (signal.canvas) {
+        this.paintSignal(signal.canvas, signal.ref);
+      }
+    });
+    
     // Save state after reordering
     this.debouncedSaveState();
   }

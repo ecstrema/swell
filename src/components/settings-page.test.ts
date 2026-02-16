@@ -5,7 +5,7 @@ import { SettingsPage } from './settings-page';
 import { settingsRegister } from '../settings/settings-register';
 
 // Mock backend before importing
-vi.mock('../backend.js', () => ({
+vi.mock('../backend/index.js', () => ({
     isTauri: false,
     invoke: vi.fn()
 }));

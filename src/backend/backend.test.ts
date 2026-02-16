@@ -11,7 +11,7 @@ vi.mock('@tauri-apps/plugin-dialog', () => ({
 }));
 
 // Mock the entire WASM module
-vi.mock('../backend/pkg/backend', () => ({
+vi.mock('../../backend/pkg/backend', () => ({
     default: vi.fn(),
     add_file_bytes: vi.fn(),
     get_files: vi.fn(),
@@ -22,7 +22,7 @@ vi.mock('../backend/pkg/backend', () => ({
 // Need to access the mocks to assert on them, but since we are testing `backend.ts` logic
 // which imports them, we ideally want to spy on the imported modules.
 import { invoke } from '@tauri-apps/api/core';
-import * as wasm from '../backend/pkg/backend';
+import * as wasm from '../../backend/pkg/backend';
 
 describe('Backend Interface', () => {
 

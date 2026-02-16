@@ -4,7 +4,7 @@ import { FileDisplay } from './file-display.js';
 import { Timeline } from './timeline.js';
 
 // Mock the backend module
-vi.mock('../backend.js', () => ({
+vi.mock('../backend/index.js', () => ({
   getSignalChanges: vi.fn(async (filename: string, signalId: number, start: number, end: number) => {
     // Return mock signal changes for testing
     return [

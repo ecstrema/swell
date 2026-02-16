@@ -1,4 +1,4 @@
-import { getSignalChanges, SignalChange, getHierarchy } from '../backend.js';
+import { getSignalChanges, SignalChange, getHierarchy } from '../backend/index.js';
 import { css } from '../utils/css-utils.js';
 import { setupCanvasForHighDPI } from '../utils/canvas-utils.js';
 import { scrollbarSheet } from '../styles/shared-sheets.js';

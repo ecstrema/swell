@@ -3,7 +3,7 @@
  * Provides consistent rendering logic for menu items, separators, and submenus
  */
 
-import { MenuItemConfig, SubmenuConfig } from "../../menu-api.js";
+import { MenuItemConfig, SubmenuConfig } from "../../menu-api/index.js";
 import { ShortcutManager } from "../../shortcuts/index.js";
 import ChevronRightIcon from '~icons/mdi/chevron-right?raw';
 

@@ -1,4 +1,4 @@
-import { addFile, openFileDialog, getHierarchy, getFiles, removeFile } from "../backend.js";
+import { addFile, openFileDialog, getHierarchy, getFiles, removeFile } from "../backend/index.js";
 import { FileDisplay } from "./file-display.js";
 import { HierarchyRoot } from "./files-tree.js";
 import { updateDocumentTitle } from "../utils/title-utils.js";
@@ -99,7 +99,7 @@ export class FileManager {
      */
     async handleOpenExample(filename: string): Promise<string | null> {
         try {
-            const { loadExampleFile } = await import("../backend.js");
+            const { loadExampleFile } = await import("../backend/index.js");
             const result = await loadExampleFile(filename);
             return result;
         } catch (err) {

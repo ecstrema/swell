@@ -1,6 +1,6 @@
 // This file unifies the interface for creating menus between the web and native Tauri backends.
 
-import { isTauri } from "./backend.js";
+import { isTauri } from "../backend/index.js";
 
 // Menu item types
 export type MenuItemType = 'normal' | 'separator' | 'checkbox';

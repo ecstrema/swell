@@ -1,7 +1,7 @@
 // File session persistence for web using IndexedDB
 // This allows files to be restored when the page is refreshed
 
-import { isTauri } from '../backend.js';
+import { isTauri } from '../backend/index.js';
 
 const DB_NAME = 'swell-file-session';
 const DB_VERSION = 1;

@@ -1,4 +1,4 @@
-import { restoreSession, getStartupFiles } from "../backend.js";
+import { restoreSession, getStartupFiles } from "../backend/index.js";
 import "./menu/menu-bar.ts";
 import { MenuBar } from "./menu/menu-bar.js";
 import "./files-tree.ts";
@@ -9,7 +9,7 @@ import { FilesTree } from "./files-tree.ts";
 import { SettingsPage } from "./settings-page.js";
 import { AboutPane } from "./about-pane.js";
 import { UndoTreePanel } from "./undo-tree-panel.js";
-import { themeManager } from "../theme-manager.js";
+import { themeManager } from "../theme/index.js";
 import { DockManager } from "./docking/dock-manager.js";
 import { DockStack } from "./docking/types.js";
 import { css } from "../utils/css-utils.js";
@@ -272,7 +272,7 @@ export class AppMain extends HTMLElement {
             onFileOpen: () => this.handleFileOpen(),
             onFileQuit: async () => {
                 // Only available in Tauri, not on web
-                const { isTauri } = await import('../backend.js');
+                const { isTauri } = await import('../backend/index.js');
                 if (isTauri) {
                     const { getCurrentWindow } = await import('@tauri-apps/api/window');
                     await getCurrentWindow().close();

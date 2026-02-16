@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AppMain } from './app-main.js';
-import * as backend from '../backend.js';
+import * as backend from '../backend/index.js';
 
 // Mock the backend module
-vi.mock('../backend.js', () => ({
+vi.mock('../backend/index.js', () => ({
     addFile: vi.fn(),
     openFileDialog: vi.fn(),
     getHierarchy: vi.fn(),

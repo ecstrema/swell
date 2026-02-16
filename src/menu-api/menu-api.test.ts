@@ -2,12 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createMenu, createSubmenu, createMenuItem, MenuConfig, SubmenuConfig, MenuItemConfig } from './menu-api.js';
 
 // Mock the backend module to avoid WASM dependency
-vi.mock('./backend.js', () => ({
+vi.mock('../backend/index.js', () => ({
     isTauri: false
 }));
 
 // Mock the WASM backend module
-vi.mock('../backend/pkg/backend', () => ({
+vi.mock('../../backend/pkg/backend', () => ({
     default: vi.fn(),
     add_file_bytes: vi.fn(),
     get_files: vi.fn(),

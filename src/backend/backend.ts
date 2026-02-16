@@ -1,10 +1,10 @@
 // This file unifies the interface between the web backend (Wasm/API) and the native Tauri backend.
 
-import init, * as wasm from "../backend/pkg/backend";
+import init, * as wasm from "../../backend/pkg/backend";
 
 import { invoke } from "@tauri-apps/api/core";
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { saveFileToSession, removeFileFromSession, getSessionFiles } from "./utils/file-session.js";
+import { saveFileToSession, removeFileFromSession, getSessionFiles } from "../utils/file-session.js";
 
 // Detect if we are running in Tauri
 // @ts-ignore

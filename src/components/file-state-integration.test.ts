@@ -4,7 +4,7 @@ import { FileDisplay } from './file-display.js';
 import { saveFileState, loadFileState, clearAllFileStates } from '../utils/file-state-storage.js';
 
 // Mock the backend module
-vi.mock('../backend.js', () => ({
+vi.mock('../backend/index.js', () => ({
   getSignalChanges: vi.fn(async (filename: string, signalId: number, start: number, end: number) => {
     return [
       { time: start, value: '0' },

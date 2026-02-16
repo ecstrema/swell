@@ -182,37 +182,42 @@ export class MenuBar extends HTMLElement {
                     text: 'View',
                     items: [
                         {
-                            id: 'zoom-in',
-                            text: 'Zoom In',
-                            action: () => {
-                                this.dispatchEvent(new CustomEvent('menu-action', {
-                                    bubbles: true,
-                                    composed: true,
-                                    detail: 'view-zoom-in'
-                                }));
-                            }
-                        },
-                        {
-                            id: 'zoom-out',
-                            text: 'Zoom Out',
-                            action: () => {
-                                this.dispatchEvent(new CustomEvent('menu-action', {
-                                    bubbles: true,
-                                    composed: true,
-                                    detail: 'view-zoom-out'
-                                }));
-                            }
-                        },
-                        {
-                            id: 'zoom-fit',
-                            text: 'Zoom to Fit',
-                            action: () => {
-                                this.dispatchEvent(new CustomEvent('menu-action', {
-                                    bubbles: true,
-                                    composed: true,
-                                    detail: 'view-zoom-fit'
-                                }));
-                            }
+                            text: 'Zoom',
+                            items: [
+                                {
+                                    id: 'zoom-in',
+                                    text: 'Zoom In',
+                                    action: () => {
+                                        this.dispatchEvent(new CustomEvent('menu-action', {
+                                            bubbles: true,
+                                            composed: true,
+                                            detail: 'view-zoom-in'
+                                        }));
+                                    }
+                                },
+                                {
+                                    id: 'zoom-out',
+                                    text: 'Zoom Out',
+                                    action: () => {
+                                        this.dispatchEvent(new CustomEvent('menu-action', {
+                                            bubbles: true,
+                                            composed: true,
+                                            detail: 'view-zoom-out'
+                                        }));
+                                    }
+                                },
+                                {
+                                    id: 'zoom-fit',
+                                    text: 'Zoom to Fit',
+                                    action: () => {
+                                        this.dispatchEvent(new CustomEvent('menu-action', {
+                                            bubbles: true,
+                                            composed: true,
+                                            detail: 'view-zoom-fit'
+                                        }));
+                                    }
+                                }
+                            ]
                         },
                         {
                             type: 'separator' as const

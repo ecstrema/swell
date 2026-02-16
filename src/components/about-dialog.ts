@@ -3,7 +3,7 @@ import aboutDialogCss from "./about-dialog.css?inline";
 import { formatTimeAgo, formatDateTime } from "../utils/time-utils.js";
 
 export class AboutDialog extends HTMLElement {
-    private _escapeHandler?: (e: KeyboardEvent) => void;
+    private dialog: HTMLDialogElement | null = null;
 
     constructor() {
         super();
@@ -36,7 +36,7 @@ export class AboutDialog extends HTMLElement {
         }
 
         this.shadowRoot!.innerHTML = `
-            <div class="dialog">
+            <dialog>
                 <div class="dialog-header">
                     <h1 class="dialog-title">Swell</h1>
                     <p class="dialog-version">Version ${version}</p>
@@ -63,17 +63,13 @@ export class AboutDialog extends HTMLElement {
                 <div class="dialog-footer">
                     <button class="close-btn">Close</button>
                 </div>
-            </div>
+            </dialog>
         `;
+        this.dialog = this.shadowRoot!.querySelector('dialog');
     }
 
     private setupEventListeners() {
-        // Close dialog when clicking outside
-        this.addEventListener('click', (e) => {
-            if (e.target === this) {
-                this.close();
-            }
-        });
+        if (!this.dialog) return;
 
         // Close button
         const closeBtn = this.shadowRoot!.querySelector('.close-btn');
@@ -83,32 +79,41 @@ export class AboutDialog extends HTMLElement {
             });
         }
 
-        // Close on Escape key
-        this._escapeHandler = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && this.classList.contains('open')) {
+        // Handle ESC key (built-in to <dialog>)
+        this.dialog.addEventListener('cancel', (e) => {
+            e.preventDefault();
+            this.close();
+        });
+
+        // Handle backdrop click
+        this.dialog.addEventListener('click', (e) => {
+            const rect = this.dialog!.getBoundingClientRect();
+            const isInDialog = (
+                rect.top <= e.clientY &&
+                e.clientY <= rect.top + rect.height &&
+                rect.left <= e.clientX &&
+                e.clientX <= rect.left + rect.width
+            );
+            if (!isInDialog) {
                 this.close();
             }
-        };
-        document.addEventListener('keydown', this._escapeHandler);
-    }
-
-    disconnectedCallback() {
-        // Clean up event listener
-        if (this._escapeHandler) {
-            document.removeEventListener('keydown', this._escapeHandler);
-        }
+        });
     }
 
     open() {
-        this.classList.add('open');
+        if (this.dialog) {
+            this.dialog.showModal();
+        }
     }
 
     close() {
-        this.classList.remove('open');
+        if (this.dialog) {
+            this.dialog.close();
+        }
     }
 
     toggle() {
-        if (this.classList.contains('open')) {
+        if (this.dialog && this.dialog.open) {
             this.close();
         } else {
             this.open();

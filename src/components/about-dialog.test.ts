@@ -16,30 +16,68 @@ describe('AboutDialog', () => {
     });
 
     it('should be hidden by default', () => {
-        expect(dialog.classList.contains('open')).toBe(false);
+        const shadowRoot = dialog.shadowRoot;
+        const dialogElement = shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+        expect(dialogElement).not.toBeNull();
+        expect(dialogElement.open).toBe(false);
     });
 
     it('should open when open() is called', () => {
+        const shadowRoot = dialog.shadowRoot;
+        const dialogElement = shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+        
+        // Mock showModal since jsdom doesn't support it fully
+        dialogElement.showModal = () => {
+            dialogElement.setAttribute('open', '');
+            dialogElement.open = true;
+        };
+        
         dialog.open();
-        expect(dialog.classList.contains('open')).toBe(true);
+        expect(dialogElement.open).toBe(true);
     });
 
     it('should close when close() is called', () => {
+        const shadowRoot = dialog.shadowRoot;
+        const dialogElement = shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+        
+        // Mock showModal and close
+        dialogElement.showModal = () => {
+            dialogElement.setAttribute('open', '');
+            dialogElement.open = true;
+        };
+        dialogElement.close = () => {
+            dialogElement.removeAttribute('open');
+            dialogElement.open = false;
+        };
+        
         dialog.open();
-        expect(dialog.classList.contains('open')).toBe(true);
+        expect(dialogElement.open).toBe(true);
         
         dialog.close();
-        expect(dialog.classList.contains('open')).toBe(false);
+        expect(dialogElement.open).toBe(false);
     });
 
     it('should toggle between open and closed states', () => {
-        expect(dialog.classList.contains('open')).toBe(false);
+        const shadowRoot = dialog.shadowRoot;
+        const dialogElement = shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+        
+        // Mock showModal and close
+        dialogElement.showModal = () => {
+            dialogElement.setAttribute('open', '');
+            dialogElement.open = true;
+        };
+        dialogElement.close = () => {
+            dialogElement.removeAttribute('open');
+            dialogElement.open = false;
+        };
+        
+        expect(dialogElement.open).toBe(false);
         
         dialog.toggle();
-        expect(dialog.classList.contains('open')).toBe(true);
+        expect(dialogElement.open).toBe(true);
         
         dialog.toggle();
-        expect(dialog.classList.contains('open')).toBe(false);
+        expect(dialogElement.open).toBe(false);
     });
 
     it('should contain the application name', () => {
@@ -83,14 +121,26 @@ describe('AboutDialog', () => {
     });
 
     it('should close when close button is clicked', () => {
-        dialog.open();
-        expect(dialog.classList.contains('open')).toBe(true);
-        
         const shadowRoot = dialog.shadowRoot;
+        const dialogElement = shadowRoot!.querySelector('dialog') as HTMLDialogElement;
+        
+        // Mock showModal and close
+        dialogElement.showModal = () => {
+            dialogElement.setAttribute('open', '');
+            dialogElement.open = true;
+        };
+        dialogElement.close = () => {
+            dialogElement.removeAttribute('open');
+            dialogElement.open = false;
+        };
+        
+        dialog.open();
+        expect(dialogElement.open).toBe(true);
+        
         const closeBtn = shadowRoot!.querySelector('.close-btn') as HTMLButtonElement;
         closeBtn.click();
         
-        expect(dialog.classList.contains('open')).toBe(false);
+        expect(dialogElement.open).toBe(false);
     });
 
     it('should display build time information when available', () => {

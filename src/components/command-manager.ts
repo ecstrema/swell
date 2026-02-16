@@ -1,5 +1,7 @@
 import { CommandRegistry, ShortcutManager, defaultShortcuts } from "../shortcuts/index.js";
 import { CommandPalette } from "./command-palette.js";
+import { ConfirmDialog } from "./confirm-dialog.js";
+import { AlertDialog } from "./alert-dialog.js";
 
 /**
  * Manages the command registry, shortcuts, and command palette
@@ -8,6 +10,8 @@ export class CommandManager {
     private commandRegistry: CommandRegistry;
     private shortcutManager: ShortcutManager;
     private commandPalette: CommandPalette | null = null;
+    private confirmDialog: ConfirmDialog | null = null;
+    private alertDialog: AlertDialog | null = null;
 
     constructor() {
         this.commandRegistry = new CommandRegistry();
@@ -41,6 +45,13 @@ export class CommandManager {
     initializeCommandPalette(): void {
         this.commandPalette = new CommandPalette(this.commandRegistry);
         document.body.appendChild(this.commandPalette);
+        
+        // Initialize confirm and alert dialogs
+        this.confirmDialog = new ConfirmDialog();
+        document.body.appendChild(this.confirmDialog);
+        
+        this.alertDialog = new AlertDialog();
+        document.body.appendChild(this.alertDialog);
     }
 
     /**
@@ -120,10 +131,27 @@ export class CommandManager {
         this.commandRegistry.register({
             id: 'settings-clear-local-storage',
             label: 'Clear Local Storage',
-            handler: () => {
-                if (confirm('Are you sure you want to clear all local storage? This will reset all settings, theme preferences, and file states.')) {
+            handler: async () => {
+                if (!this.confirmDialog) return;
+                
+                const confirmed = await this.confirmDialog.show({
+                    title: 'Clear Local Storage',
+                    message: 'Are you sure you want to clear all local storage? This will reset all settings, theme preferences, and file states.',
+                    confirmLabel: 'Clear',
+                    cancelLabel: 'Cancel',
+                    danger: true
+                });
+                
+                if (confirmed) {
                     localStorage.clear();
-                    alert('Local storage has been cleared. The page will now reload.');
+                    
+                    if (this.alertDialog) {
+                        await this.alertDialog.show({
+                            title: 'Success',
+                            message: 'Local storage has been cleared. The page will now reload.'
+                        });
+                    }
+                    
                     window.location.reload();
                 }
             }
@@ -151,6 +179,15 @@ export class CommandManager {
         // Clean up command palette
         if (this.commandPalette && this.commandPalette.parentNode) {
             this.commandPalette.parentNode.removeChild(this.commandPalette);
+        }
+        
+        // Clean up dialogs
+        if (this.confirmDialog && this.confirmDialog.parentNode) {
+            this.confirmDialog.parentNode.removeChild(this.confirmDialog);
+        }
+        
+        if (this.alertDialog && this.alertDialog.parentNode) {
+            this.alertDialog.parentNode.removeChild(this.alertDialog);
         }
     }
 }

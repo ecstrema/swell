@@ -4,6 +4,8 @@ import { CommandManager } from './command-manager.js';
 describe('CommandManager', () => {
     let commandManager: CommandManager;
     let reloadMock: ReturnType<typeof vi.fn>;
+    let confirmDialog: any;
+    let alertDialog: any;
 
     beforeEach(() => {
         // Mock window.location.reload
@@ -27,7 +29,19 @@ describe('CommandManager', () => {
             onToggleSignalSelection: vi.fn()
         };
         
+        commandManager.initializeCommandPalette();
         commandManager.initializeShortcuts(mockHandlers);
+        
+        // Get references to the dialogs
+        confirmDialog = document.body.querySelector('confirm-dialog');
+        alertDialog = document.body.querySelector('alert-dialog');
+    });
+
+    afterEach(() => {
+        // Clean up
+        if (commandManager) {
+            commandManager.deactivate();
+        }
     });
 
     describe('Clear Local Storage Command', () => {
@@ -39,76 +53,81 @@ describe('CommandManager', () => {
             expect(command?.label).toBe('Clear Local Storage');
         });
 
-        it('should clear localStorage when confirmed', () => {
+        it('should clear localStorage when confirmed', async () => {
             // Set up test data in localStorage
             localStorage.setItem('test-key', 'test-value');
             localStorage.setItem('app-theme', 'dark');
             expect(localStorage.length).toBeGreaterThan(0);
             
-            // Mock window.confirm to return true
-            const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+            // Mock the confirm dialog to return true
+            const showSpy = vi.spyOn(confirmDialog, 'show').mockResolvedValue(true);
             
-            // Mock window.alert
-            const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+            // Mock the alert dialog
+            const alertShowSpy = vi.spyOn(alertDialog, 'show').mockResolvedValue(undefined);
             
             // Execute the command
             const registry = commandManager.getCommandRegistry();
             const command = registry.get('settings-clear-local-storage');
-            command?.handler();
+            await command?.handler();
             
-            // Verify confirm was called with the right message
-            expect(confirmSpy).toHaveBeenCalledWith(
-                'Are you sure you want to clear all local storage? This will reset all settings, theme preferences, and file states.'
-            );
+            // Verify confirm dialog was called with the right message
+            expect(showSpy).toHaveBeenCalledWith({
+                title: 'Clear Local Storage',
+                message: 'Are you sure you want to clear all local storage? This will reset all settings, theme preferences, and file states.',
+                confirmLabel: 'Clear',
+                cancelLabel: 'Cancel',
+                danger: true
+            });
             
             // Verify localStorage was cleared
             expect(localStorage.length).toBe(0);
             
             // Verify alert was shown
-            expect(alertSpy).toHaveBeenCalledWith(
-                'Local storage has been cleared. The page will now reload.'
-            );
+            expect(alertShowSpy).toHaveBeenCalledWith({
+                title: 'Success',
+                message: 'Local storage has been cleared. The page will now reload.'
+            });
             
             // Verify page reload was triggered
             expect(reloadMock).toHaveBeenCalled();
             
             // Clean up
-            confirmSpy.mockRestore();
-            alertSpy.mockRestore();
+            showSpy.mockRestore();
+            alertShowSpy.mockRestore();
         });
 
-        it('should not clear localStorage when cancelled', () => {
+        it('should not clear localStorage when cancelled', async () => {
             // Set up test data in localStorage
             localStorage.setItem('test-key', 'test-value');
             const initialLength = localStorage.length;
             
-            // Mock window.confirm to return false
-            const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+            // Mock the confirm dialog to return false
+            const showSpy = vi.spyOn(confirmDialog, 'show').mockResolvedValue(false);
             
-            // Mock window.alert
-            const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => {});
+            // Mock the alert dialog
+            const alertShowSpy = vi.spyOn(alertDialog, 'show').mockResolvedValue(undefined);
             
             // Execute the command
             const registry = commandManager.getCommandRegistry();
             const command = registry.get('settings-clear-local-storage');
-            command?.handler();
+            await command?.handler();
             
-            // Verify confirm was called
-            expect(confirmSpy).toHaveBeenCalled();
+            // Verify confirm dialog was called
+            expect(showSpy).toHaveBeenCalled();
             
             // Verify localStorage was NOT cleared
             expect(localStorage.length).toBe(initialLength);
             expect(localStorage.getItem('test-key')).toBe('test-value');
             
             // Verify alert was NOT shown
-            expect(alertSpy).not.toHaveBeenCalled();
+            expect(alertShowSpy).not.toHaveBeenCalled();
             
             // Verify page was NOT reloaded
             expect(reloadMock).not.toHaveBeenCalled();
             
             // Clean up
-            confirmSpy.mockRestore();
-            alertSpy.mockRestore();
+            showSpy.mockRestore();
+            alertShowSpy.mockRestore();
         });
     });
 

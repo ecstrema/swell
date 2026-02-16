@@ -190,8 +190,8 @@ export class CommandPalette extends HTMLElement {
             if (this.shortcutManager) {
                 const shortcuts = this.shortcutManager.getShortcutsForCommand(command.id);
                 if (shortcuts.length > 0) {
-                    const shortcutDisplay = new ShortcutDisplay();
-                    shortcutDisplay.setShortcut(ShortcutManager.formatShortcut(shortcuts[0]));
+                    const shortcutDisplay = document.createElement('app-shortcut-display') as ShortcutDisplay;
+                    shortcutDisplay.setAttribute('shortcut', ShortcutManager.formatShortcut(shortcuts[0]));
                     item.appendChild(shortcutDisplay);
                 }
             }

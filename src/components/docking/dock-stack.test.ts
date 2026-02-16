@@ -502,4 +502,92 @@ describe('DockStack - Tab Reordering', () => {
         // Verify handleTabReorder was called
         expect(handleTabReorderSpy).toHaveBeenCalled();
     });
+
+    it('should not stop propagation when dragging from different stack', () => {
+        // Register mock content
+        dockManager.registerContent('test-content', () => {
+            const div = document.createElement('div');
+            div.textContent = 'Test Content';
+            return div;
+        });
+
+        // Create source and target stacks
+        const sourceStack = {
+            type: 'stack' as const,
+            id: 'source-stack',
+            weight: 1,
+            activeId: 'pane-1',
+            children: [
+                {
+                    id: 'pane-1',
+                    title: 'Tab 1',
+                    contentId: 'test-content',
+                    closable: true
+                }
+            ]
+        };
+
+        const targetStack = {
+            type: 'stack' as const,
+            id: 'target-stack',
+            weight: 1,
+            activeId: 'pane-2',
+            children: [
+                {
+                    id: 'pane-2',
+                    title: 'Tab 2',
+                    contentId: 'test-content',
+                    closable: true
+                }
+            ]
+        };
+
+        dockStack.node = targetStack;
+
+        // Simulate dragging from source stack (different stack)
+        dockManager.handleDragStart(sourceStack.children[0], sourceStack);
+
+        // Get tab from target stack
+        const tabs = dockStack.shadowRoot!.querySelectorAll('.tab');
+        const tab = tabs[0] as HTMLElement;
+
+        // Track stopPropagation calls
+        let stopPropagationCalled = false;
+
+        // Create drop event on tab with spy
+        const dropEvent = new MouseEvent('drop', { 
+            bubbles: true,
+            composed: true,
+            cancelable: true,
+            clientX: tab.getBoundingClientRect().left + 5,
+        });
+        
+        // Override stopPropagation to track if it's called
+        const originalStopPropagation = dropEvent.stopPropagation;
+        let stopPropagationWasCalled = false;
+        dropEvent.stopPropagation = function() {
+            stopPropagationCalled = true;
+            stopPropagationWasCalled = true;
+            originalStopPropagation.call(this);
+        };
+        
+        Object.defineProperty(dropEvent, 'dataTransfer', {
+            value: {
+                effectAllowed: '',
+                getData: vi.fn(),
+            },
+            writable: true
+        });
+        
+        // Prevent event from reaching stack handler (to avoid error in test)
+        dockStack.removeEventListener('drop', dockStack['_dropHandler']!);
+        
+        tab.dispatchEvent(dropEvent);
+        
+        // Restore handler
+        dockStack.addEventListener('drop', dockStack['_dropHandler']!);
+
+        // Verify stopPropagation was NOT called (allows event to bubble to stack handler)
+        expect(stopPropagationCalled).toBe(false);
+    });
 });

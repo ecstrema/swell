@@ -216,9 +216,11 @@ export class TreeView extends HTMLElement {
         if (value === 'right') {
             this.style.setProperty('--tree-leaf-justify', 'flex-end');
             this.style.setProperty('--tree-leaf-direction', 'row-reverse');
+            this.style.setProperty('--tree-text-align', 'right');
         } else {
             this.style.setProperty('--tree-leaf-justify', 'flex-start');
             this.style.setProperty('--tree-leaf-direction', 'row');
+            this.style.setProperty('--tree-text-align', 'left');
         }
     }
 

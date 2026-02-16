@@ -68,6 +68,8 @@ details > summary {
     align-items: center;
     gap: 6px;
     position: relative;
+    justify-content: var(--tree-leaf-justify, flex-start);
+    flex-direction: var(--tree-leaf-direction, row);
 }
 
 /* Horizontal guide line for branch/scope nodes (except root level) */
@@ -238,4 +240,5 @@ details[open] > summary > .tree-chevron {
     white-space: nowrap;
     min-width: 0;
     flex: 1;
+    text-align: var(--tree-text-align, left);
 }

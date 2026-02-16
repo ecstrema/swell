@@ -413,21 +413,27 @@ export class DockManager extends HTMLElement {
 
   private cleanupEmptyNodes(node: DockNode): boolean {
     if (node.type === "box") {
-      // Count how many non-empty stacks remain after filtering
-      const emptyStackCount = node.children.filter(
-        child => child.type === "stack" && child.children.length === 0
-      ).length;
-      const totalStackCount = node.children.filter(
-        child => child.type === "stack"
-      ).length;
+      // Count stacks in a single pass for efficiency
+      let totalStackCount = 0;
+      let emptyStackCount = 0;
+      for (const child of node.children) {
+        if (child.type === "stack") {
+          totalStackCount++;
+          if (child.children.length === 0) {
+            emptyStackCount++;
+          }
+        }
+      }
       const nonEmptyStackCount = totalStackCount - emptyStackCount;
       
       // First, recursively clean children and filter out empty stacks/boxes
       node.children = node.children.filter((child) => {
         // Don't remove the last empty stack in a box (to preserve root stack for placeholder)
         if (child.type === "stack" && child.children.length === 0) {
-          // Keep this empty stack if removing it would leave no stacks at all
-          return nonEmptyStackCount === 0 && totalStackCount === 1;
+          // Keep this empty stack if it's the only stack and there are no non-empty stacks
+          // This ensures the root dock shows the placeholder when all tabs are closed
+          const isLastEmptyStack = nonEmptyStackCount === 0 && totalStackCount === 1;
+          return isLastEmptyStack;
         }
         if (child.type === "box") return !this.cleanupEmptyNodes(child);
         return true;

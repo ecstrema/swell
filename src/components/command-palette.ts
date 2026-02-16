@@ -90,6 +90,7 @@ export class CommandPalette extends HTMLElement {
         // Reset and focus
         if (this.searchInput) {
             this.searchInput.value = '';
+            this.searchInput.placeholder = 'Type a command...';
             this.searchInput.focus();
         }
 

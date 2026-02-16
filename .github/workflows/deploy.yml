@@ -17,10 +17,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup development environment
-        uses: ./.github/actions/setup
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
         with:
-          rust-targets: wasm32-unknown-unknown
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: backend -> target
+
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
 
       - name: Build WASM
         run: bun run wasm:build

@@ -34,6 +34,11 @@
       "shortcut": "Ctrl+-",
       "commandId": "view-zoom-out",
       "description": "Zoom out"
+    },
+    {
+      "shortcut": "Ctrl+0",
+      "commandId": "view-zoom-fit",
+      "description": "Zoom to fit"
     }
   ]
 }

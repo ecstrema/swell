@@ -28,8 +28,13 @@ runs:
   steps:
     - name: Setup Rust
       uses: dtolnay/rust-toolchain@stable
+      if: ${{ inputs.rust-targets != '' }}
       with:
         targets: ${{ inputs.rust-targets }}
+
+    - name: Setup Rust (no targets)
+      uses: dtolnay/rust-toolchain@stable
+      if: ${{ inputs.rust-targets == '' }}
 
     - name: Rust cache
       if: ${{ inputs.rust-cache == 'true' }}
@@ -61,8 +66,9 @@ runs:
       uses: actions/cache@v4
       with:
         path: backend/pkg
-        key: ${{ runner.os }}-wasm-${{ hashFiles('backend/src/**', 'backend/Cargo.toml', 'backend/Cargo.lock') }}
+        key: ${{ runner.os }}-wasm-${{ inputs.wasm-pack-version }}-${{ hashFiles('backend/src/**', 'backend/Cargo.toml', 'backend/Cargo.lock') }}
         restore-keys: |
+          ${{ runner.os }}-wasm-${{ inputs.wasm-pack-version }}-
           ${{ runner.os }}-wasm-
 
     - name: Install dependencies

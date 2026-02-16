@@ -8,6 +8,12 @@
     font-size: 14px;
     color: var(--color-text);
     box-sizing: border-box;
+    
+    /* Tree guide line styling variables */
+    --tree-guide-offset: -12px;
+    --tree-guide-line-width: 8px;
+    --tree-guide-vertical-position: calc(var(--tree-guide-offset) + var(--tree-guide-line-width));
+    --tree-guide-opacity: 0.5;
 }
 
 .filter-container {
@@ -43,6 +49,36 @@
 
 details {
     padding-left: var(--tree-indent, 20px);
+    position: relative;
+}
+
+/* Vertical guide line for tree hierarchy */
+details::before {
+    content: '';
+    position: absolute;
+    left: var(--tree-guide-vertical-position);
+    top: 24px;
+    bottom: 0;
+    width: 1px;
+    background-color: var(--color-border, #cccccc);
+    opacity: var(--tree-guide-opacity);
+}
+
+/* Hide the vertical line when details is closed */
+details:not([open])::before {
+    display: none;
+}
+
+/* For the last child in a details element, adjust vertical line to stop at that child */
+details > details:last-child::after,
+details > .leaf-node:last-child::after {
+    content: '';
+    position: absolute;
+    left: var(--tree-guide-offset);
+    bottom: 0;
+    top: 50%;
+    width: 1px;
+    background-color: var(--color-bg-surface, #ffffff);
 }
 
 details > summary {
@@ -56,6 +92,24 @@ details > summary {
     display: flex;
     align-items: center;
     gap: 6px;
+    position: relative;
+}
+
+/* Horizontal guide line for branch/scope nodes (except root level) */
+details > summary::before {
+    content: '';
+    position: absolute;
+    left: var(--tree-guide-offset);
+    top: 50%;
+    width: var(--tree-guide-line-width);
+    height: 1px;
+    background-color: var(--color-border, #cccccc);
+    opacity: var(--tree-guide-opacity);
+}
+
+/* Hide horizontal line for root-level nodes */
+#tree-container > details > summary::before {
+    display: none;
 }
 
 details > summary::-webkit-details-marker {
@@ -98,6 +152,18 @@ details[open] > summary > .tree-chevron {
     overflow: hidden;
     justify-content: var(--tree-leaf-justify, flex-start);
     flex-direction: var(--tree-leaf-direction, row);
+}
+
+/* Horizontal guide line connecting leaf nodes to parent's vertical line */
+.leaf-node::before {
+    content: '';
+    position: absolute;
+    left: var(--tree-guide-offset);
+    top: 50%;
+    width: var(--tree-guide-line-width);
+    height: 1px;
+    background-color: var(--color-border, #cccccc);
+    opacity: var(--tree-guide-opacity);
 }
 
 .leaf-node:hover {

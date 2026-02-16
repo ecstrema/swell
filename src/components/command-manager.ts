@@ -69,8 +69,8 @@ export class CommandManager {
                 id: cmd.id,
                 label: cmd.label,
                 handler: () => {
-                    // CommandRegistry.execute() already emits 'command-execute' event
-                    // This stub handler allows the command to be registered and found
+                    // Stub handler: the actual work is done by event listeners in app-main.ts
+                    // This allows decoupling command registration from implementation
                 }
             });
         }

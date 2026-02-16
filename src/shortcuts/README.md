@@ -128,7 +128,7 @@ Then add the shortcut in `default-shortcuts.json`:
 
 ### Method 2: Event Listener (Decoupled)
 
-For commands that need to integrate with other systems or require complex coordination:
+For commands that need to coordinate between multiple components or where the implementation should be separate from the command definition:
 
 1. **Register a command with a stub handler**:
 ```typescript
@@ -136,8 +136,9 @@ this.commandRegistry.register({
     id: 'my-action',
     label: 'My Action',
     handler: () => {
-        // Minimal or no logic here
-        // The real work happens in event listeners
+        // Stub handler: actual work done by event listeners
+        // Use this pattern when multiple components need to react
+        // or when you want to decouple command registration from implementation
     }
 });
 ```
@@ -164,6 +165,10 @@ this.commandRegistry.addEventListener('command-execute', (event: Event) => {
   ]
 }
 ```
+
+**When to use each approach**:
+- **Use Method 1 (Traditional Handler)**: For self-contained commands with simple logic
+- **Use Method 2 (Event Listener)**: For commands that need coordination across components, have complex state dependencies, or when multiple parts of the application should react to the command
 
 **Benefits of the event-driven approach**:
 - Multiple listeners can react to the same command

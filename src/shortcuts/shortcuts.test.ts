@@ -25,16 +25,13 @@ describe('Shortcuts System', () => {
             expect(result).toBe(false);
         });
 
-        it('should emit command-execute event when command is executed', async () => {
+        it('should emit command-specific event when command is executed', async () => {
             const registry = new CommandRegistry();
             let eventFired = false;
-            let eventCommandId = '';
 
-            // Register event listener
-            registry.addEventListener('command-execute', (event: Event) => {
+            // Register event listener for specific command
+            registry.addEventListener('test-cmd', () => {
                 eventFired = true;
-                const customEvent = event as CustomEvent<{ commandId: string }>;
-                eventCommandId = customEvent.detail.commandId;
             });
 
             // Register command
@@ -49,15 +46,14 @@ describe('Shortcuts System', () => {
 
             // Verify event was emitted
             expect(eventFired).toBe(true);
-            expect(eventCommandId).toBe('test-cmd');
         });
 
         it('should emit event before executing handler', async () => {
             const registry = new CommandRegistry();
             const callOrder: string[] = [];
 
-            // Register event listener
-            registry.addEventListener('command-execute', () => {
+            // Register event listener for specific command
+            registry.addEventListener('test-cmd', () => {
                 callOrder.push('event');
             });
 

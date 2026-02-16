@@ -2,17 +2,16 @@ import { describe, it, expect, vi } from 'vitest';
 import { CommandRegistry, ShortcutManager } from './index.js';
 
 describe('Event-Driven Command System Integration', () => {
-    it('should emit events when shortcuts trigger commands', async () => {
+    it('should emit command-specific events when shortcuts trigger commands', async () => {
         const registry = new CommandRegistry();
         const manager = new ShortcutManager(registry);
         
-        let eventCommandId = '';
+        let eventFired = false;
         let handlerCalled = false;
         
-        // Set up event listener (the event-driven way)
-        registry.addEventListener('command-execute', (event: Event) => {
-            const customEvent = event as CustomEvent<{ commandId: string }>;
-            eventCommandId = customEvent.detail.commandId;
+        // Set up event listener for specific command (the event-driven way)
+        registry.addEventListener('test-action', () => {
+            eventFired = true;
         });
         
         // Register command with stub handler
@@ -34,7 +33,7 @@ describe('Event-Driven Command System Integration', () => {
         await registry.execute('test-action');
         
         // Verify both event and handler were triggered
-        expect(eventCommandId).toBe('test-action');
+        expect(eventFired).toBe(true);
         expect(handlerCalled).toBe(true);
     });
     
@@ -42,28 +41,17 @@ describe('Event-Driven Command System Integration', () => {
         const registry = new CommandRegistry();
         const callLog: string[] = [];
         
-        // First listener
-        registry.addEventListener('command-execute', (event: Event) => {
-            const customEvent = event as CustomEvent<{ commandId: string }>;
-            if (customEvent.detail.commandId === 'multi-listener-cmd') {
-                callLog.push('listener-1');
-            }
+        // Multiple listeners for the same command event
+        registry.addEventListener('multi-listener-cmd', () => {
+            callLog.push('listener-1');
         });
         
-        // Second listener
-        registry.addEventListener('command-execute', (event: Event) => {
-            const customEvent = event as CustomEvent<{ commandId: string }>;
-            if (customEvent.detail.commandId === 'multi-listener-cmd') {
-                callLog.push('listener-2');
-            }
+        registry.addEventListener('multi-listener-cmd', () => {
+            callLog.push('listener-2');
         });
         
-        // Third listener
-        registry.addEventListener('command-execute', (event: Event) => {
-            const customEvent = event as CustomEvent<{ commandId: string }>;
-            if (customEvent.detail.commandId === 'multi-listener-cmd') {
-                callLog.push('listener-3');
-            }
+        registry.addEventListener('multi-listener-cmd', () => {
+            callLog.push('listener-3');
         });
         
         // Register command
@@ -88,13 +76,9 @@ describe('Event-Driven Command System Integration', () => {
         let editActionExecuted = false;
         
         // Event listener that respects application state
-        registry.addEventListener('command-execute', (event: Event) => {
-            const customEvent = event as CustomEvent<{ commandId: string }>;
-            
-            if (customEvent.detail.commandId === 'edit-action') {
-                if (state.editMode) {
-                    editActionExecuted = true;
-                }
+        registry.addEventListener('edit-action', () => {
+            if (state.editMode) {
+                editActionExecuted = true;
             }
         });
         
@@ -129,14 +113,6 @@ describe('Event-Driven Command System Integration', () => {
             { shortcut: 'Ctrl+S', commandId: 'file-save' },
             { shortcut: 'Ctrl+Z', commandId: 'edit-undo' }
         ];
-        
-        const eventLog: string[] = [];
-        
-        // Set up event listener
-        registry.addEventListener('command-execute', (event: Event) => {
-            const customEvent = event as CustomEvent<{ commandId: string }>;
-            eventLog.push(customEvent.detail.commandId);
-        });
         
         // Register commands
         for (const binding of jsonShortcuts) {

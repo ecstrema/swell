@@ -3,7 +3,7 @@ import { Command } from "./types.js";
 /**
  * Central registry for all application commands.
  * Commands can be triggered by shortcuts, menu items, or programmatically.
- * Emits 'command-execute' events when commands are triggered.
+ * Emits command-specific events (e.g., 'file-open', 'edit-undo') when commands are triggered.
  */
 export class CommandRegistry extends EventTarget {
     private commands: Map<string, Command> = new Map();
@@ -24,7 +24,7 @@ export class CommandRegistry extends EventTarget {
 
     /**
      * Execute a command by ID
-     * Emits a 'command-execute' event before executing the command
+     * Emits a command-specific event (e.g., 'file-open', 'edit-undo') before executing the command
      */
     async execute(commandId: string): Promise<boolean> {
         const command = this.commands.get(commandId);
@@ -34,9 +34,9 @@ export class CommandRegistry extends EventTarget {
             return false;
         }
 
-        // Emit event before executing command
-        this.dispatchEvent(new CustomEvent('command-execute', {
-            detail: { commandId },
+        // Emit command-specific event before executing command
+        // Event type is the command ID itself (e.g., 'file-open')
+        this.dispatchEvent(new CustomEvent(commandId, {
             bubbles: true,
             composed: true
         }));

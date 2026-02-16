@@ -291,43 +291,42 @@ export class AppMain extends HTMLElement {
     /**
      * Set up event listeners for command execution events.
      * This is the event-driven approach: when commands are triggered,
-     * they emit events that we listen to and handle.
+     * they emit specific events that we listen to and handle.
      */
     private setupCommandListeners() {
         const commandRegistry = this.commandManager.getCommandRegistry();
 
-        // Listen for all command execution events
-        commandRegistry.addEventListener('command-execute', (event: Event) => {
-            const customEvent = event as CustomEvent<{ commandId: string }>;
-            const { commandId } = customEvent.detail;
+        // Listen for specific command events
+        commandRegistry.addEventListener('file-open', () => {
+            this.handleFileOpen();
+        });
 
-            // Handle each command based on its ID
-            switch (commandId) {
-                case 'file-open':
-                    this.handleFileOpen();
-                    break;
-                case 'file-quit':
-                    this.handleFileQuit();
-                    break;
-                case 'edit-undo':
-                    this.undoManager.undo();
-                    break;
-                case 'edit-redo':
-                    this.undoManager.redo();
-                    break;
-                case 'view-zoom-in':
-                    this.dispatchZoomCommand('zoom-in');
-                    break;
-                case 'view-zoom-out':
-                    this.dispatchZoomCommand('zoom-out');
-                    break;
-                case 'view-zoom-fit':
-                    this.dispatchZoomCommand('zoom-fit');
-                    break;
-                case 'view-toggle-signal-selection':
-                    this.toggleSignalSelection();
-                    break;
-            }
+        commandRegistry.addEventListener('file-quit', () => {
+            this.handleFileQuit();
+        });
+
+        commandRegistry.addEventListener('edit-undo', () => {
+            this.undoManager.undo();
+        });
+
+        commandRegistry.addEventListener('edit-redo', () => {
+            this.undoManager.redo();
+        });
+
+        commandRegistry.addEventListener('view-zoom-in', () => {
+            this.dispatchZoomCommand('zoom-in');
+        });
+
+        commandRegistry.addEventListener('view-zoom-out', () => {
+            this.dispatchZoomCommand('zoom-out');
+        });
+
+        commandRegistry.addEventListener('view-zoom-fit', () => {
+            this.dispatchZoomCommand('zoom-fit');
+        });
+
+        commandRegistry.addEventListener('view-toggle-signal-selection', () => {
+            this.toggleSignalSelection();
         });
     }
 

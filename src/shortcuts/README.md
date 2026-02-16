@@ -12,7 +12,7 @@ A central registry for all application commands. Commands can be triggered by:
 - Menu items
 - Direct programmatic calls
 
-**Event-Driven Architecture**: When commands are executed, the CommandRegistry emits `command-execute` events that can be listened to by any component. This allows for loose coupling between the command system and command handlers.
+**Event-Driven Architecture**: When commands are executed, the CommandRegistry emits command-specific events (using the command ID as the event type) that can be listened to by any component. This allows for loose coupling between the command system and command handlers, with no need to filter events.
 
 ```typescript
 import { CommandRegistry } from './shortcuts/index.js';
@@ -26,13 +26,12 @@ registry.register({
   handler: () => console.log('Opening file...')
 });
 
-// Listen to command execution events
-registry.addEventListener('command-execute', (event: Event) => {
-  const customEvent = event as CustomEvent<{ commandId: string }>;
-  console.log(`Command executed: ${customEvent.detail.commandId}`);
+// Listen to specific command events
+registry.addEventListener('file-open', () => {
+  console.log('File open command triggered');
 });
 
-// Execute a command (this will emit an event and call the handler)
+// Execute a command (this will emit a 'file-open' event and call the handler)
 await registry.execute('file-open');
 ```
 
@@ -143,13 +142,10 @@ this.commandRegistry.register({
 });
 ```
 
-2. **Listen to the command execution event**:
+2. **Listen to the specific command event**:
 ```typescript
-this.commandRegistry.addEventListener('command-execute', (event: Event) => {
-    const customEvent = event as CustomEvent<{ commandId: string }>;
-    if (customEvent.detail.commandId === 'my-action') {
-        this.myActionHandler();
-    }
+this.commandRegistry.addEventListener('my-action', () => {
+    this.myActionHandler();
 });
 ```
 

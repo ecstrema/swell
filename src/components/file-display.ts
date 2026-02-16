@@ -332,10 +332,19 @@ export class FileDisplay extends HTMLElement {
     // Update the internal signals array to match the new order
     this.selectedSignals = reorderedSignals;
     
-    // Re-render the waveforms in the new order
-    this.render();
+    // Reorder DOM elements without recreating them
+    // This avoids clearing innerHTML and preserves the existing elements
+    if (this.signalsContainer) {
+      this.selectedSignals.forEach(signal => {
+        const element = signal.isTimeline ? signal.timeline : signal.canvas;
+        if (element && element.parentElement === this.signalsContainer) {
+          // Remove and re-append to move to the end, building the correct order
+          this.signalsContainer!.appendChild(element);
+        }
+      });
+    }
     
-    // Repaint all signal canvases to ensure they display correctly in their new positions
+    // Repaint signal canvases with their new indices for correct alternating backgrounds
     this.selectedSignals.forEach((signal, index) => {
       if (signal.canvas) {
         this.paintSignal(signal.canvas, signal.ref, index);

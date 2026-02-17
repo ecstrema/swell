@@ -1,11 +1,11 @@
 // Settings page component
 
-import { settingsRegister, SettingMetadata, SettingValue } from '../../extensions/settings-extension/settings-extension.js';
-import { getSetting, setSetting } from '../../extensions/settings-extension/settings-extension.js';
+import { settingsRegister, SettingMetadata, SettingValue } from './settings-extension.js';
+import { getSetting, setSetting } from './settings-extension.js';
 import { css } from '../../utils/css-utils.js';
 import { scrollbarSheet } from '../../styles/shared-sheets.js';
 import settingsCss from './settings-page.css?inline';
-import { TreeView, TreeNode } from '../trees/tree-view.js';
+import { TreeView, TreeNode } from '../../components/trees/tree-view.js';
 
 export class SettingsPage extends HTMLElement {
     private static readonly HIGHLIGHT_DURATION_MS = 1000;

@@ -13,7 +13,8 @@ export class ShortcutManager {
 
     constructor(commandRegistry: CommandRegistry) {
         this.commandRegistry = commandRegistry;
-        this.initializeShoSho(document);
+        // Don't initialize ShoSho yet - wait until activate() is called
+        // This prevents issues in test environments where document might not be available
     }
 
     private initializeShoSho(target: EventTarget) {
@@ -93,12 +94,12 @@ export class ShortcutManager {
     /**
      * Start listening for keyboard events
      */
-    activate(target: EventTarget = document): void {
-        // If target differs, we might need to re-init
-        // We access internal options if available, otherwise just rely on re-init behavior if we could detect valid target change
-        // For simplicity: if target is passed and it is not document (default), we re-init.
-        if (target !== document) { // simplified check
-             this.initializeShoSho(target);
+    activate(target: EventTarget = typeof document !== 'undefined' ? document : null as any): void {
+        // Initialize ShoSho on first activation or when target changes
+        if (!this.shosho) {
+            this.initializeShoSho(target);
+        } else if (target !== document) { // simplified check for target change
+            this.initializeShoSho(target);
         }
 
         this.shosho.start();
@@ -107,7 +108,7 @@ export class ShortcutManager {
     /**
      * Stop listening for keyboard events
      */
-    deactivate(target: EventTarget = document): void {
+    deactivate(target: EventTarget = typeof document !== 'undefined' ? document : null as any): void {
         if (this.shosho) {
             this.shosho.stop();
         }

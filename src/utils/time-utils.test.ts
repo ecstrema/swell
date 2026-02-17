@@ -5,8 +5,7 @@ describe('time-utils', () => {
     describe('formatTimeAgo', () => {
         beforeEach(() => {
             // Mock Date.now() to return a fixed timestamp
-            vi.useFakeTimers();
-            vi.setSystemTime(new Date('2024-01-15T12:00:00Z'));
+            vi.useFakeTimers({ now: new Date('2024-01-15T12:00:00Z') });
         });
 
         afterEach(() => {

@@ -1,5 +1,5 @@
 import { css } from "../../utils/css-utils.js";
-import { UndoTree, UndoTreeNode } from "../../extensions/undo-extension/undo-tree.js";
+import { UndoTree, UndoTreeNode } from "./undo-tree.js";
 import undoTreePanelCss from "./undo-tree-panel.css?inline";
 
 /**

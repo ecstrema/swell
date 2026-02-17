@@ -274,11 +274,25 @@ export class AppMain extends HTMLElement {
      * Initialize extensions
      */
     private async initializeExtensions() {
-        // Initialize extensions in the command manager first
-        await this.commandManager.initializeExtensions();
-
-        // Get the undo manager from the undo extension
         const extensionRegistry = this.commandManager.getExtensionRegistry();
+        
+        // Provide app APIs to extensions BEFORE registering them
+        this.commandManager.setAppAPIs({
+            getUndoManager: () => this.undoManager,
+            getFileManager: () => this.fileManager,
+            getPaneManager: () => this.paneManager,
+            getDockManager: () => this.dockManager,
+        });
+        
+        // Import and register all default extensions
+        const { getAllExtensions } = await import('../../extensions/all-extensions.js');
+        const extensions = getAllExtensions();
+        
+        for (const extension of extensions) {
+            await extensionRegistry.register(extension);
+        }
+        
+        // Get the undo manager from the undo extension
         const undoAPI = await extensionRegistry.getExtension<any>('core/undo');
         if (undoAPI && undoAPI.getUndoManager) {
             this.undoManager = undoAPI.getUndoManager();
@@ -286,7 +300,7 @@ export class AppMain extends HTMLElement {
             console.warn('Undo manager not available from undo extension');
         }
 
-        // Provide app APIs to extensions (including undoManager from extension)
+        // Update app APIs now that undoManager is available
         this.commandManager.setAppAPIs({
             getUndoManager: () => this.undoManager,
             getFileManager: () => this.fileManager,

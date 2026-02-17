@@ -1,10 +1,6 @@
 import { CommandRegistry, ShortcutManager, defaultShortcuts } from "../../shortcuts/index.js";
 import { CommandPalette } from "./command-palette.js";
 import { ExtensionRegistry } from "../../extensions/index.js";
-import { ShortcutEditorExtension } from "../../extensions/shortcut-editor-extension/index.js";
-import { SettingsExtension } from "../../extensions/settings-extension/index.js";
-import { AboutExtension } from "../../extensions/about-extension/index.js";
-import { UndoExtension } from "../../extensions/undo-extension/index.js";
 import type { AppAPIs } from "../../extensions/types.js";
 
 /**
@@ -55,17 +51,6 @@ export class CommandManager {
      */
     setAppAPIs(apis: AppAPIs): void {
         this.extensionRegistry.setAppAPIs(apis);
-    }
-
-    /**
-     * Initialize extensions
-     */
-    async initializeExtensions(): Promise<void> {
-        // Register core extensions
-        await this.extensionRegistry.register(new ShortcutEditorExtension());
-        await this.extensionRegistry.register(new SettingsExtension());
-        await this.extensionRegistry.register(new AboutExtension());
-        await this.extensionRegistry.register(new UndoExtension());
     }
 
     /**

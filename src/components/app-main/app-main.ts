@@ -476,6 +476,11 @@ export class AppMain extends HTMLElement {
             async (id: string) => {
                 const fileDisplay = this.fileManager.getFileResources(id)?.element;
                 if (fileDisplay) {
+                    // Set up undo operation executor for the file display
+                    fileDisplay.setUndoableOperationExecutor((operation) => {
+                        this.executeOperation(operation);
+                    });
+
                     // Register the file display as content in the dock manager
                     this.dockManager.registerContent(`file-${id}`, () => fileDisplay);
 

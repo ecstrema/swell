@@ -293,7 +293,8 @@ export class WaveformFileExtension implements Extension {
      * Handle startup files from command-line arguments
      */
     async handleStartupFiles(): Promise<void> {
-        if (!this.fileManager) {
+        const fileManager = this.getFileManager();
+        if (!fileManager) {
             console.warn('File manager not available');
             return;
         }
@@ -304,7 +305,7 @@ export class WaveformFileExtension implements Extension {
                 console.log(`Opening ${startupFiles.length} file(s) from command-line arguments:`, startupFiles);
 
                 for (const filePath of startupFiles) {
-                    const fileId = await this.fileManager.openFilePath(filePath);
+                    const fileId = await fileManager.openFilePath(filePath);
                     if (fileId) {
                         console.log(`Successfully opened: ${filePath}`);
                     } else {

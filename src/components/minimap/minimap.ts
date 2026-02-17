@@ -23,6 +23,7 @@ export class Minimap extends HTMLElement {
   private _dragStartX: number = 0;
   private _dragStartVisibleStart: number = 0;
   private _dragStartVisibleEnd: number = 0;
+  private _didDrag: boolean = false;
 
   constructor() {
     super();
@@ -151,7 +152,8 @@ export class Minimap extends HTMLElement {
 
   private handleCanvasClick(e: MouseEvent) {
     // Don't trigger click if we just finished dragging
-    if (this._isDragging) {
+    if (this._didDrag) {
+      this._didDrag = false;
       return;
     }
     
@@ -198,6 +200,7 @@ export class Minimap extends HTMLElement {
     // Check if the mouse is within the visible range indicator
     if (x >= visibleStartX && x <= visibleEndX) {
       this._isDragging = true;
+      this._didDrag = false; // Reset the drag flag
       this._dragStartX = e.clientX;
       this._dragStartVisibleStart = this._visibleStart;
       this._dragStartVisibleEnd = this._visibleEnd;
@@ -209,6 +212,8 @@ export class Minimap extends HTMLElement {
 
   private handleMouseMove(e: MouseEvent) {
     if (!this._isDragging || !this.canvas) return;
+    
+    this._didDrag = true; // Mark that dragging occurred
     
     const rect = this.canvas.getBoundingClientRect();
     const deltaX = e.clientX - this._dragStartX;
@@ -239,7 +244,8 @@ export class Minimap extends HTMLElement {
   private handleMouseUp(e: MouseEvent) {
     if (this._isDragging) {
       this._isDragging = false;
-      e.preventDefault();
+      // Don't prevent default on mouseup as it doesn't typically have default behavior
+      // that needs preventing and could interfere with other components
     }
   }
 

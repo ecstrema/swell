@@ -179,8 +179,7 @@ describe('Minimap Component', () => {
     const mouseupEvent = new MouseEvent('mouseup', { bubbles: true });
     window.dispatchEvent(mouseupEvent);
 
-    // Now try to click - but we need to reset the drag state first
-    // by simulating a click event after the drag is complete
+    // Verify that the range changed from the drag operation
     const initialRange = minimap.visibleRange;
 
     // Click at position 200 (which should center the view there if not dragging)

@@ -48,8 +48,9 @@ export class FilesTree extends TreeView {
     private updateConfig() {
         this.config = {
             onLeafClick: (node: TreeNode) => {
+                const path = this.getNodePath(node);
                 this.dispatchEvent(new CustomEvent('signal-select', {
-                    detail: { name: node.name, ref: node.id, filename: this._filename },
+                    detail: { name: node.name, ref: node.id, filename: this._filename, path },
                     bubbles: true,
                     composed: true
                 }));
@@ -60,15 +61,16 @@ export class FilesTree extends TreeView {
                     const allDescendantSignals = this.getAllDescendantSignals(node);
                     allDescendantSignals.forEach(signal => {
                         this.dispatchEvent(new CustomEvent('checkbox-toggle', {
-                            detail: { name: signal.name, ref: signal.ref, filename: this._filename, checked },
+                            detail: { name: signal.name, ref: signal.ref, filename: this._filename, path: signal.path, checked },
                             bubbles: true,
                             composed: true
                         }));
                     });
                 } else {
                     // For leaf nodes, just toggle the single signal
+                    const path = this.getNodePath(node);
                     this.dispatchEvent(new CustomEvent('checkbox-toggle', {
-                        detail: { name: node.name, ref: node.id, filename: this._filename, checked },
+                        detail: { name: node.name, ref: node.id, filename: this._filename, path, checked },
                         bubbles: true,
                         composed: true
                     }));
@@ -246,12 +248,12 @@ export class FilesTree extends TreeView {
     /**
      * Get all descendant signals (leaf nodes) recursively from a node
      */
-    private getAllDescendantSignals(node: TreeNode): Array<{ref: number, name: string}> {
-        const signals: Array<{ref: number, name: string}> = [];
+    private getAllDescendantSignals(node: TreeNode): Array<{ref: number, name: string, path: string}> {
+        const signals: Array<{ref: number, name: string, path: string}> = [];
         
         if (!node.children || node.children.length === 0) {
             // This is a leaf node (signal)
-            signals.push({ref: node.id as number, name: node.name});
+            signals.push({ref: node.id as number, name: node.name, path: this.getNodePath(node)});
         } else {
             // This is a branch node, recursively collect from children
             node.children.forEach(child => {
@@ -261,6 +263,43 @@ export class FilesTree extends TreeView {
         
         return signals;
     }
+    
+    /**
+     * Get the full hierarchical path for a node
+     * @param node - The node to get the path for
+     * @returns The full path with dots as separators (e.g., "top.module.signal")
+     */
+    private getNodePath(node: TreeNode): string {
+        const path = this.findNodePath(this._data, node.id);
+        return path !== null ? path.join('.') : node.name;
+    }
+    
+    /**
+     * Recursively find the path to a node by its ID
+     * @param nodes - The nodes to search
+     * @param targetId - The target node ID
+     * @param currentPath - The current path being built
+     * @returns Array of node names forming the path, or null if not found
+     */
+    private findNodePath(nodes: TreeNode[], targetId: string | number, currentPath: string[] = []): string[] | null {
+        for (const node of nodes) {
+            const newPath = [...currentPath, node.name];
+            
+            if (node.id === targetId) {
+                return newPath;
+            }
+            
+            if (node.children && node.children.length > 0) {
+                const result = this.findNodePath(node.children, targetId, newPath);
+                if (result !== null) {
+                    return result;
+                }
+            }
+        }
+        
+        return null;
+    }
+
     
     /**
      * Get all descendant signal refs (leaf nodes) recursively from a node

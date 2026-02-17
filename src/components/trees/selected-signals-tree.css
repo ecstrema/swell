@@ -15,3 +15,13 @@
 .signal-node:hover {
     background-color: var(--color-bg-hover);
 }
+
+/* Styling for signal path display */
+.signal-path-dimmed {
+    opacity: 0.5;
+    font-weight: 400;
+}
+
+.signal-name {
+    font-weight: 500;
+}

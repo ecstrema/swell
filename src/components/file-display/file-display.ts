@@ -18,6 +18,8 @@ import '../primitives/split-button.js';
 interface SelectedSignal {
   name: string;
   ref: number;
+  path?: string; // Full hierarchical path (e.g., "top.module.signal")
+  showFullPath?: boolean; // Whether to display the full path or just the name
   canvas?: HTMLCanvasElement;
   timeline?: Timeline;
   minimap?: Minimap;
@@ -52,6 +54,7 @@ export class FileDisplay extends HTMLElement {
   private boundHandleAddMinimap: () => void;
   private boundHandleSignalsReordered: (event: Event) => void;
   private boundHandleThemeChanged: (event: Event) => void;
+  private boundHandleSignalPathToggled: (event: Event) => void;
   private visibleStart: number = 0;
   private visibleEnd: number = 1000000;
   private timeRangeInitialized: boolean = false;
@@ -75,6 +78,7 @@ export class FileDisplay extends HTMLElement {
     this.boundHandleAddMinimap = this.handleAddMinimap.bind(this);
     this.boundHandleSignalsReordered = this.handleSignalsReordered.bind(this);
     this.boundHandleThemeChanged = this.handleThemeChanged.bind(this);
+    this.boundHandleSignalPathToggled = this.handleSignalPathToggled.bind(this);
 
     this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(fileDisplayCss)];
     
@@ -135,7 +139,9 @@ export class FileDisplay extends HTMLElement {
         return {
           _type: 'signal' as const,
           ref: signal.ref,
-          name: signal.name
+          name: signal.name,
+          path: signal.path,
+          showFullPath: signal.showFullPath
         };
       }
     });
@@ -175,14 +181,16 @@ export class FileDisplay extends HTMLElement {
         throw new Error('Could not load hierarchy to apply state');
       }
       
-      // Helper to find signals by ref in the hierarchy
-      const findSignalByRef = (node: HierarchyNode, targetRef: number): { name: string; ref: number } | null => {
+      // Helper to find signals by ref in the hierarchy and compute their path
+      const findSignalByRef = (node: HierarchyNode, targetRef: number, currentPath: string[] = []): { name: string; ref: number; path: string } | null => {
+        const newPath = [...currentPath, node.name];
+        
         if (node.var_ref === targetRef) {
-          return { name: node.name, ref: targetRef };
+          return { name: node.name, ref: targetRef, path: newPath.join('.') };
         }
         if (node.children) {
           for (const child of node.children) {
-            const found = findSignalByRef(child, targetRef);
+            const found = findSignalByRef(child, targetRef, newPath);
             if (found) return found;
           }
         }
@@ -204,7 +212,16 @@ export class FileDisplay extends HTMLElement {
           // Verify signal still exists in hierarchy
           const found = findSignalByRef(hierarchy, item.ref);
           if (found) {
-            this.addSignal(item.name, item.ref);
+            // Add the signal with computed path
+            this.addSignal(item.name, item.ref, found.path);
+            
+            // Restore showFullPath preference if it was saved
+            if (item.showFullPath !== undefined) {
+              const signal = this.selectedSignals.find(s => s.ref === item.ref);
+              if (signal) {
+                signal.showFullPath = item.showFullPath;
+              }
+            }
           } else {
             console.warn(`Signal ${item.name} (ref: ${item.ref}) not found in hierarchy`);
           }
@@ -257,6 +274,9 @@ export class FileDisplay extends HTMLElement {
     // Listen for signals reordered event from the tree
     this.selectedSignalsTree.addEventListener('signals-reordered', this.boundHandleSignalsReordered);
     
+    // Listen for signal path toggled event from the tree
+    this.selectedSignalsTree.addEventListener('signal-path-toggled', this.boundHandleSignalPathToggled);
+    
     // Listen for theme changes
     window.addEventListener('theme-changed', this.boundHandleThemeChanged);
     
@@ -280,6 +300,7 @@ export class FileDisplay extends HTMLElement {
     this.minimap.removeEventListener('range-changed', this.boundHandleMinimapRangeChanged);
     this.removeEventListener('zoom-command', this.boundHandleZoomCommand);
     this.selectedSignalsTree.removeEventListener('signals-reordered', this.boundHandleSignalsReordered);
+    this.selectedSignalsTree.removeEventListener('signal-path-toggled', this.boundHandleSignalPathToggled);
     window.removeEventListener('theme-changed', this.boundHandleThemeChanged);
     
     // Clean up ResizeObserver
@@ -478,22 +499,39 @@ export class FileDisplay extends HTMLElement {
       }
     });
   }
+  
+  private handleSignalPathToggled(event: Event) {
+    const customEvent = event as CustomEvent;
+    const { ref, showFullPath } = customEvent.detail;
+    
+    // Find and update the signal
+    const signal = this.selectedSignals.find(s => s.ref === ref);
+    if (signal) {
+      signal.showFullPath = showFullPath;
+      
+      // Update the tree display
+      this.updateSelectedSignalsTree();
+      
+      // Save state to persist the preference
+      this.debouncedSaveState();
+    }
+  }
 
   private handleSignalSelect(event: Event) {
     const customEvent = event as CustomEvent;
-    const { name, ref, filename } = customEvent.detail;
+    const { name, ref, filename, path } = customEvent.detail;
 
     // Only handle events for this file - signals are independent per file
     if (filename !== this._filename) {
       return;
     }
 
-    this.addSignal(name, ref);
+    this.addSignal(name, ref, path);
   }
 
   private handleCheckboxToggle(event: Event) {
     const customEvent = event as CustomEvent;
-    const { name, ref, filename, checked } = customEvent.detail;
+    const { name, ref, filename, path, checked } = customEvent.detail;
 
     // Only handle events for this file - signals are independent per file
     if (filename !== this._filename) {
@@ -501,7 +539,7 @@ export class FileDisplay extends HTMLElement {
     }
 
     if (checked) {
-      this.addSignalUndoable(name, ref);
+      this.addSignalUndoable(name, ref, path);
     } else {
       this.removeSignalUndoable(ref);
     }
@@ -571,7 +609,7 @@ export class FileDisplay extends HTMLElement {
     }
   }
 
-  private addSignal(name: string, ref: number) {
+  private addSignal(name: string, ref: number, path?: string) {
     // Check if signal is already selected
     if (this.selectedSignals.some(s => s.ref === ref)) {
       return;
@@ -583,7 +621,14 @@ export class FileDisplay extends HTMLElement {
     canvas.width = 800;
     canvas.height = 32;
 
-    this.selectedSignals.push({ name, ref, canvas, isTimeline: false });
+    this.selectedSignals.push({ 
+      name, 
+      ref, 
+      path, 
+      showFullPath: false, // Default to showing just the name
+      canvas, 
+      isTimeline: false 
+    });
     
     // Update the selected signals tree
     this.updateSelectedSignalsTree();
@@ -650,7 +695,9 @@ export class FileDisplay extends HTMLElement {
   private updateSelectedSignalsTree() {
     this.selectedSignalsTree.signals = this.selectedSignals.map(s => ({
       name: s.name,
-      ref: s.ref
+      ref: s.ref,
+      path: s.path,
+      showFullPath: s.showFullPath
     }));
     
     // Dispatch event to notify that selected signals have changed

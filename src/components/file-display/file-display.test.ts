@@ -383,8 +383,8 @@ describe('FileDisplay Component', () => {
     const signalLabels = shadowRoot?.querySelector('.signal-labels');
     expect(signalLabels).toBeTruthy();
     
-    // Count label elements (should have timeline + 3 signals + overview = 5 labels)
+    // Count label elements: 1 timeline + 3 signals + 1 overview = 5 labels total
     const labels = signalLabels?.querySelectorAll('.signal-label');
-    expect(labels?.length).toBeGreaterThanOrEqual(3); // At least the 3 signals
+    expect(labels?.length).toBe(5);
   });
 });

@@ -1113,6 +1113,7 @@ export class FileDisplay extends HTMLElement {
         const label = document.createElement('div');
         label.className = 'signal-label';
         label.textContent = signal.name;
+        // Store ref for potential future features (e.g., click to highlight, context menu)
         label.dataset.ref = signal.ref.toString();
         labelsContainer.appendChild(label);
         

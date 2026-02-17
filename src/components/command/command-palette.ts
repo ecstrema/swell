@@ -86,14 +86,34 @@ export class CommandPalette extends HTMLElement {
             const target = e.target as HTMLElement;
             const resultItem = target.closest('.result-item') as HTMLElement;
             
-            if (resultItem && resultItem.hasAttribute('data-index')) {
-                const index = parseInt(resultItem.getAttribute('data-index')!, 10);
-                this.selectedIndex = index;
-                
+            if (resultItem) {
                 if (this.isSelectionMode) {
-                    this.selectOption();
+                    const optionId = resultItem.getAttribute('data-option-id');
+                    if (optionId) {
+                        const option = this.filteredOptions.find(opt => opt.id === optionId);
+                        if (option && this.selectionResolve) {
+                            const value = option.value;
+                            const resolve = this.selectionResolve;
+                            
+                            // Reset state before resolving
+                            this.isSelectionMode = false;
+                            this.selectionOptions = [];
+                            this.filteredOptions = [];
+                            this.selectionResolve = null;
+                            this.selectionReject = null;
+                            
+                            // Close and resolve
+                            this.isOpen = false;
+                            this.classList.remove('open');
+                            resolve(value);
+                        }
+                    }
                 } else {
-                    this.executeSelected();
+                    const commandId = resultItem.getAttribute('data-command-id');
+                    if (commandId) {
+                        this.commandRegistry.execute(commandId);
+                        this.close();
+                    }
                 }
             }
         });
@@ -103,17 +123,20 @@ export class CommandPalette extends HTMLElement {
             const target = e.target as HTMLElement;
             const resultItem = target.closest('.result-item') as HTMLElement;
             
-            if (resultItem && resultItem.hasAttribute('data-index')) {
-                const index = parseInt(resultItem.getAttribute('data-index')!, 10);
-                
-                // Only update if the index has changed to avoid unnecessary re-renders
-                if (this.selectedIndex !== index) {
-                    this.selectedIndex = index;
+            if (resultItem) {
+                const indexAttr = resultItem.getAttribute('data-index');
+                if (indexAttr) {
+                    const index = parseInt(indexAttr, 10);
                     
-                    if (this.isSelectionMode) {
-                        this.renderSelection();
-                    } else {
-                        this.render();
+                    // Only update if the index has changed to avoid unnecessary re-renders
+                    if (this.selectedIndex !== index) {
+                        this.selectedIndex = index;
+                        
+                        if (this.isSelectionMode) {
+                            this.renderSelection();
+                        } else {
+                            this.render();
+                        }
                     }
                 }
             }
@@ -299,6 +322,7 @@ export class CommandPalette extends HTMLElement {
             const item = document.createElement('div');
             item.className = 'result-item';
             item.setAttribute('data-index', index.toString());
+            item.setAttribute('data-command-id', command.id);
             if (index === this.selectedIndex) {
                 item.classList.add('selected');
             }
@@ -363,6 +387,7 @@ export class CommandPalette extends HTMLElement {
             const item = document.createElement('div');
             item.className = 'result-item';
             item.setAttribute('data-index', index.toString());
+            item.setAttribute('data-option-id', option.id);
             if (index === this.selectedIndex) {
                 item.classList.add('selected');
             }

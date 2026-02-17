@@ -25,7 +25,9 @@ export interface ExtensionMetadata {
     /** Brief description of what the extension provides */
     description?: string;
     /** Version string */
-    version?: string;
+    version: string;
+    /** List of extension IDs that this extension depends on */
+    dependencies?: ExtensionId[];
 }
 
 /**
@@ -124,6 +126,12 @@ export interface ExtensionContext {
     getMetadata(): ExtensionMetadata;
 
     /**
+     * Get an extension by ID, registering it if not already registered
+     * Returns the API provided by the extension's activate method
+     */
+    getExtension<T = any>(extensionId: ExtensionId): Promise<T | undefined>;
+
+    /**
      * Access to app-wide APIs (optional services provided by the host app)
      */
     app: AppAPIs;
@@ -141,8 +149,9 @@ export interface Extension {
     /**
      * Called when the extension is activated
      * Extensions should register their commands, menus, pages, settings, and themes here
+     * Can return an API object that other extensions can access via context.getExtension()
      */
-    activate(context: ExtensionContext): void | Promise<void>;
+    activate(context: ExtensionContext): void | Promise<void> | any | Promise<any>;
 
     /**
      * Called when the extension is deactivated (optional)

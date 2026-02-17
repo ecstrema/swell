@@ -28,6 +28,8 @@ import { MenuItemConfig, SubmenuConfig } from "../menu-api/menu-api.js";
  */
 export class ExtensionRegistry {
     private extensions: Map<ExtensionId, Extension> = new Map();
+    private extensionAPIs: Map<ExtensionId, any> = new Map();
+    private extensionFactories: Map<ExtensionId, () => Extension> = new Map();
     private pages: Map<string, PageRegistration> = new Map();
     private themes: Map<string, ThemeRegistration> = new Map();
     private menuItems: (MenuItemConfig | SubmenuConfig)[] = [];
@@ -68,8 +70,48 @@ export class ExtensionRegistry {
         // Create context for this extension
         const context = this.createContext(extension);
 
-        // Activate the extension
-        await extension.activate(context);
+        // Activate the extension and store any returned API
+        const api = await extension.activate(context);
+        if (api !== undefined) {
+            this.extensionAPIs.set(extension.metadata.id, api);
+        }
+    }
+
+    /**
+     * Register an extension factory for lazy loading
+     */
+    registerFactory(extensionId: ExtensionId, factory: () => Extension): void {
+        if (this.extensions.has(extensionId)) {
+            console.warn(`Extension ${extensionId} is already registered`);
+            return;
+        }
+        this.extensionFactories.set(extensionId, factory);
+    }
+
+    /**
+     * Get an extension by ID, registering it if not already registered
+     */
+    async getExtension<T = any>(extensionId: ExtensionId): Promise<T | undefined> {
+        // If already registered, return its API
+        if (this.extensionAPIs.has(extensionId)) {
+            return this.extensionAPIs.get(extensionId) as T;
+        }
+
+        // If extension is registered but hasn't provided an API, return undefined
+        if (this.extensions.has(extensionId)) {
+            return undefined;
+        }
+
+        // If we have a factory, create and register the extension
+        const factory = this.extensionFactories.get(extensionId);
+        if (factory) {
+            const extension = factory();
+            await this.register(extension);
+            return this.extensionAPIs.get(extensionId) as T;
+        }
+
+        console.warn(`Extension ${extensionId} not found`);
+        return undefined;
     }
 
     /**
@@ -229,6 +271,10 @@ export class ExtensionRegistry {
             },
 
             getMetadata: () => extension.metadata,
+
+            getExtension: <T = any>(extensionId: ExtensionId): Promise<T | undefined> => {
+                return this.getExtension<T>(extensionId);
+            },
             
             app: this.appAPIs,
         };

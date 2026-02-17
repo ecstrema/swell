@@ -2,14 +2,26 @@
  * Undo Extension
  * 
  * Provides undo/redo functionality and undo tree visualization.
+ * Contains the undo manager and exports an API for other extensions to use.
  */
 
 import { Extension, ExtensionContext } from "../types.js";
 import { UndoTreePanel } from "../../components/panels/undo-tree-panel.js";
+import { UndoManager } from "../../undo/undo-manager.js";
 
 // Ensure the custom element is registered
 if (!customElements.get('undo-tree-panel')) {
     customElements.define('undo-tree-panel', UndoTreePanel);
+}
+
+/**
+ * API provided by the undo extension
+ */
+export interface UndoAPI {
+    /**
+     * Get the undo manager instance
+     */
+    getUndoManager(): UndoManager;
 }
 
 export class UndoExtension implements Extension {
@@ -20,14 +32,22 @@ export class UndoExtension implements Extension {
         version: '1.0.0',
     };
 
-    async activate(context: ExtensionContext): Promise<void> {
-        const undoManager = context.app.getUndoManager?.();
+    private undoManager: UndoManager;
+
+    constructor() {
+        this.undoManager = new UndoManager();
+    }
+
+    async activate(context: ExtensionContext): Promise<UndoAPI> {
         const paneManager = context.app.getPaneManager?.();
         const dockManager = context.app.getDockManager?.();
 
-        if (!undoManager || !paneManager || !dockManager) {
+        if (!paneManager || !dockManager) {
             console.warn('Undo extension: Required managers not available');
-            return;
+            // Still return API even if UI can't be registered
+            return {
+                getUndoManager: () => this.undoManager,
+            };
         }
 
         // Register the undo tree panel page
@@ -38,7 +58,7 @@ export class UndoExtension implements Extension {
             factory: () => {
                 const undoTreePanel = new UndoTreePanel();
                 undoTreePanel.id = 'undo-tree-panel';
-                undoTreePanel.setUndoTree(undoManager.getUndoTree());
+                undoTreePanel.setUndoTree(this.undoManager.getUndoTree());
                 return undoTreePanel;
             },
         });
@@ -47,7 +67,7 @@ export class UndoExtension implements Extension {
         dockManager.registerContent('undo-tree', () => {
             const undoTreePanel = new UndoTreePanel();
             undoTreePanel.id = 'undo-tree-panel';
-            undoTreePanel.setUndoTree(undoManager.getUndoTree());
+            undoTreePanel.setUndoTree(this.undoManager.getUndoTree());
             return undoTreePanel;
         });
 
@@ -57,7 +77,7 @@ export class UndoExtension implements Extension {
             label: 'Undo',
             description: 'Undo the last action',
             handler: () => {
-                undoManager.undo();
+                this.undoManager.undo();
             },
         });
 
@@ -67,7 +87,7 @@ export class UndoExtension implements Extension {
             label: 'Redo',
             description: 'Redo the last undone action',
             handler: () => {
-                undoManager.redo();
+                this.undoManager.redo();
             },
         });
 
@@ -136,5 +156,10 @@ export class UndoExtension implements Extension {
                 },
             ],
         });
+
+        // Return the API for other extensions to use
+        return {
+            getUndoManager: () => this.undoManager,
+        };
     }
 }

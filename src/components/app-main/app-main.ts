@@ -31,7 +31,7 @@ export class AppMain extends HTMLElement {
     private commandManager: CommandManager;
     private dockLayoutHelper: DockLayoutHelper;
     private paneManager: PaneManager;
-    private undoManager: UndoManager;
+    private undoManager: UndoManager | null = null;
 
     // Docking system
     private dockManager: DockManager;
@@ -45,7 +45,7 @@ export class AppMain extends HTMLElement {
         // Initialize managers
         this.fileManager = new FileManager();
         this.commandManager = new CommandManager();
-        this.undoManager = new UndoManager();
+        // Note: undoManager will be obtained from the undo extension during initialization
 
         this.attachShadow({ mode: 'open' });
         this.shadowRoot!.adoptedStyleSheets = [css(appMainCss)];
@@ -175,7 +175,9 @@ export class AppMain extends HTMLElement {
         // Listen for undo tree node selection
         this.addEventListener('node-select', (e: Event) => {
             const customEvent = e as CustomEvent<{ nodeId: string }>;
-            this.undoManager.navigateTo(customEvent.detail.nodeId);
+            if (this.undoManager) {
+                this.undoManager.navigateTo(customEvent.detail.nodeId);
+            }
         });
 
         // Listen for setting changes to update theme
@@ -273,7 +275,19 @@ export class AppMain extends HTMLElement {
      * Initialize extensions
      */
     private async initializeExtensions() {
-        // Provide app APIs to extensions
+        // Initialize extensions in the command manager first
+        await this.commandManager.initializeExtensions();
+
+        // Get the undo manager from the undo extension
+        const extensionRegistry = this.commandManager.getExtensionRegistry();
+        const undoAPI = await extensionRegistry.getExtension<any>('core/undo');
+        if (undoAPI && undoAPI.getUndoManager) {
+            this.undoManager = undoAPI.getUndoManager();
+        } else {
+            console.warn('Undo manager not available from undo extension');
+        }
+
+        // Provide app APIs to extensions (including undoManager from extension)
         this.commandManager.setAppAPIs({
             getUndoManager: () => this.undoManager,
             getFileManager: () => this.fileManager,
@@ -281,11 +295,7 @@ export class AppMain extends HTMLElement {
             getDockManager: () => this.dockManager,
         });
 
-        // Initialize extensions in the command manager
-        await this.commandManager.initializeExtensions();
-
         // Register pages from extensions with the dock manager
-        const extensionRegistry = this.commandManager.getExtensionRegistry();
         const pages = extensionRegistry.getPages();
         
         for (const page of pages) {
@@ -350,9 +360,11 @@ export class AppMain extends HTMLElement {
         });
 
         // Set up undo manager change listener to update the panel
-        this.undoManager.setOnChange(() => {
-            this.undoTreePanel.refresh();
-        });
+        if (this.undoManager) {
+            this.undoManager.setOnChange(() => {
+                this.undoTreePanel.refresh();
+            });
+        }
 
         // Register "Open Example..." command that uses selection mode
         this.registerOpenExampleCommand();
@@ -642,7 +654,9 @@ export class AppMain extends HTMLElement {
      * This is the public API for other parts of the app to record operations
      */
     executeOperation(operation: UndoableOperation) {
-        this.undoManager.execute(operation);
+        if (this.undoManager) {
+            this.undoManager.execute(operation);
+        }
     }
 
     /**

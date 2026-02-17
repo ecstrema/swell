@@ -16,6 +16,12 @@ export class Timeline extends HTMLElement {
   private boundHandleWheel: (e: WheelEvent) => void;
   private boundHandleThemeChanged: (event: Event) => void;
   private resizeObserver: ResizeObserver | null = null;
+  private dragStartX: number | null = null;
+  private dragCurrentX: number | null = null;
+  private isDragging: boolean = false;
+  private boundHandleMouseDown: (e: MouseEvent) => void;
+  private boundHandleMouseMove: (e: MouseEvent) => void;
+  private boundHandleMouseUp: (e: MouseEvent) => void;
 
   constructor() {
     super();
@@ -24,6 +30,9 @@ export class Timeline extends HTMLElement {
     this.boundHandleResize = this.handleResize.bind(this);
     this.boundHandleWheel = this.handleWheel.bind(this);
     this.boundHandleThemeChanged = this.handleThemeChanged.bind(this);
+    this.boundHandleMouseDown = this.handleMouseDown.bind(this);
+    this.boundHandleMouseMove = this.handleMouseMove.bind(this);
+    this.boundHandleMouseUp = this.handleMouseUp.bind(this);
   }
 
   connectedCallback() {
@@ -39,6 +48,15 @@ export class Timeline extends HTMLElement {
     
     // Remove theme change listener
     window.removeEventListener('theme-changed', this.boundHandleThemeChanged);
+    
+    // Reset drag state if component is disconnected while dragging
+    if (this.isDragging) {
+      window.removeEventListener('mousemove', this.boundHandleMouseMove);
+      window.removeEventListener('mouseup', this.boundHandleMouseUp);
+      this.isDragging = false;
+      this.dragStartX = null;
+      this.dragCurrentX = null;
+    }
     
     // Clean up ResizeObserver
     if (this.resizeObserver) {
@@ -209,6 +227,7 @@ export class Timeline extends HTMLElement {
     // Canvas wheel zoom
     if (this.canvas) {
       this.canvas.addEventListener('wheel', this.boundHandleWheel);
+      this.canvas.addEventListener('mousedown', this.boundHandleMouseDown);
     }
     
     // Window resize
@@ -228,6 +247,7 @@ export class Timeline extends HTMLElement {
     // Remove canvas listeners
     if (this.canvas) {
       this.canvas.removeEventListener('wheel', this.boundHandleWheel);
+      this.canvas.removeEventListener('mousedown', this.boundHandleMouseDown);
     }
     
     // Remove window listeners
@@ -264,6 +284,66 @@ export class Timeline extends HTMLElement {
 
   private handleThemeChanged(event: Event) {
     // Repaint the canvas when theme changes
+    this.updateCanvas();
+  }
+
+  private handleMouseDown(e: MouseEvent) {
+    if (!this.canvas) return;
+    
+    const rect = this.canvas.getBoundingClientRect();
+    this.dragStartX = e.clientX - rect.left;
+    this.dragCurrentX = this.dragStartX;
+    this.isDragging = true;
+    
+    // Add window-level listeners for drag
+    window.addEventListener('mousemove', this.boundHandleMouseMove);
+    window.addEventListener('mouseup', this.boundHandleMouseUp);
+    
+    this.updateCanvas();
+  }
+
+  private handleMouseMove(e: MouseEvent) {
+    if (!this.isDragging || !this.canvas) return;
+    
+    const rect = this.canvas.getBoundingClientRect();
+    this.dragCurrentX = e.clientX - rect.left;
+    
+    // Clamp to canvas bounds
+    this.dragCurrentX = Math.max(0, Math.min(this.dragCurrentX, rect.width));
+    
+    this.updateCanvas();
+  }
+
+  private handleMouseUp(e: MouseEvent) {
+    if (!this.isDragging || !this.canvas || this.dragStartX === null) return;
+    
+    const rect = this.canvas.getBoundingClientRect();
+    const dragEndX = e.clientX - rect.left;
+    
+    // Remove window-level listeners
+    window.removeEventListener('mousemove', this.boundHandleMouseMove);
+    window.removeEventListener('mouseup', this.boundHandleMouseUp);
+    
+    // Calculate time range from drag
+    const width = rect.width;
+    const timeRange = this._endTime - this._startTime;
+    
+    const startX = Math.min(this.dragStartX, dragEndX);
+    const endX = Math.max(this.dragStartX, dragEndX);
+    
+    // Only zoom if drag is significant (more than 5 pixels)
+    if (Math.abs(endX - startX) > 5) {
+      const startTime = this._startTime + (startX / width) * timeRange;
+      const endTime = this._startTime + (endX / width) * timeRange;
+      
+      this.setVisibleRange(startTime, endTime);
+    }
+    
+    // Reset drag state
+    this.isDragging = false;
+    this.dragStartX = null;
+    this.dragCurrentX = null;
+    
     this.updateCanvas();
   }
 
@@ -325,6 +405,22 @@ export class Timeline extends HTMLElement {
       // Draw label
       const label = this.formatTime(time);
       ctx.fillText(label, x, height - 15);
+    }
+    
+    // Draw selection overlay if dragging
+    if (this.isDragging && this.dragStartX !== null && this.dragCurrentX !== null) {
+      const startX = Math.min(this.dragStartX, this.dragCurrentX);
+      const endX = Math.max(this.dragStartX, this.dragCurrentX);
+      const selectionWidth = endX - startX;
+      
+      // Draw semi-transparent selection rectangle
+      ctx.fillStyle = 'rgba(100, 150, 255, 0.2)';
+      ctx.fillRect(startX, 0, selectionWidth, height);
+      
+      // Draw selection borders
+      ctx.strokeStyle = 'rgba(100, 150, 255, 0.8)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(startX, 0, selectionWidth, height);
     }
   }
 

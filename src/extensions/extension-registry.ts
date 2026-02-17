@@ -15,6 +15,7 @@ import {
     SettingChangedCallback,
     ThemeChangedCallback,
     PageDisplayedCallback,
+    AppAPIs,
 } from "./types.js";
 import { Command, ShortcutBinding } from "../shortcuts/types.js";
 import { CommandRegistry } from "../shortcuts/command-registry.js";
@@ -33,6 +34,7 @@ export class ExtensionRegistry {
     
     private commandRegistry: CommandRegistry;
     private shortcutManager: ShortcutManager;
+    private appAPIs: AppAPIs = {};
 
     // Callbacks
     private commandExecutedCallbacks: CommandExecutedCallback[] = [];
@@ -43,6 +45,13 @@ export class ExtensionRegistry {
     constructor(commandRegistry: CommandRegistry, shortcutManager: ShortcutManager) {
         this.commandRegistry = commandRegistry;
         this.shortcutManager = shortcutManager;
+    }
+
+    /**
+     * Set app-wide APIs that extensions can access
+     */
+    setAppAPIs(apis: AppAPIs): void {
+        this.appAPIs = apis;
     }
 
     /**
@@ -220,6 +229,8 @@ export class ExtensionRegistry {
             },
 
             getMetadata: () => extension.metadata,
+            
+            app: this.appAPIs,
         };
     }
 }

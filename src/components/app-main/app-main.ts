@@ -2,13 +2,7 @@ import { restoreSession, getStartupFiles } from "../../backend/index.js";
 import "../menu/menu-bar.ts";
 import { MenuBar } from "../menu/menu-bar.js";
 import "../trees/files-tree.ts";
-import "../settings-page/settings-page.ts";
-import "../about/about-pane.ts";
-import "../panels/undo-tree-panel.ts";
 import { FilesTree } from "../trees/files-tree.js";
-import { SettingsPage } from "../settings-page/settings-page.js";
-import { AboutPane } from "../about/about-pane.js";
-import { UndoTreePanel } from "../panels/undo-tree-panel.js";
 import { themeManager } from "../../theme/index.js";
 import { DockManager } from "../docking/dock-manager.js";
 import { DockStack } from "../docking/types.js";
@@ -42,9 +36,6 @@ export class AppMain extends HTMLElement {
     private dockManager: DockManager;
     private hierarchyTree: FilesTree;
     private fileViewContainer: HTMLElement;
-    private settingsPage!: SettingsPage;
-    private aboutPane!: AboutPane;
-    private undoTreePanel!: UndoTreePanel;
     private menuBar: MenuBar | null = null;
 
     constructor() {
@@ -78,13 +69,6 @@ export class AppMain extends HTMLElement {
         this.hierarchyTree = new FilesTree();
         this.hierarchyTree.id = 'hierarchy-tree';
 
-        this.settingsPage = new SettingsPage();
-        this.settingsPage.id = 'settings-panel';
-
-        this.undoTreePanel = new UndoTreePanel();
-        this.undoTreePanel.id = 'undo-tree-panel';
-        this.undoTreePanel.setUndoTree(this.undoManager.getUndoTree());
-
         this.fileViewContainer = document.createElement('div');
         this.fileViewContainer.className = 'dockable-content';
         this.fileViewContainer.innerHTML = `
@@ -103,9 +87,6 @@ export class AppMain extends HTMLElement {
         // Register components for the docking system
         this.dockManager.registerContent('signal-selection', () => this.hierarchyTree);
         this.dockManager.registerContent('file-view', () => this.fileViewContainer);
-        this.dockManager.registerContent('settings', () => this.settingsPage);
-        this.dockManager.registerContent('about', () => this.aboutPane);
-        this.dockManager.registerContent('undo-tree', () => this.undoTreePanel);
 
         // Set initial layout (sidebar will be added when files are opened)
         this.dockManager.layout = {
@@ -150,9 +131,6 @@ export class AppMain extends HTMLElement {
         // Initialize command palette
         this.commandManager.initializeCommandPalette();
 
-        // Initialize about pane
-        this.initializeAboutPane();
-
         // Add demo undo tree command
         this.initializeDemoUndoTree();
 
@@ -170,19 +148,19 @@ export class AppMain extends HTMLElement {
             filePickerBtn.addEventListener('click', () => this.handleFileOpen());
         }
 
-        // Listen for settings open request - activate the settings tab
+        // Listen for settings open request - execute the settings command
         this.addEventListener('settings-open-request', () => {
-            this.activateSettingsPane();
+            this.commandManager.getCommandRegistry().execute('core/view/show-settings');
         });
 
-        // Listen for about open request
+        // Listen for about open request - execute the about command
         this.addEventListener('about-open-request', () => {
-            this.activateAboutPane();
+            this.commandManager.getCommandRegistry().execute('core/view/show-about');
         });
 
-        // Listen for undo tree panel open request
+        // Listen for undo tree panel open request - execute the undo tree command
         this.addEventListener('undo-tree-open-request', () => {
-            this.activateUndoTreePane();
+            this.commandManager.getCommandRegistry().execute('core/view/show-undo-tree');
         });
 
         // Listen for undo tree node selection
@@ -272,6 +250,14 @@ export class AppMain extends HTMLElement {
      * Initialize extensions
      */
     private async initializeExtensions() {
+        // Provide app APIs to extensions
+        this.commandManager.setAppAPIs({
+            getUndoManager: () => this.undoManager,
+            getFileManager: () => this.fileManager,
+            getPaneManager: () => this.paneManager,
+            getDockManager: () => this.dockManager,
+        });
+
         // Initialize extensions in the command manager
         await this.commandManager.initializeExtensions();
 
@@ -310,12 +296,6 @@ export class AppMain extends HTMLElement {
                     await getCurrentWindow().close();
                 }
             },
-            onEditUndo: () => {
-                this.undoManager.undo();
-            },
-            onEditRedo: () => {
-                this.undoManager.redo();
-            },
             onZoomIn: () => {
                 // Dispatch zoom-in event for the active file display
                 this.dispatchZoomCommand('zoom-in');
@@ -331,22 +311,6 @@ export class AppMain extends HTMLElement {
             onToggleSignalSelection: () => {
                 this.toggleSignalSelection();
             },
-            onToggleUndoHistory: () => {
-                this.toggleUndoHistory();
-            },
-            onShowSettings: () => {
-                this.activateSettingsPane();
-            },
-            onShowAbout: () => {
-                this.activateAboutPane();
-            },
-            onShowUndoTree: () => {
-                // Populate with demo data if empty
-                if (this.undoManager.getUndoTree().size() === 0) {
-                    this.populateDemoUndoTree();
-                }
-                this.activateUndoTreePane();
-            }
         });
 
         // Register save/load state commands
@@ -427,13 +391,6 @@ export class AppMain extends HTMLElement {
                 }
             }
         });
-    }
-
-    /**
-     * Initialize the about pane
-     */
-    private initializeAboutPane() {
-        this.aboutPane = new AboutPane();
     }
 
     /**
@@ -621,18 +578,6 @@ export class AppMain extends HTMLElement {
     async closeFile(id: string) {
         await this.fileManager.closeFile(id);
         await this.refreshFiles();
-    }
-
-    activateSettingsPane() {
-        this.paneManager.activatePane('settings-pane', 'Settings', 'settings', true);
-    }
-
-    activateAboutPane() {
-        this.paneManager.activatePane('about-pane', 'About', 'about', true);
-    }
-
-    activateUndoTreePane() {
-        this.paneManager.activatePane('undo-tree-pane', 'Undo History', 'undo-tree', true);
     }
 
     activateCommandsViewPane() {

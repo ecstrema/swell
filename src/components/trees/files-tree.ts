@@ -271,7 +271,7 @@ export class FilesTree extends TreeView {
      */
     private getNodePath(node: TreeNode): string {
         const path = this.findNodePath(this._data, node.id);
-        return path.join('.');
+        return path !== null ? path.join('.') : node.name;
     }
     
     /**
@@ -279,9 +279,9 @@ export class FilesTree extends TreeView {
      * @param nodes - The nodes to search
      * @param targetId - The target node ID
      * @param currentPath - The current path being built
-     * @returns Array of node names forming the path, or empty array if not found
+     * @returns Array of node names forming the path, or null if not found
      */
-    private findNodePath(nodes: TreeNode[], targetId: string | number, currentPath: string[] = []): string[] {
+    private findNodePath(nodes: TreeNode[], targetId: string | number, currentPath: string[] = []): string[] | null {
         for (const node of nodes) {
             const newPath = [...currentPath, node.name];
             
@@ -291,13 +291,13 @@ export class FilesTree extends TreeView {
             
             if (node.children && node.children.length > 0) {
                 const result = this.findNodePath(node.children, targetId, newPath);
-                if (result.length > 0) {
+                if (result !== null) {
                     return result;
                 }
             }
         }
         
-        return [];
+        return null;
     }
 
     

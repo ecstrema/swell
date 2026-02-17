@@ -27,11 +27,15 @@ export class SelectedSignalsTree extends TreeView {
         if (this.shadowRoot) {
             const existingSheets = Array.from(this.shadowRoot.adoptedStyleSheets);
             this.shadowRoot.adoptedStyleSheets = [...existingSheets, css(selectedSignalsTreeCss)];
+            
+            // Create context menu and append to shadow root
+            this.contextMenu = document.createElement('context-menu') as ContextMenu;
+            this.shadowRoot.appendChild(this.contextMenu);
+        } else {
+            // Fallback if shadow root not available (shouldn't happen)
+            this.contextMenu = document.createElement('context-menu') as ContextMenu;
+            document.body.appendChild(this.contextMenu);
         }
-        
-        // Create context menu
-        this.contextMenu = document.createElement('context-menu') as ContextMenu;
-        document.body.appendChild(this.contextMenu);
         
         // Configure the tree view for selected signals display with drag-and-drop
         this.config = {
@@ -62,8 +66,8 @@ export class SelectedSignalsTree extends TreeView {
     disconnectedCallback() {
         super.disconnectedCallback();
         
-        // Clean up context menu
-        if (this.contextMenu && this.contextMenu.parentNode) {
+        // Clean up context menu only if it was appended to document.body (fallback case)
+        if (this.contextMenu && this.contextMenu.parentNode === document.body) {
             this.contextMenu.parentNode.removeChild(this.contextMenu);
         }
     }
@@ -199,10 +203,6 @@ export class SelectedSignalsTree extends TreeView {
         }
         
         this._signals.forEach(signal => {
-            if (!signal.showFullPath || !signal.path) {
-                return;
-            }
-            
             // Find the leaf node for this signal
             const leafNode = container.querySelector(`.leaf-node[data-id="${signal.ref}"]`);
             if (!leafNode) {
@@ -210,19 +210,29 @@ export class SelectedSignalsTree extends TreeView {
             }
             
             // Find the text span - it should be the first direct child span
-            const spans = leafNode.querySelectorAll(':scope > span');
-            const textSpan = spans[0] as HTMLElement;
+            // Add data-signal-text attribute for easier identification
+            let textSpan = leafNode.querySelector('[data-signal-text]') as HTMLElement;
+            
+            // If not found with data attribute, find the first direct span and mark it
+            if (!textSpan) {
+                const spans = leafNode.querySelectorAll(':scope > span');
+                textSpan = spans[0] as HTMLElement;
+                if (textSpan) {
+                    textSpan.setAttribute('data-signal-text', 'true');
+                }
+            }
+            
             if (!textSpan) {
                 return;
             }
             
-            // Split path into prefix and name
-            const pathParts = signal.path.split('.');
-            if (pathParts.length > 1) {
-                const pathPrefix = pathParts.slice(0, -1).join('.');
-                
-                // Only update if not already updated (check for dimmed span)
-                if (!textSpan.querySelector('.signal-path-dimmed')) {
+            // Handle display based on showFullPath flag
+            if (signal.showFullPath && signal.path) {
+                // Show full path with dimmed styling
+                const pathParts = signal.path.split('.');
+                if (pathParts.length > 1) {
+                    const pathPrefix = pathParts.slice(0, -1).join('.');
+                    
                     // Replace text content with structured HTML
                     textSpan.innerHTML = '';
                     
@@ -236,7 +246,13 @@ export class SelectedSignalsTree extends TreeView {
                     
                     textSpan.appendChild(dimmedSpan);
                     textSpan.appendChild(nameSpan);
+                } else {
+                    // Path has only one part, just show the name
+                    textSpan.textContent = signal.name;
                 }
+            } else {
+                // Show name only
+                textSpan.textContent = signal.name;
             }
         });
     }

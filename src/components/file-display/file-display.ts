@@ -12,6 +12,7 @@ import '../trees/selected-signals-tree.js';
 import '../timeline/timeline.js';
 import '../minimap/minimap.js';
 import '../panels/resizable-panel.js';
+import '../primitives/split-button.js';
 
 interface SelectedSignal {
   name: string;
@@ -946,23 +947,13 @@ export class FileDisplay extends HTMLElement {
     if (treeContainer) {
       treeContainer.appendChild(this.selectedSignalsTree);
       
-      // Add split button container at the bottom of the tree
-      const buttonContainer = document.createElement('div');
-      buttonContainer.className = 'add-buttons-container';
-      
-      const addTimelineBtn = document.createElement('button');
-      addTimelineBtn.className = 'add-timeline-btn';
-      addTimelineBtn.textContent = '+ Add Timeline';
-      addTimelineBtn.addEventListener('click', this.boundHandleAddTimeline);
-      
-      const addMinimapBtn = document.createElement('button');
-      addMinimapBtn.className = 'add-minimap-btn';
-      addMinimapBtn.textContent = '+ Add Minimap';
-      addMinimapBtn.addEventListener('click', this.boundHandleAddMinimap);
-      
-      buttonContainer.appendChild(addTimelineBtn);
-      buttonContainer.appendChild(addMinimapBtn);
-      treeContainer.appendChild(buttonContainer);
+      // Add split button at the bottom of the tree
+      const splitButton = document.createElement('app-split-button');
+      splitButton.setAttribute('left-label', '+ Add Timeline');
+      splitButton.setAttribute('right-label', '+ Add Minimap');
+      splitButton.addEventListener('left-click', this.boundHandleAddTimeline);
+      splitButton.addEventListener('right-click', this.boundHandleAddMinimap);
+      treeContainer.appendChild(splitButton);
     }
 
     // Append signals (including inline timelines and minimaps) to the waveforms container

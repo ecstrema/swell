@@ -79,6 +79,9 @@ describe('AppMain - Sidebar Visibility', () => {
 
 describe('AppMain - Empty State File Picker', () => {
     let appMain: AppMain;
+    
+    // Time to wait for connectedCallback to complete and attach event listeners
+    const CONNECTED_CALLBACK_DELAY = 50;
 
     beforeEach(() => {
         appMain = new AppMain();
@@ -98,6 +101,11 @@ describe('AppMain - Empty State File Picker', () => {
             const dockManager = appMain.shadowRoot!.querySelector('dock-manager');
             return dockManager && (dockManager as any).layout;
         });
+
+        // connectedCallback is async and takes time to complete. We need to ensure
+        // event listeners are attached before clicking. A small delay ensures
+        // connectedCallback has finished executing.
+        await new Promise(resolve => setTimeout(resolve, CONNECTED_CALLBACK_DELAY));
 
         // The fileViewContainer is registered with dock-manager but not in shadow root
         // We need to query it from the component's property

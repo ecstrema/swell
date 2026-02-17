@@ -13,7 +13,8 @@ export class ShortcutManager {
 
     constructor(commandRegistry: CommandRegistry) {
         this.commandRegistry = commandRegistry;
-        this.initializeShoSho(document);
+        // Don't initialize ShoSho yet - wait until activate() is called
+        // This prevents issues in test environments where document might not be available
     }
 
     private initializeShoSho(target: EventTarget) {
@@ -92,13 +93,21 @@ export class ShortcutManager {
 
     /**
      * Start listening for keyboard events
+     * @param target - The event target to listen on (defaults to document if available)
      */
-    activate(target: EventTarget = document): void {
-        // If target differs, we might need to re-init
-        // We access internal options if available, otherwise just rely on re-init behavior if we could detect valid target change
-        // For simplicity: if target is passed and it is not document (default), we re-init.
-        if (target !== document) { // simplified check
-             this.initializeShoSho(target);
+    activate(target?: EventTarget): void {
+        // Determine the actual target to use
+        const eventTarget = target ?? (typeof document !== 'undefined' ? document : null);
+        
+        if (!eventTarget) {
+            throw new Error('ShortcutManager.activate() requires a target when document is not available');
+        }
+        
+        // Initialize ShoSho on first activation or when target changes
+        if (!this.shosho) {
+            this.initializeShoSho(eventTarget);
+        } else if (target && target !== document) { // target explicitly provided and differs from document
+            this.initializeShoSho(eventTarget);
         }
 
         this.shosho.start();
@@ -106,8 +115,9 @@ export class ShortcutManager {
 
     /**
      * Stop listening for keyboard events
+     * @param target - The event target (parameter kept for API compatibility but not used)
      */
-    deactivate(target: EventTarget = document): void {
+    deactivate(_target?: EventTarget): void {
         if (this.shosho) {
             this.shosho.stop();
         }

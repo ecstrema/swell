@@ -22,8 +22,8 @@ describe('Default Shortcuts', () => {
         // Check for some expected shortcuts
         const commandIds = defaultShortcuts.map(s => s.commandId);
         
-        expect(commandIds).toContain('file-open');
-        expect(commandIds).toContain('file-quit');
+        expect(commandIds).toContain('core/file/open');
+        expect(commandIds).toContain('core/file/quit');
     });
 
     it('should not contain duplicate command IDs', () => {

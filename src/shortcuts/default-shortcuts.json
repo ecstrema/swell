@@ -2,42 +2,42 @@
   "shortcuts": [
     {
       "shortcut": "Ctrl+O",
-      "commandId": "file-open",
+      "commandId": "core/file/open",
       "description": "Open file dialog"
     },
     {
       "shortcut": "Ctrl+W",
-      "commandId": "file-close",
+      "commandId": "core/file/close",
       "description": "Close current file"
     },
     {
       "shortcut": "Ctrl+Q",
-      "commandId": "file-quit",
+      "commandId": "core/file/quit",
       "description": "Quit application"
     },
     {
       "shortcut": "Ctrl+Z",
-      "commandId": "edit-undo",
+      "commandId": "core/edit/undo",
       "description": "Undo last action"
     },
     {
       "shortcut": "Ctrl+Shift+Z",
-      "commandId": "edit-redo",
+      "commandId": "core/edit/redo",
       "description": "Redo last action"
     },
     {
       "shortcut": "Ctrl+=",
-      "commandId": "view-zoom-in",
+      "commandId": "core/view/zoom-in",
       "description": "Zoom in"
     },
     {
       "shortcut": "Ctrl+-",
-      "commandId": "view-zoom-out",
+      "commandId": "core/view/zoom-out",
       "description": "Zoom out"
     },
     {
       "shortcut": "Ctrl+0",
-      "commandId": "view-zoom-fit",
+      "commandId": "core/view/zoom-fit",
       "description": "Zoom to fit"
     }
   ]

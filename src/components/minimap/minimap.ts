@@ -15,7 +15,15 @@ export class Minimap extends HTMLElement {
   private boundHandleResize: () => void;
   private boundHandleCanvasClick: (e: MouseEvent) => void;
   private boundHandleThemeChanged: (event: Event) => void;
+  private boundHandleMouseDown: (e: MouseEvent) => void;
+  private boundHandleMouseMove: (e: MouseEvent) => void;
+  private boundHandleMouseUp: (e: MouseEvent) => void;
   private resizeObserver: ResizeObserver | null = null;
+  private _isDragging: boolean = false;
+  private _dragStartX: number = 0;
+  private _dragStartVisibleStart: number = 0;
+  private _dragStartVisibleEnd: number = 0;
+  private _didDrag: boolean = false;
 
   constructor() {
     super();
@@ -24,6 +32,9 @@ export class Minimap extends HTMLElement {
     this.boundHandleResize = this.handleResize.bind(this);
     this.boundHandleCanvasClick = this.handleCanvasClick.bind(this);
     this.boundHandleThemeChanged = this.handleThemeChanged.bind(this);
+    this.boundHandleMouseDown = this.handleMouseDown.bind(this);
+    this.boundHandleMouseMove = this.handleMouseMove.bind(this);
+    this.boundHandleMouseUp = this.handleMouseUp.bind(this);
   }
 
   connectedCallback() {
@@ -104,7 +115,12 @@ export class Minimap extends HTMLElement {
     // Canvas click to jump to position
     if (this.canvas) {
       this.canvas.addEventListener('click', this.boundHandleCanvasClick);
+      this.canvas.addEventListener('mousedown', this.boundHandleMouseDown);
     }
+    
+    // Window-level mouse events for drag support
+    window.addEventListener('mousemove', this.boundHandleMouseMove);
+    window.addEventListener('mouseup', this.boundHandleMouseUp);
     
     // Window resize
     window.addEventListener('resize', this.boundHandleResize);
@@ -122,9 +138,12 @@ export class Minimap extends HTMLElement {
     // Remove canvas listeners
     if (this.canvas) {
       this.canvas.removeEventListener('click', this.boundHandleCanvasClick);
+      this.canvas.removeEventListener('mousedown', this.boundHandleMouseDown);
     }
     
     // Remove window listeners
+    window.removeEventListener('mousemove', this.boundHandleMouseMove);
+    window.removeEventListener('mouseup', this.boundHandleMouseUp);
     window.removeEventListener('resize', this.boundHandleResize);
   }
 
@@ -132,6 +151,12 @@ export class Minimap extends HTMLElement {
   // The minimap should not have a separate scrollbar, only the canvas
 
   private handleCanvasClick(e: MouseEvent) {
+    // Don't trigger click if we just finished dragging
+    if (this._didDrag) {
+      this._didDrag = false;
+      return;
+    }
+    
     if (!this.canvas) return;
     
     const rect = this.canvas.getBoundingClientRect();
@@ -158,6 +183,70 @@ export class Minimap extends HTMLElement {
     }
     
     this.setVisibleRange(newStart, newEnd);
+  }
+
+  private handleMouseDown(e: MouseEvent) {
+    if (!this.canvas) return;
+    
+    const rect = this.canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = x / rect.width;
+    
+    // Calculate where the visible range is
+    const totalRange = this._endTime - this._startTime;
+    const visibleStartX = ((this._visibleStart - this._startTime) / totalRange) * rect.width;
+    const visibleEndX = ((this._visibleEnd - this._startTime) / totalRange) * rect.width;
+    
+    // Check if the mouse is within the visible range indicator
+    if (x >= visibleStartX && x <= visibleEndX) {
+      this._isDragging = true;
+      this._didDrag = false; // Reset the drag flag
+      this._dragStartX = e.clientX;
+      this._dragStartVisibleStart = this._visibleStart;
+      this._dragStartVisibleEnd = this._visibleEnd;
+      
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }
+
+  private handleMouseMove(e: MouseEvent) {
+    if (!this._isDragging || !this.canvas) return;
+    
+    this._didDrag = true; // Mark that dragging occurred
+    
+    const rect = this.canvas.getBoundingClientRect();
+    const deltaX = e.clientX - this._dragStartX;
+    const totalRange = this._endTime - this._startTime;
+    const deltaTime = (deltaX / rect.width) * totalRange;
+    
+    // Calculate new visible range
+    let newStart = this._dragStartVisibleStart + deltaTime;
+    let newEnd = this._dragStartVisibleEnd + deltaTime;
+    
+    const visibleRange = newEnd - newStart;
+    
+    // Clamp to total range
+    if (newStart < this._startTime) {
+      newStart = this._startTime;
+      newEnd = newStart + visibleRange;
+    }
+    if (newEnd > this._endTime) {
+      newEnd = this._endTime;
+      newStart = newEnd - visibleRange;
+    }
+    
+    this.setVisibleRange(newStart, newEnd);
+    
+    e.preventDefault();
+  }
+
+  private handleMouseUp(e: MouseEvent) {
+    if (this._isDragging) {
+      this._isDragging = false;
+      // Don't prevent default on mouseup as it doesn't typically have default behavior
+      // that needs preventing and could interfere with other components
+    }
   }
 
   private handleResize() {

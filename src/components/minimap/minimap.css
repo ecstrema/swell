@@ -19,8 +19,12 @@
   height: 32px;
   border: none;
   background-color: var(--color-bg, #1e1e1e);
-  cursor: pointer;
+  cursor: grab;
   display: block;
   margin: 0;
   padding: 0;
+}
+
+.minimap-canvas:active {
+  cursor: grabbing;
 }

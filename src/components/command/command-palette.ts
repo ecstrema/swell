@@ -80,6 +80,40 @@ export class CommandPalette extends HTMLElement {
         palette?.addEventListener('click', (e) => {
             e.stopPropagation();
         });
+
+        // Delegated click handler for result items
+        this.resultsContainer?.addEventListener('click', (e) => {
+            const target = e.target as HTMLElement;
+            const resultItem = target.closest('.result-item') as HTMLElement;
+            
+            if (resultItem && resultItem.hasAttribute('data-index')) {
+                const index = parseInt(resultItem.getAttribute('data-index')!, 10);
+                this.selectedIndex = index;
+                
+                if (this.isSelectionMode) {
+                    this.selectOption();
+                } else {
+                    this.executeSelected();
+                }
+            }
+        });
+
+        // Delegated mouseover handler for result items
+        this.resultsContainer?.addEventListener('mouseover', (e) => {
+            const target = e.target as HTMLElement;
+            const resultItem = target.closest('.result-item') as HTMLElement;
+            
+            if (resultItem && resultItem.hasAttribute('data-index')) {
+                const index = parseInt(resultItem.getAttribute('data-index')!, 10);
+                this.selectedIndex = index;
+                
+                if (this.isSelectionMode) {
+                    this.renderSelection();
+                } else {
+                    this.render();
+                }
+            }
+        });
     }
 
     open() {
@@ -260,6 +294,7 @@ export class CommandPalette extends HTMLElement {
         this.filteredCommands.forEach((command, index) => {
             const item = document.createElement('div');
             item.className = 'result-item';
+            item.setAttribute('data-index', index.toString());
             if (index === this.selectedIndex) {
                 item.classList.add('selected');
             }
@@ -297,18 +332,6 @@ export class CommandPalette extends HTMLElement {
                 }
             }
 
-            // Click handler
-            item.addEventListener('click', () => {
-                this.selectedIndex = index;
-                this.executeSelected();
-            });
-
-            // Mouse over handler
-            item.addEventListener('mouseenter', () => {
-                this.selectedIndex = index;
-                this.render();
-            });
-
             this.resultsContainer!.appendChild(item);
         });
 
@@ -335,6 +358,7 @@ export class CommandPalette extends HTMLElement {
         this.filteredOptions.forEach((option, index) => {
             const item = document.createElement('div');
             item.className = 'result-item';
+            item.setAttribute('data-index', index.toString());
             if (index === this.selectedIndex) {
                 item.classList.add('selected');
             }
@@ -361,18 +385,6 @@ export class CommandPalette extends HTMLElement {
                 label.textContent = option.label;
                 item.appendChild(label);
             }
-
-            // Click handler
-            item.addEventListener('click', () => {
-                this.selectedIndex = index;
-                this.selectOption();
-            });
-
-            // Mouse over handler
-            item.addEventListener('mouseenter', () => {
-                this.selectedIndex = index;
-                this.renderSelection();
-            });
 
             this.resultsContainer!.appendChild(item);
         });

@@ -8,6 +8,11 @@
 import { Extension, ExtensionContext } from "../types.js";
 import { CommandsView } from "./commands-view.js";
 
+// Ensure the custom element is registered
+if (!customElements.get('commands-view')) {
+    customElements.define('commands-view', CommandsView);
+}
+
 export class CommandsExtension implements Extension {
     readonly metadata = {
         id: 'core/commands',

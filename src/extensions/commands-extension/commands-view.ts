@@ -190,4 +190,4 @@ export class CommandsView extends HTMLElement {
     }
 }
 
-customElements.define('commands-view', CommandsView);
+// Note: Custom element registration is handled by the extension, not here

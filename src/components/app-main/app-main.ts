@@ -280,7 +280,7 @@ export class AppMain extends HTMLElement {
         const pages = extensionRegistry.getPages();
         
         for (const page of pages) {
-            // Register each page with the dock manager
+            // Register each page's factory with the dock manager
             this.dockManager.registerContent(page.id, page.factory);
         }
 
@@ -636,19 +636,32 @@ export class AppMain extends HTMLElement {
     }
 
     activateCommandsViewPane() {
-        // Get the commands view from extensions and wire it up
-        const commandsViewElement = this.dockManager.getContent('commands-view', 'commands-view-pane') as any;
-        if (commandsViewElement) {
-            // Provide the necessary dependencies to the commands view
-            if (commandsViewElement.setCommandRegistry) {
-                commandsViewElement.setCommandRegistry(this.commandManager.getCommandRegistry());
-            }
-            if (commandsViewElement.setShortcutManager) {
-                commandsViewElement.setShortcutManager(this.commandManager.getShortcutManager());
-            }
-        }
-        
+        // Activate the pane first
         this.paneManager.activatePane('commands-view-pane', 'All Commands', 'commands-view', true);
+        
+        // Then wire up the commands view with dependencies
+        // Need to wait a tick for the element to be in the DOM
+        setTimeout(() => {
+            const findCommandsView = (root: any): any => {
+                let cv = root.querySelector('commands-view');
+                if (cv) return cv;
+                
+                const children = root.querySelectorAll('*');
+                for (const child of children) {
+                    if (child.shadowRoot) {
+                        cv = findCommandsView(child.shadowRoot);
+                        if (cv) return cv;
+                    }
+                }
+                return null;
+            };
+            
+            const commandsView = findCommandsView(this.shadowRoot);
+            if (commandsView) {
+                commandsView.setCommandRegistry(this.commandManager.getCommandRegistry());
+                commandsView.setShortcutManager(this.commandManager.getShortcutManager());
+            }
+        }, 0);
     }
 
     /**

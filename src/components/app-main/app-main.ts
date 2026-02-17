@@ -1,22 +1,22 @@
 import { restoreSession, getStartupFiles } from "../../backend/index.js";
-import "../menu/menu-bar.ts";
-import { MenuBar } from "../menu/menu-bar.js";
-import "../trees/files-tree.ts";
-import { FilesTree } from "../trees/files-tree.js";
+import "../../extensions/menu-extension/menu-bar.ts";
+import { MenuBar } from "../../extensions/menu-extension/menu-bar.js";
+import "../../extensions/waveform-file-extension/trees/files-tree.ts";
+import { FilesTree } from "../../extensions/waveform-file-extension/trees/files-tree.js";
 import { themeManager } from "../../theme/index.js";
-import { DockManager } from "../docking/dock-manager.js";
-import { DockStack } from "../docking/types.js";
+import { DockManager } from "../../extensions/dock-extension/dock-manager.js";
+import { DockStack } from "../../extensions/dock-extension/types.js";
 import { css } from "../../utils/css-utils.js";
 import { updateDocumentTitle } from "../../utils/title-utils.js";
 import appMainCss from "./app-main.css?inline";
-import "../docking/index.js";
-import { FileManager } from "../file-manager/file-manager.js";
+import "../../extensions/dock-extension/index.js";
+import { FileManager } from "../../extensions/waveform-file-extension/file-manager/file-manager.js";
 import { CommandManager } from "../command/command-manager.js";
 import { DockLayoutHelper } from "../dock-layout-helper.js";
 import { PaneManager } from "../panels/pane-manager.js";
 import { UndoManager, UndoableOperation } from "../../extensions/undo-extension/undo-extension.js";
 import { saveStateToFile, loadStateFromFile } from "../../utils/state-file-io.js";
-import { dockStatePersistence } from "../docking/dock-state-persistence.js";
+import { dockStatePersistence } from "../../extensions/dock-extension/dock-state-persistence.js";
 
 // Setting paths
 const SETTING_NETLIST_VISIBLE = 'Interface/Netlist Visible';

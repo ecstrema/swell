@@ -1,7 +1,7 @@
 import { css } from "../../utils/css-utils.js";
 import contextMenuCss from "./context-menu.css?inline";
 import { MenuItemConfig } from "../../menu-api/index.js";
-import { renderMenuItems, findAndExecuteAction, ContextMenuItem, convertContextMenuItems } from "../menu/menu-item-renderer.js";
+import { renderMenuItems, findAndExecuteAction, ContextMenuItem, convertContextMenuItems } from "../../extensions/menu-extension/menu-item-renderer.js";
 
 // Re-export for backward compatibility
 export type { ContextMenuItem };

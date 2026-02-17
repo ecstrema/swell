@@ -1,9 +1,9 @@
 import { TreeView, TreeNode } from "./tree-view.js";
-import { css } from "../../utils/css-utils.js";
+import { css } from "../../../utils/css-utils.js";
 import selectedSignalsTreeCss from "./selected-signals-tree.css?inline";
-import { ContextMenu } from "../primitives/context-menu.js";
+import { ContextMenu } from "../../../components/primitives/context-menu.js";
 import "./tree-view.js";
-import "../primitives/context-menu.js";
+import "../../../components/primitives/context-menu.js";
 
 export interface SelectedSignal {
     name: string;

@@ -1,7 +1,7 @@
-import { addFile, openFileDialog, getHierarchy, getFiles, removeFile } from "../../backend/index.js";
+import { addFile, openFileDialog, getHierarchy, getFiles, removeFile } from "../../../backend/index.js";
 import { FileDisplay } from "../file-display/file-display.js";
 import { HierarchyRoot } from "../trees/files-tree.js";
-import { updateDocumentTitle } from "../../utils/title-utils.js";
+import { updateDocumentTitle } from "../../../utils/title-utils.js";
 
 /**
  * Manages file operations including loading, opening, closing files
@@ -99,7 +99,7 @@ export class FileManager {
      */
     async handleOpenExample(filename: string): Promise<string | null> {
         try {
-            const { loadExampleFile } = await import("../../backend/index.js");
+            const { loadExampleFile } = await import("../../../backend/index.js");
             const result = await loadExampleFile(filename);
             return result;
         } catch (err) {

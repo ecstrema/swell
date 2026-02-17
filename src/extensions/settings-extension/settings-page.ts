@@ -5,7 +5,7 @@ import { getSetting, setSetting } from './settings-extension.js';
 import { css } from '../../utils/css-utils.js';
 import { scrollbarSheet } from '../../styles/shared-sheets.js';
 import settingsCss from './settings-page.css?inline';
-import { TreeView, TreeNode } from '../../components/trees/tree-view.js';
+import { TreeView, TreeNode } from '../waveform-file-extension/trees/tree-view.js';
 
 export class SettingsPage extends HTMLElement {
     private static readonly HIGHLIGHT_DURATION_MS = 1000;

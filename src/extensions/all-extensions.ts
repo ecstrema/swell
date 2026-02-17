@@ -6,8 +6,11 @@
  */
 
 import { Extension } from "./types.js";
-import { ShortcutEditorExtension } from "./shortcut-editor-extension/index.js";
+import { MenuExtension } from "./menu-extension/index.js";
+import { DockExtension } from "./dock-extension/index.js";
 import { SettingsExtension } from "./settings-extension/index.js";
+import { ShortcutEditorExtension } from "./shortcut-editor-extension/index.js";
+import { WaveformFileExtension } from "./waveform-file-extension/index.js";
 import { AboutExtension } from "./about-extension/index.js";
 import { UndoExtension } from "./undo-extension/index.js";
 
@@ -16,8 +19,11 @@ import { UndoExtension } from "./undo-extension/index.js";
  */
 export function getAllExtensions(): Extension[] {
     return [
-        new ShortcutEditorExtension(),
+        new MenuExtension(),
+        new DockExtension(),
         new SettingsExtension(),
+        new ShortcutEditorExtension(),
+        new WaveformFileExtension(),
         new AboutExtension(),
         new UndoExtension(),
     ];

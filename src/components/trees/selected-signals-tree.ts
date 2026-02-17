@@ -209,8 +209,9 @@ export class SelectedSignalsTree extends TreeView {
                 return;
             }
             
-            // Find the text span
-            const textSpan = leafNode.querySelector('span:not(.tree-icon-button *)') as HTMLElement;
+            // Find the text span - it should be the first direct child span
+            const spans = leafNode.querySelectorAll(':scope > span');
+            const textSpan = spans[0] as HTMLElement;
             if (!textSpan) {
                 return;
             }
@@ -220,19 +221,22 @@ export class SelectedSignalsTree extends TreeView {
             if (pathParts.length > 1) {
                 const pathPrefix = pathParts.slice(0, -1).join('.');
                 
-                // Replace text content with structured HTML
-                textSpan.innerHTML = '';
-                
-                const dimmedSpan = document.createElement('span');
-                dimmedSpan.className = 'signal-path-dimmed';
-                dimmedSpan.textContent = pathPrefix + '.';
-                
-                const nameSpan = document.createElement('span');
-                nameSpan.className = 'signal-name';
-                nameSpan.textContent = signal.name;
-                
-                textSpan.appendChild(dimmedSpan);
-                textSpan.appendChild(nameSpan);
+                // Only update if not already updated (check for dimmed span)
+                if (!textSpan.querySelector('.signal-path-dimmed')) {
+                    // Replace text content with structured HTML
+                    textSpan.innerHTML = '';
+                    
+                    const dimmedSpan = document.createElement('span');
+                    dimmedSpan.className = 'signal-path-dimmed';
+                    dimmedSpan.textContent = pathPrefix + '.';
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'signal-name';
+                    nameSpan.textContent = signal.name;
+                    
+                    textSpan.appendChild(dimmedSpan);
+                    textSpan.appendChild(nameSpan);
+                }
             }
         });
     }

@@ -93,13 +93,21 @@ export class ShortcutManager {
 
     /**
      * Start listening for keyboard events
+     * @param target - The event target to listen on (defaults to document if available)
      */
-    activate(target: EventTarget = typeof document !== 'undefined' ? document : null as any): void {
+    activate(target?: EventTarget): void {
+        // Determine the actual target to use
+        const eventTarget = target ?? (typeof document !== 'undefined' ? document : null);
+        
+        if (!eventTarget) {
+            throw new Error('ShortcutManager.activate() requires a target when document is not available');
+        }
+        
         // Initialize ShoSho on first activation or when target changes
         if (!this.shosho) {
-            this.initializeShoSho(target);
-        } else if (target !== document) { // simplified check for target change
-            this.initializeShoSho(target);
+            this.initializeShoSho(eventTarget);
+        } else if (target && target !== document) { // target explicitly provided and differs from document
+            this.initializeShoSho(eventTarget);
         }
 
         this.shosho.start();
@@ -107,8 +115,9 @@ export class ShortcutManager {
 
     /**
      * Stop listening for keyboard events
+     * @param target - The event target (parameter kept for API compatibility but not used)
      */
-    deactivate(target: EventTarget = typeof document !== 'undefined' ? document : null as any): void {
+    deactivate(_target?: EventTarget): void {
         if (this.shosho) {
             this.shosho.stop();
         }

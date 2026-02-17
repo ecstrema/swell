@@ -99,8 +99,10 @@ describe('AppMain - Empty State File Picker', () => {
             return dockManager && (dockManager as any).layout;
         });
 
-        // Wait a bit more to ensure connectedCallback has completed and event listeners are attached
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // connectedCallback is async and takes time to complete. We need to ensure
+        // event listeners are attached before clicking. A small delay ensures
+        // connectedCallback has finished executing.
+        await new Promise(resolve => setTimeout(resolve, 50));
 
         // The fileViewContainer is registered with dock-manager but not in shadow root
         // We need to query it from the component's property

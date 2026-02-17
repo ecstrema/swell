@@ -35,7 +35,7 @@ describe('AppMain - Sidebar Visibility', () => {
         }
     });
 
-    it('should hide signal selection pane when no files are open', async () => {
+    it('should hide netlist pane when no files are open', async () => {
         // Wait for refreshFiles to complete (it's called in connectedCallback)
         await vi.waitFor(() => {
             const dockManager = appMain.shadowRoot!.querySelector('dock-manager');

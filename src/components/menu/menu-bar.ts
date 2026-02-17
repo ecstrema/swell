@@ -19,7 +19,7 @@ export class MenuBar extends HTMLElement {
       'zoom-in': 'view-zoom-in',
       'zoom-out': 'view-zoom-out',
       'zoom-fit': 'view-zoom-fit',
-      'toggle-signal-selection': 'view-toggle-signal-selection',
+      'toggle-netlist': 'view-toggle-netlist',
       'toggle-undo-history': 'view-toggle-undo-history',
   };
 
@@ -206,8 +206,8 @@ export class MenuBar extends HTMLElement {
                             text: 'Panes',
                             items: [
                                 {
-                                    id: 'toggle-signal-selection',
-                                    text: 'Signal Selection',
+                                    id: 'toggle-netlist',
+                                    text: 'Netlist',
                                     type: 'checkbox' as const,
                                     // Initial state - will be updated dynamically when files are loaded
                                     checked: true,
@@ -215,7 +215,7 @@ export class MenuBar extends HTMLElement {
                                         this.dispatchEvent(new CustomEvent('menu-action', {
                                             bubbles: true,
                                             composed: true,
-                                            detail: 'view-toggle-signal-selection'
+                                            detail: 'view-toggle-netlist'
                                         }));
                                     }
                                 },

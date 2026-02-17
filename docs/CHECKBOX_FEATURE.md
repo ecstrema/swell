@@ -1,4 +1,4 @@
-# Checkbox Feature for Selected Signals
+# Checkbox Feature for Netlist
 
 ## Overview
 
@@ -15,7 +15,7 @@ This feature adds visual checkboxes to the signal hierarchy tree (Files Tree) th
 - Each signal in the hierarchy tree now has a checkbox next to it
 - Checkboxes are automatically checked when a signal is selected
 - Checkboxes are unchecked when viewing a different file or when the application state changes
-- Provides immediate visual feedback about the current selection state
+- Provides immediate visual feedback about the current netlist state
 
 ## Implementation Details
 
@@ -53,13 +53,13 @@ This feature adds visual checkboxes to the signal hierarchy tree (Files Tree) th
 - Added `getSelectedSignalRefs()` public method to retrieve current signal references
 - Modified `updateSelectedSignalsTree()` to dispatch `selected-signals-changed` custom event
 - Event includes filename and array of signal refs (excluding timelines)
-- Dispatched whenever a signal is added to the selected list
+- Dispatched whenever a signal is added to the netlist
 
 #### 4. AppMain Component (`src/components/app-main.ts`)
 - Added event listener for `selected-signals-changed` events
 - Updates `hierarchyTree.selectedSignalRefs` when signals change
 - Modified `setActiveFile()` to sync checkbox state when switching between files
-- Ensures checkboxes reflect the correct state for each file's selected signals
+- Ensures checkboxes reflect the correct state for each file's netlist
 
 ### Event Flow
 
@@ -84,7 +84,7 @@ FilesTree re-renders with updated checkbox states
 New test file: `src/components/files-tree.test.ts`
 - Tests checkbox rendering for signals
 - Tests checkbox state updates when selected signals change
-- Tests multiple signal selection scenarios
+- Tests multiple netlist scenarios
 - Tests getting selected signal refs
 - Tests signal-select event dispatching
 

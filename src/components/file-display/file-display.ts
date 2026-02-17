@@ -256,7 +256,7 @@ export class FileDisplay extends HTMLElement {
   }
 
   connectedCallback() {
-    // Listen for signal selection events
+    // Listen for netlist events
     document.addEventListener('signal-select', this.boundHandleSignalSelect);
     
     // Listen for checkbox toggle events

@@ -99,6 +99,9 @@ describe('AppMain - Empty State File Picker', () => {
             return dockManager && (dockManager as any).layout;
         });
 
+        // Wait a bit more to ensure connectedCallback has completed and event listeners are attached
+        await new Promise(resolve => setTimeout(resolve, 100));
+
         // The fileViewContainer is registered with dock-manager but not in shadow root
         // We need to query it from the component's property
         const fileViewContainer = (appMain as any).fileViewContainer as HTMLElement;

@@ -49,6 +49,15 @@ export class Timeline extends HTMLElement {
     // Remove theme change listener
     window.removeEventListener('theme-changed', this.boundHandleThemeChanged);
     
+    // Reset drag state if component is disconnected while dragging
+    if (this.isDragging) {
+      window.removeEventListener('mousemove', this.boundHandleMouseMove);
+      window.removeEventListener('mouseup', this.boundHandleMouseUp);
+      this.isDragging = false;
+      this.dragStartX = null;
+      this.dragCurrentX = null;
+    }
+    
     // Clean up ResizeObserver
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
@@ -243,10 +252,6 @@ export class Timeline extends HTMLElement {
     
     // Remove window listeners
     window.removeEventListener('resize', this.boundHandleResize);
-    
-    // Remove mouse move/up listeners
-    window.removeEventListener('mousemove', this.boundHandleMouseMove);
-    window.removeEventListener('mouseup', this.boundHandleMouseUp);
   }
 
   private handleWheel(e: WheelEvent) {

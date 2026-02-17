@@ -68,15 +68,17 @@ export class SplitButton extends HTMLElement {
     private render() {
         this.shadowRoot!.innerHTML = `
             <div class="split-button-container">
-                <button class="split-button-left">${this.leftLabel}</button>
-                <button class="split-button-right">${this.rightLabel}</button>
+                <button class="split-button-left"></button>
+                <button class="split-button-right"></button>
             </div>
         `;
 
         this.leftButton = this.shadowRoot!.querySelector('.split-button-left');
         this.rightButton = this.shadowRoot!.querySelector('.split-button-right');
 
+        // Set text content safely to prevent XSS
         if (this.leftButton) {
+            this.leftButton.textContent = this.leftLabel;
             this.leftButton.addEventListener('click', () => {
                 this.dispatchEvent(new CustomEvent('left-click', {
                     bubbles: true,
@@ -86,6 +88,7 @@ export class SplitButton extends HTMLElement {
         }
 
         if (this.rightButton) {
+            this.rightButton.textContent = this.rightLabel;
             this.rightButton.addEventListener('click', () => {
                 this.dispatchEvent(new CustomEvent('right-click', {
                     bubbles: true,

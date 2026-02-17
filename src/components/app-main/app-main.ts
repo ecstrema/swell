@@ -1,22 +1,22 @@
 import { restoreSession, getStartupFiles } from "../../backend/index.js";
-import "../menu/menu-bar.ts";
-import { MenuBar } from "../menu/menu-bar.js";
-import "../trees/files-tree.ts";
-import { FilesTree } from "../trees/files-tree.js";
+import "../../extensions/menu-extension/menu-bar.ts";
+import { MenuBar } from "../../extensions/menu-extension/menu-bar.js";
+import "../../extensions/waveform-file-extension/trees/files-tree.ts";
+import { FilesTree } from "../../extensions/waveform-file-extension/trees/files-tree.js";
 import { themeManager } from "../../theme/index.js";
-import { DockManager } from "../docking/dock-manager.js";
-import { DockStack } from "../docking/types.js";
+import { DockManager } from "../../extensions/dock-extension/dock-manager.js";
+import { DockStack } from "../../extensions/dock-extension/types.js";
 import { css } from "../../utils/css-utils.js";
 import { updateDocumentTitle } from "../../utils/title-utils.js";
 import appMainCss from "./app-main.css?inline";
-import "../docking/index.js";
-import { FileManager } from "../file-manager/file-manager.js";
+import "../../extensions/dock-extension/index.js";
+import { FileManager } from "../../extensions/waveform-file-extension/file-manager/file-manager.js";
 import { CommandManager } from "../command/command-manager.js";
 import { DockLayoutHelper } from "../dock-layout-helper.js";
 import { PaneManager } from "../panels/pane-manager.js";
 import { UndoManager, UndoableOperation } from "../../extensions/undo-extension/undo-extension.js";
 import { saveStateToFile, loadStateFromFile } from "../../utils/state-file-io.js";
-import { dockStatePersistence } from "../docking/dock-state-persistence.js";
+import { dockStatePersistence } from "../../extensions/dock-extension/dock-state-persistence.js";
 
 // Setting paths
 const SETTING_NETLIST_VISIBLE = 'Interface/Netlist Visible';
@@ -274,11 +274,25 @@ export class AppMain extends HTMLElement {
      * Initialize extensions
      */
     private async initializeExtensions() {
-        // Initialize extensions in the command manager first
-        await this.commandManager.initializeExtensions();
-
-        // Get the undo manager from the undo extension
         const extensionRegistry = this.commandManager.getExtensionRegistry();
+        
+        // Provide app APIs to extensions BEFORE registering them
+        this.commandManager.setAppAPIs({
+            getUndoManager: () => this.undoManager,
+            getFileManager: () => this.fileManager,
+            getPaneManager: () => this.paneManager,
+            getDockManager: () => this.dockManager,
+        });
+        
+        // Import and register all default extensions
+        const { getAllExtensions } = await import('../../extensions/all-extensions.js');
+        const extensions = getAllExtensions();
+        
+        for (const extension of extensions) {
+            await extensionRegistry.register(extension);
+        }
+        
+        // Get the undo manager from the undo extension
         const undoAPI = await extensionRegistry.getExtension<any>('core/undo');
         if (undoAPI && undoAPI.getUndoManager) {
             this.undoManager = undoAPI.getUndoManager();
@@ -286,7 +300,7 @@ export class AppMain extends HTMLElement {
             console.warn('Undo manager not available from undo extension');
         }
 
-        // Provide app APIs to extensions (including undoManager from extension)
+        // Update app APIs now that undoManager is available
         this.commandManager.setAppAPIs({
             getUndoManager: () => this.undoManager,
             getFileManager: () => this.fileManager,

@@ -1,5 +1,5 @@
 import { TreeView, TreeNode, TreeIconButton } from "./tree-view.js";
-import { css } from "../../utils/css-utils.js";
+import { css } from "../../../utils/css-utils.js";
 import filesTreeCss from "./files-tree.css?inline";
 import "./tree-view.js";
 import PlusBoxIcon from '~icons/mdi/plus-box?raw';

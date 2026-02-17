@@ -1,19 +1,19 @@
-import { getSignalChanges, SignalChange, getHierarchy } from '../../backend/index.js';
-import { css } from '../../utils/css-utils.js';
-import { setupCanvasForHighDPI } from '../../utils/canvas-utils.js';
-import { scrollbarSheet } from '../../styles/shared-sheets.js';
+import { getSignalChanges, SignalChange, getHierarchy } from '../../../backend/index.js';
+import { css } from '../../../utils/css-utils.js';
+import { setupCanvasForHighDPI } from '../../../utils/canvas-utils.js';
+import { scrollbarSheet } from '../../../styles/shared-sheets.js';
 import fileDisplayCss from './file-display.css?inline';
 import { SelectedSignalsTree } from '../trees/selected-signals-tree.js';
-import { Timeline } from '../timeline/timeline.js';
-import { Minimap } from '../minimap/minimap.js';
-import { saveFileState, loadFileState, FileState, Item, ItemSignal, ItemTimeline } from '../../utils/file-state-storage.js';
-import { getSetting } from '../../extensions/settings-extension/settings-extension.js';
+import { Timeline } from '../../../components/timeline/timeline.js';
+import { Minimap } from '../../../components/minimap/minimap.js';
+import { saveFileState, loadFileState, FileState, Item, ItemSignal, ItemTimeline } from '../../../utils/file-state-storage.js';
+import { getSetting } from '../../settings-extension/settings-extension.js';
 import { UndoableOperation } from '../../extensions/undo-extension/undo-extension.js';
 import '../trees/selected-signals-tree.js';
-import '../timeline/timeline.js';
-import '../minimap/minimap.js';
-import '../panels/resizable-panel.js';
-import '../primitives/split-button.js';
+import '../../../components/timeline/timeline.js';
+import '../../../components/minimap/minimap.js';
+import '../../../components/panels/resizable-panel.js';
+import '../../../components/primitives/split-button.js';
 
 interface SelectedSignal {
   name: string;

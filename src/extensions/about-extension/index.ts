@@ -1,7 +1,3 @@
-/**
- * About Extension
- * 
- * Main exports for the about extension
- */
-
-export * from "./about-extension.js";
+export * from './about-dialog.js';
+export * from './about-pane.js';
+export * from './about-extension.js';

@@ -6,7 +6,7 @@
  */
 
 import { Extension, ExtensionContext } from "../types.js";
-import { UndoTreePanel } from "../../components/panels/undo-tree-panel.js";
+import { UndoTreePanel } from "./undo-tree-panel.js";
 import { UndoManager } from "./undo-manager.js";
 
 // Re-export types that external code needs

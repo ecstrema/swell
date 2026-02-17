@@ -69,16 +69,13 @@ export class CommandPalette extends HTMLElement {
             this.handleKeyDown(e);
         });
 
-        // Close on overlay click
+        // Close on overlay click (but not palette clicks)
         const overlay = this.shadowRoot!.querySelector('.overlay');
-        overlay?.addEventListener('click', () => {
-            this.close();
-        });
-
-        // Prevent palette clicks from closing
-        const palette = this.shadowRoot!.querySelector('.palette');
-        palette?.addEventListener('click', (e) => {
-            e.stopPropagation();
+        overlay?.addEventListener('click', (e) => {
+            // Only close if the click was directly on the overlay, not on the palette
+            if (e.target === overlay) {
+                this.close();
+            }
         });
     }
 

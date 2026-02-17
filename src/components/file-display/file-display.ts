@@ -8,6 +8,7 @@ import { Timeline } from '../timeline/timeline.js';
 import { Minimap } from '../minimap/minimap.js';
 import { saveFileState, loadFileState, FileState, Item, ItemSignal, ItemTimeline } from '../../utils/file-state-storage.js';
 import { getSetting } from '../../settings/settings-storage.js';
+import { UndoableOperation } from '../../undo/undo-tree.js';
 import '../trees/selected-signals-tree.js';
 import '../timeline/timeline.js';
 import '../minimap/minimap.js';
@@ -60,6 +61,7 @@ export class FileDisplay extends HTMLElement {
   private saveStateTimeout: number | null = null;
   private stateRestored: boolean = false;
   private alternatingRowPattern: number = 3;
+  private executeUndoableOperation: ((operation: UndoableOperation) => void) | null = null;
 
   constructor() {
     super();
@@ -104,6 +106,13 @@ export class FileDisplay extends HTMLElement {
     if (val && val !== oldFilename && this.isConnected && !this.stateRestored) {
       this.restoreFileState();
     }
+  }
+
+  /**
+   * Set callback for executing undoable operations
+   */
+  setUndoableOperationExecutor(executor: (operation: UndoableOperation) => void) {
+    this.executeUndoableOperation = executor;
   }
 
   /**
@@ -492,8 +501,72 @@ export class FileDisplay extends HTMLElement {
     }
 
     if (checked) {
-      this.addSignal(name, ref);
+      this.addSignalUndoable(name, ref);
     } else {
+      this.removeSignalUndoable(ref);
+    }
+  }
+
+  /**
+   * Add a signal with undo support
+   */
+  private addSignalUndoable(name: string, ref: number) {
+    // Check if signal is already selected
+    if (this.selectedSignals.some(s => s.ref === ref)) {
+      return;
+    }
+
+    if (this.executeUndoableOperation) {
+      const operation = {
+        do: () => {
+          this.addSignal(name, ref);
+        },
+        undo: () => {
+          this.removeSignal(ref);
+        },
+        redo: () => {
+          this.addSignal(name, ref);
+        },
+        getDescription: () => `Add signal ${name}`
+      };
+      this.executeUndoableOperation(operation);
+    } else {
+      // Fallback if undo system not available
+      this.addSignal(name, ref);
+    }
+  }
+
+  /**
+   * Remove a signal with undo support
+   */
+  private removeSignalUndoable(ref: number) {
+    // Find the signal to remove
+    const signalIndex = this.selectedSignals.findIndex(s => s.ref === ref);
+    if (signalIndex === -1) {
+      return;
+    }
+
+    const signal = this.selectedSignals[signalIndex];
+    const name = signal.name;
+    const savedIndex = signalIndex;
+
+    if (this.executeUndoableOperation) {
+      const operation = {
+        do: () => {
+          this.removeSignal(ref);
+        },
+        undo: () => {
+          // Restore signal at its original position
+          this.addSignalAtIndex(name, ref, savedIndex);
+        },
+        redo: () => {
+          this.removeSignal(ref);
+        },
+        getDescription: () => `Remove signal ${name}`
+      };
+      this.executeUndoableOperation(operation);
+    } else {
+      // Fallback if undo system not available
       this.removeSignal(ref);
     }
   }
@@ -511,6 +584,35 @@ export class FileDisplay extends HTMLElement {
     canvas.height = 32;
 
     this.selectedSignals.push({ name, ref, canvas, isTimeline: false });
+    
+    // Update the selected signals tree
+    this.updateSelectedSignalsTree();
+    
+    this.render();
+
+    // Paint the signal after the canvas is properly sized in the DOM
+    this.setupAndPaintCanvas(canvas, ref);
+    
+    // Save state after adding signal
+    this.debouncedSaveState();
+  }
+
+  /**
+   * Add a signal at a specific index (used for undo/redo)
+   */
+  private addSignalAtIndex(name: string, ref: number, index: number) {
+    // Check if signal is already selected
+    if (this.selectedSignals.some(s => s.ref === ref)) {
+      return;
+    }
+
+    // Create a new canvas for this signal
+    const canvas = document.createElement('canvas');
+    canvas.width = 800;
+    canvas.height = 32;
+
+    // Insert at the specified index
+    this.selectedSignals.splice(index, 0, { name, ref, canvas, isTimeline: false });
     
     // Update the selected signals tree
     this.updateSelectedSignalsTree();

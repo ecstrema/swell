@@ -55,6 +55,7 @@ export class CommandManager {
         onZoomOut: () => void,
         onZoomFit: () => void,
         onToggleSignalSelection: () => void,
+        onToggleUndoHistory: () => void,
         onShowSettings: () => void,
         onShowAbout: () => void,
         onShowUndoTree: () => void
@@ -106,6 +107,12 @@ export class CommandManager {
             id: 'view-toggle-signal-selection',
             label: 'Toggle Signal Selection View',
             handler: commandHandlers.onToggleSignalSelection
+        });
+
+        this.commandRegistry.register({
+            id: 'view-toggle-undo-history',
+            label: 'Toggle Undo History View',
+            handler: commandHandlers.onToggleUndoHistory
         });
 
         // Register show settings command

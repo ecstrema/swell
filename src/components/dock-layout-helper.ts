@@ -127,12 +127,6 @@ export class DockLayoutHelper {
                             title: 'Signal Selection',
                             contentId: 'signal-selection',
                             closable: false
-                        },
-                        {
-                            id: 'undo-tree-pane',
-                            title: 'Undo History',
-                            contentId: 'undo-tree',
-                            closable: true
                         }
                     ]
                 };
@@ -185,12 +179,6 @@ export class DockLayoutHelper {
                         title: 'Signal Selection',
                         contentId: 'signal-selection',
                         closable: false
-                    },
-                    {
-                        id: 'undo-tree-pane',
-                        title: 'Undo History',
-                        contentId: 'undo-tree',
-                        closable: true
                     }
                 ]
             };
@@ -216,5 +204,65 @@ export class DockLayoutHelper {
         return rootBox.children.some(
             child => child.type === 'stack' && child.id === 'sidebar-stack'
         );
+    }
+
+    /**
+     * Find the sidebar stack
+     */
+    private findSidebarStack(): DockStack | null {
+        const layout = this.dockManager.layout;
+        if (!layout || layout.root.type !== 'box') return null;
+
+        const rootBox = layout.root;
+        for (const child of rootBox.children) {
+            if (child.type === 'stack' && child.id === 'sidebar-stack') {
+                return child;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Toggle undo history pane visibility in the sidebar
+     * @returns new visibility state (true = visible, false = hidden)
+     */
+    toggleUndoPaneVisibility(): boolean {
+        const sidebarStack = this.findSidebarStack();
+        if (!sidebarStack) return false;
+
+        const undoPaneIndex = sidebarStack.children.findIndex(
+            p => p.id === 'undo-tree-pane'
+        );
+
+        if (undoPaneIndex === -1) {
+            // Undo pane is hidden, add it
+            sidebarStack.children.push({
+                id: 'undo-tree-pane',
+                title: 'Undo History',
+                contentId: 'undo-tree',
+                closable: true
+            });
+            this.dockManager.render();
+            return true;
+        } else {
+            // Undo pane is visible, remove it
+            sidebarStack.children.splice(undoPaneIndex, 1);
+            // If the active pane was the undo pane, switch to another pane
+            if (sidebarStack.activeId === 'undo-tree-pane') {
+                sidebarStack.activeId = sidebarStack.children.length > 0 ? sidebarStack.children[0].id : null;
+            }
+            this.dockManager.render();
+            return false;
+        }
+    }
+
+    /**
+     * Check if undo history pane is currently visible in the sidebar
+     */
+    isUndoPaneVisible(): boolean {
+        const sidebarStack = this.findSidebarStack();
+        if (!sidebarStack) return false;
+
+        return sidebarStack.children.some(p => p.id === 'undo-tree-pane');
     }
 }

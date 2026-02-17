@@ -26,6 +26,7 @@ import { saveStateToFile, loadStateFromFile } from "../../utils/state-file-io.js
 
 // Setting paths
 const SETTING_SIGNAL_SELECTION_VISIBLE = 'Interface/Signal Selection Visible';
+const SETTING_UNDO_HISTORY_VISIBLE = 'Interface/Undo History Visible';
 
 
 
@@ -486,16 +487,26 @@ export class AppMain extends HTMLElement {
         if (fileIds.length > 0) {
             // Get user preference for signal selection visibility
             let signalSelectionVisible = true;
+            let undoHistoryVisible = false; // Default to false - don't show undo history automatically
             try {
                 const { getSetting } = await import('../../settings/settings-storage.js');
                 signalSelectionVisible = (await getSetting(SETTING_SIGNAL_SELECTION_VISIBLE)) ?? true;
+                undoHistoryVisible = (await getSetting(SETTING_UNDO_HISTORY_VISIBLE)) ?? false;
             } catch (error) {
-                console.warn('Failed to load signal selection visibility setting:', error);
+                console.warn('Failed to load visibility settings:', error);
             }
             
             // Only show sidebar if user wants it visible
             if (signalSelectionVisible) {
                 this.dockLayoutHelper.updateSidebarVisibility(true);
+            }
+            
+            // Restore undo history visibility if user had it open
+            if (undoHistoryVisible && this.dockLayoutHelper.isSidebarVisible()) {
+                // Only add undo pane if it's not already there
+                if (!this.dockLayoutHelper.isUndoPaneVisible()) {
+                    this.dockLayoutHelper.toggleUndoPaneVisibility();
+                }
             }
             
             // Update menu checkbox to reflect current state
@@ -708,12 +719,20 @@ export class AppMain extends HTMLElement {
     /**
      * Toggle the undo history pane visibility
      */
-    private toggleUndoHistory() {
+    private async toggleUndoHistory() {
         const newVisibility = this.dockLayoutHelper.toggleUndoPaneVisibility();
         
         // Update the menu checkbox state
         if (this.menuBar) {
             this.menuBar.updateMenuItemChecked('toggle-undo-history', newVisibility);
+        }
+        
+        // Persist the setting
+        try {
+            const { setSetting } = await import('../../settings/settings-storage.js');
+            await setSetting(SETTING_UNDO_HISTORY_VISIBLE, newVisibility);
+        } catch (error) {
+            console.warn('Failed to persist undo history visibility setting:', error);
         }
     }
 }

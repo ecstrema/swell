@@ -55,31 +55,6 @@ export interface ThemeRegistration {
 }
 
 /**
- * App APIs that extensions can access
- */
-export interface AppAPIs {
-    /**
-     * Get the UndoManager for undo/redo operations
-     */
-    getUndoManager?: () => any;
-
-    /**
-     * Get the FileManager for file operations
-     */
-    getFileManager?: () => any;
-
-    /**
-     * Get the PaneManager for managing panes
-     */
-    getPaneManager?: () => any;
-
-    /**
-     * Get the DockManager for dock operations
-     */
-    getDockManager?: () => any;
-}
-
-/**
  * Extension context - provides APIs for extensions to interact with the app
  */
 export interface ExtensionContext {
@@ -130,9 +105,10 @@ export interface ExtensionContext {
     getExtension<T = any>(extensionId: ExtensionId): Promise<T | undefined>;
 
     /**
-     * Access to app-wide APIs (optional services provided by the host app)
+     * APIs from dependencies declared in extension metadata
+     * Maps dependency extension ID to its API
      */
-    app: AppAPIs;
+    dependencies: Map<ExtensionId, any>;
 }
 
 /**

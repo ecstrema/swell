@@ -33,6 +33,7 @@ export class UndoExtension implements Extension {
         id: 'core/undo',
         name: 'Undo Extension',
         description: 'Provides undo/redo functionality and history visualization',
+        dependencies: ['core/dock'],
     };
 
     private undoManager: UndoManager;
@@ -42,8 +43,9 @@ export class UndoExtension implements Extension {
     }
 
     async activate(context: ExtensionContext): Promise<UndoAPI> {
-        const paneManager = context.app.getPaneManager?.();
-        const dockManager = context.app.getDockManager?.();
+        const dockAPI = context.dependencies.get('core/dock');
+        const paneManager = dockAPI?.getPaneManager?.();
+        const dockManager = dockAPI?.getDockManager?.();
 
         if (!paneManager || !dockManager) {
             console.warn('Undo extension: Required managers not available');

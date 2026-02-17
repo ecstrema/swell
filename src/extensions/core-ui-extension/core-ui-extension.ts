@@ -16,6 +16,7 @@ export class CoreUIExtension implements Extension {
         id: 'core/ui',
         name: 'Core UI Extension',
         description: 'Manages UI coordination and view commands',
+        dependencies: ['core/dock'],
     };
 
     private context: ExtensionContext | null = null;
@@ -127,7 +128,8 @@ export class CoreUIExtension implements Extension {
     private async toggleNetlist(): Promise<void> {
         if (!this.context) return;
 
-        const dockManager = this.context.app.getDockManager?.();
+        const dockAPI = this.context.dependencies.get('core/dock');
+        const dockManager = dockAPI?.getDockManager?.();
         if (!dockManager) return;
 
         // Import DockLayoutHelper to access the sidebar toggle logic
@@ -160,7 +162,8 @@ export class CoreUIExtension implements Extension {
     private async toggleUndoHistory(): Promise<void> {
         if (!this.context) return;
 
-        const dockManager = this.context.app.getDockManager?.();
+        const dockAPI = this.context.dependencies.get('core/dock');
+        const dockManager = dockAPI?.getDockManager?.();
         if (!dockManager) return;
 
         // Import DockLayoutHelper to access the undo pane toggle logic

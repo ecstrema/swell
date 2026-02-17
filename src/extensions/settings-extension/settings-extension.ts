@@ -34,11 +34,13 @@ export class SettingsExtension implements Extension {
         id: 'core/settings',
         name: 'Settings Extension',
         description: 'Provides settings page and configuration interface',
+        dependencies: ['core/dock'],
     };
 
     async activate(context: ExtensionContext): Promise<SettingsAPI> {
-        const paneManager = context.app.getPaneManager?.();
-        const dockManager = context.app.getDockManager?.();
+        const dockAPI = context.dependencies.get('core/dock');
+        const paneManager = dockAPI?.getPaneManager?.();
+        const dockManager = dockAPI?.getDockManager?.();
 
         if (!paneManager || !dockManager) {
             console.warn('Settings extension: PaneManager or DockManager not available');

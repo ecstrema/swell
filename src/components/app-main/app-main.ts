@@ -176,14 +176,6 @@ export class AppMain extends HTMLElement {
             dockAPI.initializeDockSystem(this.dockManager);
         }
 
-        // Provide app APIs to extensions
-        this.commandManager.setAppAPIs({
-            getUndoManager: () => this.getUndoManager(),
-            getFileManager: () => this.getFileManager(),
-            getPaneManager: () => this.getPaneManager(),
-            getDockManager: () => this.dockManager,
-        });
-
         // Register pages from extensions with the dock manager
         const pages = extensionRegistry.getPages();
 

@@ -251,17 +251,7 @@ export class WaveformFileExtension implements Extension {
      * Get the file manager from app APIs
      */
     private getFileManager(): FileManager | null {
-        // First try the stored reference
-        if (this.fileManager) {
-            return this.fileManager;
-        }
-        
-        // Fall back to app APIs
-        if (this.context?.app.getFileManager) {
-            return this.context.app.getFileManager();
-        }
-        
-        return null;
+        return this.fileManager;
     }
 
     /**

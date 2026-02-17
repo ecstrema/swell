@@ -15,7 +15,6 @@ import {
     SettingChangedCallback,
     ThemeChangedCallback,
     PageDisplayedCallback,
-    AppAPIs,
 } from "./types.js";
 import { Command, ShortcutBinding } from "../shortcuts/types.js";
 import { CommandRegistry } from "../shortcuts/command-registry.js";
@@ -36,7 +35,6 @@ export class ExtensionRegistry {
     
     private commandRegistry: CommandRegistry;
     private shortcutManager: ShortcutManager;
-    private appAPIs: AppAPIs = {};
 
     // Callbacks
     private commandExecutedCallbacks: CommandExecutedCallback[] = [];
@@ -47,13 +45,6 @@ export class ExtensionRegistry {
     constructor(commandRegistry: CommandRegistry, shortcutManager: ShortcutManager) {
         this.commandRegistry = commandRegistry;
         this.shortcutManager = shortcutManager;
-    }
-
-    /**
-     * Set app-wide APIs that extensions can access
-     */
-    setAppAPIs(apis: AppAPIs): void {
-        this.appAPIs = apis;
     }
 
     /**
@@ -249,6 +240,17 @@ export class ExtensionRegistry {
      * Create an extension context for a specific extension
      */
     private createContext(extension: Extension): ExtensionContext {
+        // Gather APIs from declared dependencies
+        const dependencies = new Map<ExtensionId, any>();
+        if (extension.metadata.dependencies) {
+            for (const depId of extension.metadata.dependencies) {
+                const depAPI = this.extensionAPIs.get(depId);
+                if (depAPI) {
+                    dependencies.set(depId, depAPI);
+                }
+            }
+        }
+
         return {
             registerCommand: (command: Command) => {
                 this.commandRegistry.register(command);
@@ -292,7 +294,7 @@ export class ExtensionRegistry {
                 return this.getExtension<T>(extensionId);
             },
             
-            app: this.appAPIs,
+            dependencies,
         };
     }
 }

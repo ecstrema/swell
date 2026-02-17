@@ -57,12 +57,28 @@ export class ExtensionRegistry {
     }
 
     /**
-     * Register an extension
+     * Register an extension and its dependencies
      */
     async register(extension: Extension): Promise<void> {
         if (this.extensions.has(extension.metadata.id)) {
             console.warn(`Extension ${extension.metadata.id} is already registered`);
             return;
+        }
+
+        // Register dependencies first
+        if (extension.metadata.dependencies) {
+            for (const depId of extension.metadata.dependencies) {
+                // Check if dependency is already registered
+                if (!this.extensions.has(depId)) {
+                    // Try to register from factory if available
+                    const factory = this.extensionFactories.get(depId);
+                    if (factory) {
+                        await this.register(factory());
+                    } else {
+                        console.warn(`Dependency ${depId} for extension ${extension.metadata.id} not found`);
+                    }
+                }
+            }
         }
 
         this.extensions.set(extension.metadata.id, extension);

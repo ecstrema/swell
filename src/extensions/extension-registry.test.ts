@@ -162,6 +162,51 @@ describe('Extension Registry', () => {
             // Both should receive the same API instance
             expect(api1).toBe(api2);
         });
+
+        it('should automatically register dependencies when registering an extension', async () => {
+            // Create a provider extension
+            const providerExtension: Extension = {
+                metadata: {
+                    id: 'test/auto-provider',
+                    name: 'Auto Provider',
+                },
+                activate: async () => {
+                    return { provided: 'data' };
+                },
+            };
+
+            // Create a consumer that depends on provider
+            let consumerActivated = false;
+            let receivedAPI: any = null;
+            const consumerExtension: Extension = {
+                metadata: {
+                    id: 'test/auto-consumer',
+                    name: 'Auto Consumer',
+                    dependencies: ['test/auto-provider'],
+                },
+                activate: async (context: ExtensionContext) => {
+                    consumerActivated = true;
+                    receivedAPI = await context.getExtension('test/auto-provider');
+                },
+            };
+
+            // Register factory for the provider
+            registry.registerFactory('test/auto-provider', () => providerExtension);
+
+            // Register only the consumer - provider should be auto-registered
+            await registry.register(consumerExtension);
+
+            // Both should be registered
+            const extensions = registry.getExtensions();
+            expect(extensions).toHaveLength(2);
+            expect(extensions.map(e => e.metadata.id)).toContain('test/auto-provider');
+            expect(extensions.map(e => e.metadata.id)).toContain('test/auto-consumer');
+
+            // Consumer should have been activated and received the API
+            expect(consumerActivated).toBe(true);
+            expect(receivedAPI).toBeDefined();
+            expect(receivedAPI.provided).toBe('data');
+        });
     });
 
     describe('Extension Registration', () => {

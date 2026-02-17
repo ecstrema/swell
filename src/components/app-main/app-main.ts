@@ -503,8 +503,10 @@ export class AppMain extends HTMLElement {
             
             // Restore undo history visibility if user had it open
             if (undoHistoryVisible && this.dockLayoutHelper.isSidebarVisible()) {
-                // Only add undo pane if it's not already there
+                // Only restore undo pane if sidebar is visible and undo pane is not already there
+                // The sidebar visibility check ensures undo history respects signal selection visibility
                 if (!this.dockLayoutHelper.isUndoPaneVisible()) {
+                    // toggleUndoPaneVisibility() will add the pane since it's currently not visible
                     this.dockLayoutHelper.toggleUndoPaneVisibility();
                 }
             }

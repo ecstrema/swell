@@ -71,6 +71,8 @@ details > summary {
     height: 32px;
     box-sizing: border-box;
     line-height: 24px;
+    justify-content: var(--tree-branch-justify, flex-start);
+    flex-direction: var(--tree-branch-direction, row);
 }
 
 /* Horizontal guide line for branch/scope nodes (except root level) */

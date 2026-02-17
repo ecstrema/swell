@@ -33,3 +33,4 @@ dist-test/
 
 # Downloaded tools
 wasm-pack-*/
+tree-*.html

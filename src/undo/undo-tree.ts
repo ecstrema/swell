@@ -125,18 +125,54 @@ export class UndoTree {
     }
 
     /**
+     * Add a new operation to the tree WITHOUT executing it
+     * This is useful for composite operations where the operations have already been executed
+     * If we're not at the latest node, this creates a new branch
+     */
+    addOperationWithoutExecuting(operation: UndoableOperation): string {
+        const nodeId = this.generateNodeId();
+        const node: UndoTreeNode = {
+            id: nodeId,
+            operation,
+            timestamp: Date.now(),
+            parentId: this.currentId,
+            children: []
+        };
+
+        this.nodes.set(nodeId, node);
+
+        // Update parent's children list
+        if (this.currentId) {
+            const parent = this.nodes.get(this.currentId);
+            if (parent && !parent.children.includes(nodeId)) {
+                parent.children.push(nodeId);
+            }
+        } else {
+            // This is the root node
+            this.rootId = nodeId;
+        }
+
+        // Do NOT execute the operation - it should have been executed already
+
+        this.currentId = nodeId;
+        return nodeId;
+    }
+
+    /**
      * Undo - move to parent node and call undo on current operation
+     * If at root, moves to null (before any operations) and undoes the root
      * Returns true if undo was successful, false otherwise
      */
     undo(): boolean {
         if (!this.currentId) return false;
 
         const current = this.nodes.get(this.currentId);
-        if (!current || !current.parentId) return false;
+        if (!current) return false;
 
         // Call undo on the current operation
         current.operation.undo();
 
+        // Move to parent (can be null for root)
         this.currentId = current.parentId;
         return true;
     }
@@ -144,11 +180,20 @@ export class UndoTree {
     /**
      * Redo - move forward in the tree and call redo on the operation
      * When redoing, reuse the last branch (rightmost/most recent child)
+     * If at null (before root), redo to the root node
      * The redo method can use cached results from the original do()
      * Returns true if redo was successful, false otherwise
      */
     redo(): boolean {
-        if (!this.currentId) return false;
+        // If at null, redo to root
+        if (!this.currentId) {
+            if (!this.rootId) return false;
+            const root = this.nodes.get(this.rootId);
+            if (!root) return false;
+            root.operation.redo();
+            this.currentId = this.rootId;
+            return true;
+        }
 
         const current = this.nodes.get(this.currentId);
         if (!current || current.children.length === 0) return false;
@@ -210,18 +255,21 @@ export class UndoTree {
 
     /**
      * Check if we can undo
+     * Returns true if there's a current node (even if it's the root)
      */
     canUndo(): boolean {
-        if (!this.currentId) return false;
-        const current = this.nodes.get(this.currentId);
-        return current !== undefined && current.parentId !== null;
+        return this.currentId !== null;
     }
 
     /**
      * Check if we can redo
+     * Returns true if we're at null and have a root, or if current node has children
      */
     canRedo(): boolean {
-        if (!this.currentId) return false;
+        if (!this.currentId) {
+            // At null, can redo to root if it exists
+            return this.rootId !== null;
+        }
         const current = this.nodes.get(this.currentId);
         return current !== undefined && current.children.length > 0;
     }

@@ -476,6 +476,11 @@ export class AppMain extends HTMLElement {
             async (id: string) => {
                 const fileDisplay = this.fileManager.getFileResources(id)?.element;
                 if (fileDisplay) {
+                    // Set up undo operation executor for the file display
+                    fileDisplay.setUndoableOperationExecutor((operation) => {
+                        this.executeOperation(operation);
+                    });
+
                     // Register the file display as content in the dock manager
                     this.dockManager.registerContent(`file-${id}`, () => fileDisplay);
 
@@ -605,7 +610,7 @@ export class AppMain extends HTMLElement {
 
     activateCommandsViewPane() {
         // Activate the pane first
-        this.paneManager.activatePane('commands-view-pane', 'All Commands', 'commands-view', true);
+        this.paneManager.activatePane('commands-view-pane', 'Keyboard Shortcuts', 'commands-view', true);
         
         // Then wire up the commands view with dependencies
         // Need to wait a tick for the element to be in the DOM

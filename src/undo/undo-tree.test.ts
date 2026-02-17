@@ -86,10 +86,14 @@ describe('UndoTree', () => {
             expect(testState.value).toBe(2);
         });
 
-        it('should return false when undoing at root', () => {
+        it('should undo root node to initial state', () => {
             tree.addOperation(createTestOperation(testState, 1, 'Set to 1'));
+            expect(testState.value).toBe(1);
+            
             const success = tree.undo();
-            expect(success).toBe(false);
+            expect(success).toBe(true);
+            expect(testState.value).toBe(0); // Back to initial state
+            expect(tree.getCurrentId()).toBeNull(); // At null (before root)
         });
 
         it('should return false when redoing with no children', () => {
@@ -99,23 +103,40 @@ describe('UndoTree', () => {
         });
 
         it('should check canUndo correctly', () => {
-            expect(tree.canUndo()).toBe(false);
+            expect(tree.canUndo()).toBe(false); // No operations yet
             
             tree.addOperation(createTestOperation(testState, 1, 'Set to 1'));
-            expect(tree.canUndo()).toBe(false);
+            expect(tree.canUndo()).toBe(true); // Can undo root
             
             tree.addOperation(createTestOperation(testState, 2, 'Set to 2'));
-            expect(tree.canUndo()).toBe(true);
+            expect(tree.canUndo()).toBe(true); // Can still undo
         });
 
         it('should check canRedo correctly', () => {
             tree.addOperation(createTestOperation(testState, 1, 'Set to 1'));
             tree.addOperation(createTestOperation(testState, 2, 'Set to 2'));
             
-            expect(tree.canRedo()).toBe(false);
+            expect(tree.canRedo()).toBe(false); // At latest node
             
             tree.undo();
-            expect(tree.canRedo()).toBe(true);
+            expect(tree.canRedo()).toBe(true); // Can redo
+            
+            tree.undo();
+            expect(tree.canRedo()).toBe(true); // At null, can redo to root
+        });
+
+        it('should redo from null to root', () => {
+            tree.addOperation(createTestOperation(testState, 1, 'Set to 1'));
+            expect(testState.value).toBe(1);
+            
+            tree.undo();
+            expect(testState.value).toBe(0);
+            expect(tree.getCurrentId()).toBeNull();
+            
+            const success = tree.redo();
+            expect(success).toBe(true);
+            expect(testState.value).toBe(1);
+            expect(tree.getCurrentId()).not.toBeNull();
         });
     });
 

@@ -6,7 +6,7 @@
  */
 
 import { Extension, ExtensionContext } from "../types.js";
-import { SettingsPage } from "../../components/settings-page/settings-page.js";
+import { SettingsPage } from "./settings-page.js";
 import { settingsRegister, SettingMetadata } from "./settings-register.js";
 
 // Re-export types and functions that external code needs

@@ -6,7 +6,7 @@
  */
 
 import { Extension, ExtensionContext } from "../types.js";
-import { AboutPane } from "../../components/about/about-pane.js";
+import { AboutPane } from "./about-pane.js";
 import type { SettingsAPI } from "../settings-extension/settings-extension.js";
 
 // Ensure the custom element is registered

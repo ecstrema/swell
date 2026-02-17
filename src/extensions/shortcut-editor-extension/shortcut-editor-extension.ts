@@ -1,8 +1,8 @@
 /**
- * Commands Extension
+ * Shortcut Editor Extension
  * 
  * Extension that displays all registered commands with their descriptions and shortcuts.
- * Proof of concept for the extension system.
+ * Allows viewing and customizing keyboard shortcuts.
  */
 
 import { Extension, ExtensionContext } from "../types.js";
@@ -13,9 +13,9 @@ if (!customElements.get('commands-view')) {
     customElements.define('commands-view', CommandsView);
 }
 
-export class CommandsExtension implements Extension {
+export class ShortcutEditorExtension implements Extension {
     readonly metadata = {
-        id: 'core/commands',
+        id: 'core/shortcut-editor',
         name: 'Keyboard Shortcuts Editor',
         description: 'View and customize keyboard shortcuts for all registered commands',
     };

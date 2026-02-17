@@ -525,22 +525,16 @@ export class FileDisplay extends HTMLElement {
         newRange = currentRange * zoomFactor;
       }
       
-      // Clamp to reasonable minimum (1 nanosecond)
+      // Clamp to reasonable minimum (1 time unit - the waveform uses nanoseconds)
       if (newRange < 1) {
         newRange = 1;
-      }
-      
-      // Clamp to total available range
-      const totalRange = this.visibleEnd - this.visibleStart;
-      if (newRange > totalRange * 2) {
-        newRange = totalRange * 2;
       }
       
       const center = (this.visibleStart + this.visibleEnd) / 2;
       let newStart = center - newRange / 2;
       let newEnd = center + newRange / 2;
       
-      // Clamp to valid bounds (don't go below 0 or beyond reasonable limits)
+      // Clamp to valid bounds (don't go below 0)
       if (newStart < 0) {
         newStart = 0;
         newEnd = newStart + newRange;

@@ -19,7 +19,7 @@
   height: 32px;
   border: none;
   background-color: var(--color-bg, #1e1e1e);
-  cursor: crosshair;
+  cursor: default;
   display: block;
   margin: 0;
   padding: 0;

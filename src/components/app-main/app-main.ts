@@ -13,7 +13,6 @@ import "../../extensions/dock-extension/index.js";
 import { FileManager } from "../../extensions/waveform-file-extension/file-manager/file-manager.js";
 import { CommandManager } from "../command/command-manager.js";
 import { DockLayoutHelper } from "../dock-layout-helper.js";
-import { PaneManager } from "../panels/pane-manager.js";
 import { UndoManager } from "../../extensions/undo-extension/undo-extension.js";
 import { dockStatePersistence } from "../../extensions/dock-extension/dock-state-persistence.js";
 
@@ -214,16 +213,6 @@ export class AppMain extends HTMLElement {
     }
 
     /**
-     * Get pane manager from dock extension
-     */
-    private getPaneManager(): PaneManager | null {
-        const extensionRegistry = this.commandManager.getExtensionRegistry();
-        const apis = (extensionRegistry as any).extensionAPIs;
-        const dockAPI = apis?.get('core/dock');
-        return dockAPI?.getPaneManager() ?? null;
-    }
-
-    /**
      * Get undo manager from undo extension
      */
     private getUndoManager(): UndoManager | null {
@@ -301,24 +290,24 @@ export class AppMain extends HTMLElement {
         this.addEventListener('pane-close', (e: any) => {
             const paneId = e.detail.id;
 
-            const paneManager = this.getPaneManager();
-            if (!paneManager) return;
+            const dockLayoutHelper = this.getDockLayoutHelper();
+            if (!dockLayoutHelper) return;
 
             // Handle settings pane close
             if (paneId === 'settings-pane') {
-                paneManager.closePane('settings-pane');
+                dockLayoutHelper.closePane('settings-pane');
                 return;
             }
 
             // Handle about pane close
             if (paneId === 'about-pane') {
-                paneManager.closePane('about-pane');
+                dockLayoutHelper.closePane('about-pane');
                 return;
             }
 
             // Handle undo tree pane close
             if (paneId === 'undo-tree-pane') {
-                paneManager.closePane('undo-tree-pane');
+                dockLayoutHelper.closePane('undo-tree-pane');
                 return;
             }
 
@@ -574,14 +563,14 @@ export class AppMain extends HTMLElement {
     }
 
     activateCommandsViewPane() {
-        const paneManager = this.getPaneManager();
-        if (!paneManager) {
-            console.warn('Pane manager not initialized yet');
+        const dockLayoutHelper = this.getDockLayoutHelper();
+        if (!dockLayoutHelper) {
+            console.warn('Dock layout helper not initialized yet');
             return;
         }
         
         // Activate the pane first
-        paneManager.activatePane('commands-view-pane', 'Keyboard Shortcuts', 'commands-view', true);
+        dockLayoutHelper.activatePane('commands-view-pane', 'Keyboard Shortcuts', 'commands-view', true);
 
         // Then wire up the commands view with dependencies
         // Need to wait a tick for the element to be in the DOM

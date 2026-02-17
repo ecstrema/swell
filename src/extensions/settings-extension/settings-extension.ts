@@ -39,11 +39,11 @@ export class SettingsExtension implements Extension {
 
     async activate(context: ExtensionContext): Promise<SettingsAPI> {
         const dockAPI = context.dependencies.get('core/dock');
-        const paneManager = dockAPI?.getPaneManager?.();
+        const dockLayoutHelper = dockAPI?.getDockLayoutHelper?.();
         const dockManager = dockAPI?.getDockManager?.();
 
-        if (!paneManager || !dockManager) {
-            console.warn('Settings extension: PaneManager or DockManager not available');
+        if (!dockLayoutHelper || !dockManager) {
+            console.warn('Settings extension: DockLayoutHelper or DockManager not available');
             // Still return API even if UI can't be registered
             return {
                 registerSetting: (setting: SettingMetadata) => settingsRegister.register(setting),
@@ -75,7 +75,7 @@ export class SettingsExtension implements Extension {
             label: 'Show Settings',
             description: 'Open the settings page',
             handler: () => {
-                paneManager.activatePane('settings-pane', 'Settings', 'settings', true);
+                dockLayoutHelper.activatePane('settings-pane', 'Settings', 'settings', true);
             },
         });
 

@@ -8,7 +8,6 @@
 import { Extension, ExtensionContext } from "../types.js";
 import { DockManager } from "./dock-manager.js";
 import { DockLayoutHelper } from "../../components/dock-layout-helper.js";
-import { PaneManager } from "../../components/panels/pane-manager.js";
 
 // Ensure custom elements are registered
 import "./dock-manager.js";
@@ -30,11 +29,6 @@ export interface DockAPI {
     getDockLayoutHelper(): DockLayoutHelper | null;
     
     /**
-     * Get the pane manager instance
-     */
-    getPaneManager(): PaneManager | null;
-    
-    /**
      * Initialize the dock system with the DOM element
      */
     initializeDockSystem(dockManager: DockManager): void;
@@ -49,7 +43,6 @@ export class DockExtension implements Extension {
 
     private dockManager: DockManager | null = null;
     private dockLayoutHelper: DockLayoutHelper | null = null;
-    private paneManager: PaneManager | null = null;
 
     async activate(context: ExtensionContext): Promise<DockAPI> {
         // The dock manager DOM element is created by app-main
@@ -58,7 +51,6 @@ export class DockExtension implements Extension {
         return {
             getDockManager: () => this.dockManager,
             getDockLayoutHelper: () => this.dockLayoutHelper,
-            getPaneManager: () => this.paneManager,
             initializeDockSystem: (dockManager: DockManager) => this.initializeDockSystem(dockManager),
         };
     }
@@ -70,8 +62,7 @@ export class DockExtension implements Extension {
     private initializeDockSystem(dockManager: DockManager): void {
         this.dockManager = dockManager;
         
-        // Create the dock layout helper and pane manager
+        // Create the dock layout helper
         this.dockLayoutHelper = new DockLayoutHelper(dockManager);
-        this.paneManager = new PaneManager(dockManager, this.dockLayoutHelper);
     }
 }

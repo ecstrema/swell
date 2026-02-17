@@ -246,4 +246,5 @@ details[open] > summary > .tree-chevron {
     white-space: nowrap;
     min-width: 0;
     flex: 1;
+    text-align: var(--tree-text-align, left);
 }

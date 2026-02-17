@@ -77,7 +77,7 @@ export class ShortcutManager {
     }
 
     /**
-     * Unregister a shortcut by command ID
+     * Unregister all shortcuts for a command ID
      */
     unregister(commandId: string): void {
         // Remove from bindings
@@ -89,6 +89,75 @@ export class ShortcutManager {
             disposers.forEach(dispose => dispose());
             this.disposers.delete(commandId);
         }
+    }
+
+    /**
+     * Update a shortcut for a specific command
+     * Removes the old shortcut and registers the new one
+     */
+    updateShortcut(commandId: string, oldShortcut: KeyboardShortcut, newShortcut: KeyboardShortcut): boolean {
+        // Find the binding to update
+        const index = this.bindings.findIndex(b => b.commandId === commandId && b.shortcut === oldShortcut);
+        if (index === -1) {
+            return false; // Binding not found
+        }
+
+        // Remove the old binding
+        this.removeShortcut(commandId, oldShortcut);
+
+        // Add the new binding
+        this.register({ shortcut: newShortcut, commandId });
+
+        return true;
+    }
+
+    /**
+     * Remove a specific shortcut for a command (useful when a command has multiple shortcuts)
+     */
+    removeShortcut(commandId: string, shortcut: KeyboardShortcut): boolean {
+        const index = this.bindings.findIndex(b => b.commandId === commandId && b.shortcut === shortcut);
+        if (index === -1) {
+            return false;
+        }
+
+        // Remove from bindings
+        this.bindings.splice(index, 1);
+
+        // Dispose the specific shosho handler
+        // Note: We need to re-register all bindings for this command
+        // because we don't track individual disposers per shortcut
+        const disposers = this.disposers.get(commandId);
+        if (disposers) {
+            disposers.forEach(dispose => dispose());
+            this.disposers.delete(commandId);
+        }
+
+        // Re-register remaining bindings for this command
+        if (this.shosho) {
+            const remainingBindings = this.bindings.filter(b => b.commandId === commandId);
+            for (const binding of remainingBindings) {
+                this.registerWithShoSho(binding);
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if a shortcut is already in use by another command
+     */
+    isShortcutInUse(shortcut: KeyboardShortcut, excludeCommandId?: string): boolean {
+        return this.bindings.some(b => 
+            b.shortcut === shortcut && (!excludeCommandId || b.commandId !== excludeCommandId)
+        );
+    }
+
+    /**
+     * Get command ID for a shortcut
+     */
+    getCommandForShortcut(shortcut: KeyboardShortcut): string | undefined {
+        const binding = this.bindings.find(b => b.shortcut === shortcut);
+        return binding?.commandId;
     }
 
     /**

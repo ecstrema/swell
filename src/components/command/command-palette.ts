@@ -170,10 +170,13 @@ export class CommandPalette extends HTMLElement {
         } else {
             // Filter commands
             const allCommands = this.commandRegistry.getAll();
+            // Exclude the command palette toggle command since it's redundant when the palette is already open
+            const commandsToShow = allCommands.filter(cmd => cmd.id !== 'core/command-palette/toggle');
+            
             if (query === '') {
-                this.filteredCommands = allCommands;
+                this.filteredCommands = commandsToShow;
             } else {
-                this.filteredCommands = allCommands.filter(cmd => {
+                this.filteredCommands = commandsToShow.filter(cmd => {
                     const labelMatch = cmd.label.toLowerCase().includes(query);
                     const idMatch = cmd.id.toLowerCase().includes(query);
                     const descriptionMatch = cmd.description?.toLowerCase().includes(query) || false;

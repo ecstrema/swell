@@ -263,4 +263,43 @@ describe('CommandPalette', () => {
         const shortcutDisplay = testCommandItem!.querySelector('app-shortcut-display');
         expect(shortcutDisplay).toBeNull();
     });
+
+    it('should not show the "Open Command Palette" command in the palette', () => {
+        // Register the command palette toggle command (as it would be in the real app)
+        registry.register({
+            id: 'core/command-palette/toggle',
+            label: 'Open Command Palette',
+            description: 'Open the command palette to search and execute commands',
+            handler: () => {}
+        });
+
+        // Recreate palette with the command palette toggle command
+        if (palette.parentNode) {
+            palette.parentNode.removeChild(palette);
+        }
+        palette = new CommandPalette(registry, shortcutManager);
+        document.body.appendChild(palette);
+
+        palette.open();
+        
+        const shadowRoot = palette.shadowRoot;
+        expect(shadowRoot).toBeTruthy();
+        
+        // Get all result items
+        const resultItems = shadowRoot!.querySelectorAll('.result-item');
+        
+        // Check that none of the result items contain "Open Command Palette"
+        let foundCommandPalette = false;
+        for (const item of Array.from(resultItems)) {
+            if (item.textContent?.includes('Open Command Palette')) {
+                foundCommandPalette = true;
+                break;
+            }
+        }
+        
+        expect(foundCommandPalette).toBe(false);
+        
+        // Should still show the other 3 commands (test-command-1, test-command-2, file-open)
+        expect(resultItems.length).toBe(3);
+    });
 });

@@ -23,7 +23,8 @@
 }
 
 details {
-    padding-left: var(--tree-indent, 20px);
+    padding-left: var(--tree-indent-left, var(--tree-indent, 20px));
+    padding-right: var(--tree-indent-right, 0);
     position: relative;
 }
 
@@ -60,7 +61,8 @@ details > summary {
     cursor: pointer;
     list-style: none;
     padding: 4px;
-    margin-left: calc(-1 * var(--tree-indent, 20px));
+    margin-left: var(--tree-summary-margin-left, calc(-1 * var(--tree-indent, 20px)));
+    margin-right: var(--tree-summary-margin-right, 0);
     user-select: none;
     white-space: nowrap;
     overflow: hidden;
@@ -71,6 +73,8 @@ details > summary {
     height: 32px;
     box-sizing: border-box;
     line-height: 24px;
+    justify-content: var(--tree-branch-justify, flex-start);
+    flex-direction: var(--tree-branch-direction, row);
 }
 
 /* Horizontal guide line for branch/scope nodes (except root level) */
@@ -244,4 +248,5 @@ details[open] > summary > .tree-chevron {
     white-space: nowrap;
     min-width: 0;
     flex: 1;
+    text-align: var(--tree-text-align, left);
 }

@@ -182,21 +182,39 @@ export class WaveformFileExtension implements Extension {
     }
 
     /**
+     * Get the file manager from app APIs
+     */
+    private getFileManager(): FileManager | null {
+        // First try the stored reference
+        if (this.fileManager) {
+            return this.fileManager;
+        }
+        
+        // Fall back to app APIs
+        if (this.context?.app.getFileManager) {
+            return this.context.app.getFileManager();
+        }
+        
+        return null;
+    }
+
+    /**
      * Handle save state command
      */
     private async handleSaveState(): Promise<void> {
-        if (!this.fileManager) {
+        const fileManager = this.getFileManager();
+        if (!fileManager) {
             console.warn('File manager not available');
             return;
         }
 
-        const activeFileId = this.fileManager.getActiveFileId();
+        const activeFileId = fileManager.getActiveFileId();
         if (!activeFileId) {
             console.warn('No active file to save state');
             return;
         }
 
-        const activeRes = this.fileManager.getFileResources(activeFileId);
+        const activeRes = fileManager.getFileResources(activeFileId);
         if (!activeRes) {
             console.warn('Active file resources not found');
             return;
@@ -216,7 +234,8 @@ export class WaveformFileExtension implements Extension {
      * Handle load state command
      */
     private async handleLoadState(): Promise<void> {
-        if (!this.fileManager) {
+        const fileManager = this.getFileManager();
+        if (!fileManager) {
             console.warn('File manager not available');
             return;
         }
@@ -231,13 +250,13 @@ export class WaveformFileExtension implements Extension {
             const { filename, state } = loaded;
 
             // Check if the file is currently open
-            const fileId = this.fileManager.getFileIdFromFilename(filename);
+            const fileId = fileManager.getFileIdFromFilename(filename);
             if (!fileId) {
                 alert(`The waveform file "${filename}" is not currently open. Please open it first.`);
                 return;
             }
 
-            const fileRes = this.fileManager.getFileResources(fileId);
+            const fileRes = fileManager.getFileResources(fileId);
             if (!fileRes) {
                 console.warn('File resources not found');
                 return;
@@ -247,7 +266,7 @@ export class WaveformFileExtension implements Extension {
             await fileRes.element.applyState(state);
 
             // Dispatch event to notify app-main to activate the file
-            if (this.fileManager.getActiveFileId() !== fileId) {
+            if (fileManager.getActiveFileId() !== fileId) {
                 const event = new CustomEvent('file-activate-request', {
                     bubbles: true,
                     detail: { fileId }

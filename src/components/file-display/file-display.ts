@@ -506,7 +506,7 @@ export class FileDisplay extends HTMLElement {
   }
 
   private handleContainerResize() {
-    // When the container is resized (e.g., dock resize), update all canvas elements
+    // When the container is resized (e.g., dock resize), update all canvas and timeline elements
     this.selectedSignals.forEach((signal, index) => {
       if (signal.canvas) {
         const displayWidth = signal.canvas.clientWidth || 800;
@@ -520,6 +520,9 @@ export class FileDisplay extends HTMLElement {
           setupCanvasForHighDPI(signal.canvas, displayWidth, displayHeight);
           this.paintSignal(signal.canvas, signal.ref, index);
         }
+      } else if (signal.timeline) {
+        // Trigger resize on timeline components
+        signal.timeline.resize();
       }
     });
   }

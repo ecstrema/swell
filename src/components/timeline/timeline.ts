@@ -247,6 +247,14 @@ export class Timeline extends HTMLElement {
   }
 
   private handleResize() {
+    this.resize();
+  }
+
+  /**
+   * Public method to manually trigger a resize and redraw of the timeline canvas.
+   * Can be called by parent components when they detect a resize event.
+   */
+  public resize() {
     if (this.canvas) {
       const rect = this.canvas.getBoundingClientRect();
       setupCanvasForHighDPI(this.canvas, rect.width, rect.height);

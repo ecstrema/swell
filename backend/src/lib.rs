@@ -303,7 +303,7 @@ pub fn get_signal_changes(filename: String, signal_id: usize, start: u64, end: u
     let signal = waveform.get_signal(signal_ref).ok_or("Signal not found")?;
     let time_table = waveform.time_table();
 
-    let mut changes = Vec::new();
+    let mut result = Vec::new();
     let mut last_before_start: Option<SignalChange> = None;
 
     for (time_idx, value) in signal.iter_changes() {
@@ -320,25 +320,29 @@ pub fn get_signal_changes(filename: String, signal_id: usize, start: u64, end: u
 
          if time > end {
              // Add the first change after the end time
-             changes.push(SignalChange {
+             result.push(SignalChange {
                  time,
                  value: format!("{}", value),
              });
              break;
          }
 
-         changes.push(SignalChange {
+         result.push(SignalChange {
              time,
              value: format!("{}", value),
          });
     }
 
-    // Prepend the last change before start to the beginning
+    // Build final result with boundary change at the start
+    // More efficient than insert(0, ...) which requires shifting all elements
     if let Some(before) = last_before_start {
-        changes.insert(0, before);
+        let mut changes = Vec::with_capacity(result.len() + 1);
+        changes.push(before);
+        changes.extend(result);
+        Ok(changes)
+    } else {
+        Ok(result)
     }
-
-    Ok(changes)
 }
 
 #[wasm_bindgen]

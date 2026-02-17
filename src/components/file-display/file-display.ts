@@ -1084,10 +1084,7 @@ export class FileDisplay extends HTMLElement {
           <button id="add-minimap-btn" class="command-button">+ Add Minimap</button>
         </div>
         <div class="grid-scroll-container">
-          <div class="grid-container">
-            <div class="signal-labels" id="signal-labels"></div>
-            <div class="signal-canvases" id="signal-canvases"></div>
-          </div>
+          <div class="grid-container" id="grid-container"></div>
         </div>
       </div>
     `;
@@ -1102,42 +1099,60 @@ export class FileDisplay extends HTMLElement {
       addMinimapBtn.addEventListener('click', this.boundHandleAddMinimap);
     }
 
-    // Get containers
-    const labelsContainer = this.shadowRoot.querySelector('#signal-labels');
-    const canvasesContainer = this.shadowRoot.querySelector('#signal-canvases');
+    // Get grid container
+    const gridContainer = this.shadowRoot.querySelector('#grid-container');
     
-    if (labelsContainer && canvasesContainer) {
-      // Add all the signals (timelines, minimaps, and signal canvases) in grid layout
+    if (gridContainer) {
+      // Add all the signals (timelines, minimaps, and signal canvases) as individual rows
       this.selectedSignals.forEach(signal => {
+        // Create row container
+        const row = document.createElement('div');
+        row.className = 'signal-row';
+        
         // Create label element
         const label = document.createElement('div');
         label.className = 'signal-label';
         label.textContent = signal.name;
         // Store ref for potential future features (e.g., click to highlight, context menu)
         label.dataset.ref = signal.ref.toString();
-        labelsContainer.appendChild(label);
+        row.appendChild(label);
         
-        // Add corresponding canvas/timeline/minimap
+        // Create canvas container and add corresponding canvas/timeline/minimap
+        const canvasContainer = document.createElement('div');
+        canvasContainer.className = 'signal-canvas-container';
         if (signal.isTimeline && signal.timeline) {
-          canvasesContainer.appendChild(signal.timeline);
+          canvasContainer.appendChild(signal.timeline);
         } else if (signal.isMinimap && signal.minimap) {
-          canvasesContainer.appendChild(signal.minimap);
+          canvasContainer.appendChild(signal.minimap);
         } else if (signal.canvas) {
-          canvasesContainer.appendChild(signal.canvas);
+          canvasContainer.appendChild(signal.canvas);
         }
+        row.appendChild(canvasContainer);
+        
+        gridContainer.appendChild(row);
       });
       
       // Add the fixed minimap at the bottom
       if (this.selectedSignals.length > 0) {
+        const row = document.createElement('div');
+        row.className = 'signal-row';
+        
         const minimapLabel = document.createElement('div');
         minimapLabel.className = 'signal-label';
         minimapLabel.textContent = 'Overview';
-        labelsContainer.appendChild(minimapLabel);
-        canvasesContainer.appendChild(this.minimap);
+        row.appendChild(minimapLabel);
+        
+        const canvasContainer = document.createElement('div');
+        canvasContainer.className = 'signal-canvas-container';
+        canvasContainer.appendChild(this.minimap);
+        row.appendChild(canvasContainer);
+        
+        gridContainer.appendChild(row);
       }
     }
     
-    this.signalsContainer = canvasesContainer as HTMLDivElement;
+    // Store reference to the grid container for signal access
+    this.signalsContainer = gridContainer as HTMLDivElement;
   }
 }
 

@@ -65,6 +65,7 @@ export class FileDisplay extends HTMLElement {
   private stateRestored: boolean = false;
   private alternatingRowPattern: number = 3;
   private executeUndoableOperation: ((operation: UndoableOperation) => void) | null = null;
+  private boundHandleSignalCanvasWheel: (e: WheelEvent) => void;
 
   constructor() {
     super();
@@ -79,6 +80,7 @@ export class FileDisplay extends HTMLElement {
     this.boundHandleSignalsReordered = this.handleSignalsReordered.bind(this);
     this.boundHandleThemeChanged = this.handleThemeChanged.bind(this);
     this.boundHandleSignalPathToggled = this.handleSignalPathToggled.bind(this);
+    this.boundHandleSignalCanvasWheel = this.handleSignalCanvasWheel.bind(this);
 
     this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(fileDisplayCss)];
     
@@ -500,6 +502,69 @@ export class FileDisplay extends HTMLElement {
     });
   }
   
+  /**
+   * Handle wheel events on signal canvases
+   * Implements zoom with Ctrl+wheel and horizontal pan with plain wheel
+   */
+  private handleSignalCanvasWheel(e: WheelEvent) {
+    e.preventDefault();
+    
+    const currentRange = this.visibleEnd - this.visibleStart;
+    
+    // Check if Ctrl key is pressed (or Cmd on Mac)
+    if (e.ctrlKey || e.metaKey) {
+      // Ctrl+Wheel: Zoom in/out
+      const zoomFactor = 1.2;
+      let newRange: number;
+      
+      if (e.deltaY < 0) {
+        // Zoom in
+        newRange = currentRange / zoomFactor;
+      } else {
+        // Zoom out
+        newRange = currentRange * zoomFactor;
+      }
+      
+      // Clamp to reasonable minimum (1 nanosecond)
+      if (newRange < 1) {
+        newRange = 1;
+      }
+      
+      // Clamp to total available range
+      const totalRange = this.visibleEnd - this.visibleStart;
+      if (newRange > totalRange * 2) {
+        newRange = totalRange * 2;
+      }
+      
+      const center = (this.visibleStart + this.visibleEnd) / 2;
+      let newStart = center - newRange / 2;
+      let newEnd = center + newRange / 2;
+      
+      // Clamp to valid bounds (don't go below 0 or beyond reasonable limits)
+      if (newStart < 0) {
+        newStart = 0;
+        newEnd = newStart + newRange;
+      }
+      
+      this.setVisibleRange(newStart, newEnd);
+    } else {
+      // Plain Wheel: Pan left/right (horizontal scroll)
+      const panFactor = 0.1; // 10% of visible range
+      const panDistance = currentRange * panFactor * Math.sign(e.deltaY);
+      
+      let newStart = this.visibleStart + panDistance;
+      let newEnd = this.visibleEnd + panDistance;
+      
+      // Don't pan before 0
+      if (newStart < 0) {
+        newStart = 0;
+        newEnd = newStart + currentRange;
+      }
+      
+      this.setVisibleRange(newStart, newEnd);
+    }
+  }
+  
   private handleSignalPathToggled(event: Event) {
     const customEvent = event as CustomEvent;
     const { ref, showFullPath } = customEvent.detail;
@@ -622,6 +687,9 @@ export class FileDisplay extends HTMLElement {
     // Set a reasonable default width - will be updated after render
     canvas.width = 800;
     canvas.height = 32;
+    
+    // Add wheel event listener for zoom and pan
+    canvas.addEventListener('wheel', this.boundHandleSignalCanvasWheel);
 
     this.selectedSignals.push({ 
       name, 
@@ -657,6 +725,9 @@ export class FileDisplay extends HTMLElement {
     const canvas = document.createElement('canvas');
     canvas.width = 800;
     canvas.height = 32;
+    
+    // Add wheel event listener for zoom and pan
+    canvas.addEventListener('wheel', this.boundHandleSignalCanvasWheel);
 
     // Insert at the specified index
     this.selectedSignals.splice(index, 0, { 
@@ -686,6 +757,12 @@ export class FileDisplay extends HTMLElement {
     
     if (signalIndex === -1) {
       return;
+    }
+
+    // Remove wheel event listener from canvas if it exists
+    const signal = this.selectedSignals[signalIndex];
+    if (signal.canvas) {
+      signal.canvas.removeEventListener('wheel', this.boundHandleSignalCanvasWheel);
     }
 
     // Remove the signal

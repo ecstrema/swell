@@ -187,6 +187,45 @@ export class Timeline extends HTMLElement {
   }
 
   /**
+   * Pan (shift) the visible range left or right
+   * @param direction - Negative to pan left (earlier in time), positive to pan right (later in time)
+   * @param factor - Multiplier for pan distance (default 0.1 = 10% of visible range)
+   */
+  pan(direction: number, factor: number = 0.1): void {
+    const currentRange = this._endTime - this._startTime;
+    
+    // Prevent panning if range is invalid
+    if (currentRange <= 0) {
+      console.warn('Cannot pan: invalid time range');
+      return;
+    }
+    
+    // Calculate pan distance based on visible range
+    const panDistance = currentRange * factor * Math.sign(direction);
+    
+    let newStart = this._startTime + panDistance;
+    let newEnd = this._endTime + panDistance;
+    
+    // Clamp to total range
+    if (newStart < this._totalStartTime) {
+      newStart = this._totalStartTime;
+      newEnd = newStart + currentRange;
+    }
+    if (newEnd > this._totalEndTime) {
+      newEnd = this._totalEndTime;
+      newStart = newEnd - currentRange;
+    }
+    
+    // Validate final range
+    if (newStart >= newEnd) {
+      console.warn('Cannot pan: would create invalid range');
+      return;
+    }
+    
+    this.setVisibleRange(newStart, newEnd);
+  }
+
+  /**
    * Set visible range and dispatch event
    */
   private setVisibleRange(start: number, end: number): void {
@@ -257,12 +296,19 @@ export class Timeline extends HTMLElement {
   private handleWheel(e: WheelEvent) {
     e.preventDefault();
     
-    if (e.deltaY < 0) {
-      // Zoom in
-      this.zoomIn(1.2);
+    // Check if Ctrl key is pressed (or Cmd on Mac)
+    if (e.ctrlKey || e.metaKey) {
+      // Ctrl+Wheel: Zoom in/out
+      if (e.deltaY < 0) {
+        this.zoomIn(1.2);
+      } else {
+        this.zoomOut(1.2);
+      }
     } else {
-      // Zoom out
-      this.zoomOut(1.2);
+      // Plain Wheel: Pan left/right (horizontal scroll)
+      // deltaY > 0 means scroll down/right, < 0 means scroll up/left
+      // We'll pan in the direction of the scroll
+      this.pan(e.deltaY, 0.1);
     }
   }
 

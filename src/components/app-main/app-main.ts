@@ -134,6 +134,9 @@ export class AppMain extends HTMLElement {
         // Handle startup files from command-line arguments (Tauri only)
         await this.handleStartupFiles();
 
+        // Initialize extensions
+        await this.initializeExtensions();
+
         // Initialize shortcut system
         this.initializeShortcuts();
 
@@ -263,6 +266,34 @@ export class AppMain extends HTMLElement {
     disconnectedCallback() {
         // Clean up command manager (includes shortcuts and command palette)
         this.commandManager.deactivate();
+    }
+
+    /**
+     * Initialize extensions
+     */
+    private async initializeExtensions() {
+        // Initialize extensions in the command manager
+        await this.commandManager.initializeExtensions();
+
+        // Register pages from extensions with the dock manager
+        const extensionRegistry = this.commandManager.getExtensionRegistry();
+        const pages = extensionRegistry.getPages();
+        
+        for (const page of pages) {
+            // Register each page with the dock manager
+            this.dockManager.registerContent(page.id, page.factory);
+        }
+
+        // Update the show commands command to actually open the commands view
+        this.commandManager.getCommandRegistry().register({
+            id: 'core/commands/show',
+            label: 'Show All Commands',
+            description: 'Display all registered commands with their shortcuts',
+            handler: () => {
+                // Activate the commands view pane
+                this.activateCommandsViewPane();
+            },
+        });
     }
 
     /**
@@ -602,6 +633,22 @@ export class AppMain extends HTMLElement {
 
     activateUndoTreePane() {
         this.paneManager.activatePane('undo-tree-pane', 'Undo History', 'undo-tree', true);
+    }
+
+    activateCommandsViewPane() {
+        // Get the commands view from extensions and wire it up
+        const commandsViewElement = this.dockManager.getContent('commands-view', 'commands-view-pane') as any;
+        if (commandsViewElement) {
+            // Provide the necessary dependencies to the commands view
+            if (commandsViewElement.setCommandRegistry) {
+                commandsViewElement.setCommandRegistry(this.commandManager.getCommandRegistry());
+            }
+            if (commandsViewElement.setShortcutManager) {
+                commandsViewElement.setShortcutManager(this.commandManager.getShortcutManager());
+            }
+        }
+        
+        this.paneManager.activatePane('commands-view-pane', 'All Commands', 'commands-view', true);
     }
 
     /**

@@ -2,7 +2,7 @@
 // This allows the application to restore the exact state when reopening a file
 
 import { isTauri } from '../backend/index.js';
-import { getSetting, setSetting } from '../settings/settings-storage.js';
+import { getSetting, setSetting } from '../extensions/settings-extension/settings-extension.js';
 
 /**
  * Item representing a signal in the waveform display

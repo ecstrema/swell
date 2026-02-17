@@ -1,3 +1,5 @@
+import { UndoableOperation } from './undo-tree.js';
+
 /**
  * Composite operation that groups multiple operations together
  * All operations are executed/undone/redone as a single unit

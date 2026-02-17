@@ -20,7 +20,7 @@ import {
 import { Command, ShortcutBinding } from "../shortcuts/types.js";
 import { CommandRegistry } from "../shortcuts/command-registry.js";
 import { ShortcutManager } from "../shortcuts/shortcut-manager.js";
-import { SettingMetadata, settingsRegister } from "../settings/settings-register.js";
+import { SettingMetadata, settingsRegister } from "../extensions/settings-extension/settings-extension.js";
 import { MenuItemConfig, SubmenuConfig } from "../menu-api/menu-api.js";
 
 /**
@@ -28,6 +28,8 @@ import { MenuItemConfig, SubmenuConfig } from "../menu-api/menu-api.js";
  */
 export class ExtensionRegistry {
     private extensions: Map<ExtensionId, Extension> = new Map();
+    private extensionAPIs: Map<ExtensionId, any> = new Map();
+    private extensionFactories: Map<ExtensionId, () => Extension> = new Map();
     private pages: Map<string, PageRegistration> = new Map();
     private themes: Map<string, ThemeRegistration> = new Map();
     private menuItems: (MenuItemConfig | SubmenuConfig)[] = [];
@@ -55,7 +57,7 @@ export class ExtensionRegistry {
     }
 
     /**
-     * Register an extension
+     * Register an extension and its dependencies
      */
     async register(extension: Extension): Promise<void> {
         if (this.extensions.has(extension.metadata.id)) {
@@ -63,13 +65,69 @@ export class ExtensionRegistry {
             return;
         }
 
+        // Register dependencies first
+        if (extension.metadata.dependencies) {
+            for (const depId of extension.metadata.dependencies) {
+                // Check if dependency is already registered
+                if (!this.extensions.has(depId)) {
+                    // Try to register from factory if available
+                    const factory = this.extensionFactories.get(depId);
+                    if (factory) {
+                        await this.register(factory());
+                    } else {
+                        console.warn(`Dependency ${depId} for extension ${extension.metadata.id} not found`);
+                    }
+                }
+            }
+        }
+
         this.extensions.set(extension.metadata.id, extension);
 
         // Create context for this extension
         const context = this.createContext(extension);
 
-        // Activate the extension
-        await extension.activate(context);
+        // Activate the extension and store any returned API
+        const api = await extension.activate(context);
+        if (api !== undefined) {
+            this.extensionAPIs.set(extension.metadata.id, api);
+        }
+    }
+
+    /**
+     * Register an extension factory for lazy loading
+     */
+    registerFactory(extensionId: ExtensionId, factory: () => Extension): void {
+        if (this.extensions.has(extensionId)) {
+            console.warn(`Extension ${extensionId} is already registered`);
+            return;
+        }
+        this.extensionFactories.set(extensionId, factory);
+    }
+
+    /**
+     * Get an extension by ID, registering it if not already registered
+     */
+    async getExtension<T = any>(extensionId: ExtensionId): Promise<T | undefined> {
+        // If already registered, return its API
+        if (this.extensionAPIs.has(extensionId)) {
+            return this.extensionAPIs.get(extensionId) as T;
+        }
+
+        // If extension is registered but hasn't provided an API, return undefined
+        if (this.extensions.has(extensionId)) {
+            return undefined;
+        }
+
+        // If we have a factory, create and register the extension
+        const factory = this.extensionFactories.get(extensionId);
+        if (factory) {
+            const extension = factory();
+            await this.register(extension);
+            return this.extensionAPIs.get(extensionId) as T;
+        }
+
+        console.warn(`Extension ${extensionId} not found`);
+        return undefined;
     }
 
     /**
@@ -229,6 +287,10 @@ export class ExtensionRegistry {
             },
 
             getMetadata: () => extension.metadata,
+
+            getExtension: <T = any>(extensionId: ExtensionId): Promise<T | undefined> => {
+                return this.getExtension<T>(extensionId);
+            },
             
             app: this.appAPIs,
         };

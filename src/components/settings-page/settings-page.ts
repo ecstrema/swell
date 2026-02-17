@@ -1,7 +1,7 @@
 // Settings page component
 
-import { settingsRegister, SettingMetadata, SettingValue } from '../../settings/settings-register.js';
-import { getSetting, setSetting } from '../../settings/settings-storage.js';
+import { settingsRegister, SettingMetadata, SettingValue } from '../../extensions/settings-extension/settings-extension.js';
+import { getSetting, setSetting } from '../../extensions/settings-extension/settings-extension.js';
 import { css } from '../../utils/css-utils.js';
 import { scrollbarSheet } from '../../styles/shared-sheets.js';
 import settingsCss from './settings-page.css?inline';

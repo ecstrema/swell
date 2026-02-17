@@ -171,6 +171,89 @@ mod tests {
         // Cleanup
         remove_file("simple.vcd".to_string());
     }
+
+    #[test]
+    #[serial]
+    fn test_signal_changes_includes_boundary_values() {
+        // Clear files first
+        {
+            let mut files = OPENED_FILES.lock().unwrap();
+            files.clear();
+        }
+
+        // Load a real VCD file from examples
+        let vcd_content = std::fs::read("../examples/simple.vcd").expect("Failed to read simple.vcd");
+        let res = add_file_bytes("simple.vcd".to_string(), vcd_content);
+        assert!(res.is_ok(), "Failed to load VCD file");
+
+        // Get hierarchy to find signal refs
+        let hierarchy = get_hierarchy("simple.vcd".to_string()).expect("Failed to get hierarchy");
+        
+        // Find a variable with multiple changes (clk is a good candidate)
+        let mut test_signal_ref: Option<usize> = None;
+        for scope in &hierarchy.scopes {
+            for var in &scope.vars {
+                if var.name == "clk" {
+                    test_signal_ref = Some(var.ref_);
+                    break;
+                }
+            }
+            if test_signal_ref.is_some() {
+                break;
+            }
+        }
+
+        assert!(test_signal_ref.is_some(), "No 'clk' variable found in hierarchy");
+        let signal_ref = test_signal_ref.unwrap();
+
+        // First, get all changes to understand the signal
+        let all_changes = get_signal_changes("simple.vcd".to_string(), signal_ref, 0, u64::MAX)
+            .expect("Failed to get all signal changes");
+        
+        assert!(all_changes.len() >= 4, "Expected at least 4 changes for clk signal");
+
+        // Now test with a range that excludes the first and last changes
+        // Choose a range like [30, 100] which should be in the middle
+        let range_start = 30;
+        let range_end = 100;
+
+        let range_changes = get_signal_changes("simple.vcd".to_string(), signal_ref, range_start, range_end)
+            .expect("Failed to get range signal changes");
+
+        // Verify that the first returned change is before the range start
+        assert!(
+            range_changes.len() > 0,
+            "Expected at least one change in result"
+        );
+        
+        // The first change should be before or at the start (it's the boundary change)
+        assert!(
+            range_changes[0].time <= range_start,
+            "First change should be at or before range start. Got time={}, expected <= {}",
+            range_changes[0].time,
+            range_start
+        );
+
+        // At least one change should be within the range
+        let has_change_in_range = range_changes.iter().any(|c| c.time >= range_start && c.time <= range_end);
+        assert!(has_change_in_range, "Expected at least one change within the range");
+
+        // The last change should be after the range end (if there are changes after end)
+        // Find if there's a change after end in all_changes
+        let has_change_after_end = all_changes.iter().any(|c| c.time > range_end);
+        if has_change_after_end {
+            // Then our result should include it as the last element
+            assert!(
+                range_changes.last().unwrap().time > range_end,
+                "Last change should be after range end when such a change exists. Got time={}, expected > {}",
+                range_changes.last().unwrap().time,
+                range_end
+            );
+        }
+
+        // Cleanup
+        remove_file("simple.vcd".to_string());
+    }
 }
 
 pub fn get_hierarchy(filename: String) -> Result<HierarchyRoot, String> {
@@ -220,21 +303,46 @@ pub fn get_signal_changes(filename: String, signal_id: usize, start: u64, end: u
     let signal = waveform.get_signal(signal_ref).ok_or("Signal not found")?;
     let time_table = waveform.time_table();
 
-    let mut changes = Vec::new();
+    let mut result = Vec::new();
+    let mut last_before_start: Option<SignalChange> = None;
 
     for (time_idx, value) in signal.iter_changes() {
          let time = time_table[time_idx as usize];
 
-         if time < start { continue; }
-         if time > end { break; }
+         if time < start {
+             // Keep track of the last change before the start time
+             last_before_start = Some(SignalChange {
+                 time,
+                 value: format!("{}", value),
+             });
+             continue;
+         }
 
-         changes.push(SignalChange {
+         if time > end {
+             // Add the first change after the end time
+             result.push(SignalChange {
+                 time,
+                 value: format!("{}", value),
+             });
+             break;
+         }
+
+         result.push(SignalChange {
              time,
              value: format!("{}", value),
          });
     }
 
-    Ok(changes)
+    // Build final result with boundary change at the start
+    // More efficient than insert(0, ...) which requires shifting all elements
+    if let Some(before) = last_before_start {
+        let mut changes = Vec::with_capacity(result.len() + 1);
+        changes.push(before);
+        changes.extend(result);
+        Ok(changes)
+    } else {
+        Ok(result)
+    }
 }
 
 #[wasm_bindgen]

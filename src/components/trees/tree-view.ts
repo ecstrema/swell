@@ -1,7 +1,7 @@
 import { css } from "../../utils/css-utils.js";
 import { scrollbarSheet } from "../../styles/shared-sheets.js";
 import treeViewCss from "./tree-view.css?inline";
-import { getSetting } from "../../settings/settings-storage.js";
+import { getSetting } from "../../extensions/settings-extension/settings-extension.js";
 import ChevronRightIcon from '~icons/mdi/chevron-right?raw';
 import { FilterInput, FilterOptions, FilterChangeEvent } from "../primitives/filter-input.js";
 import "../primitives/filter-input.js";

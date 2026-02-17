@@ -14,8 +14,7 @@ import { FileManager } from "../file-manager/file-manager.js";
 import { CommandManager } from "../command/command-manager.js";
 import { DockLayoutHelper } from "../dock-layout-helper.js";
 import { PaneManager } from "../panels/pane-manager.js";
-import { UndoManager } from "../../undo/undo-manager.js";
-import { UndoableOperation } from "../../undo/undo-tree.js";
+import { UndoManager, UndoableOperation } from "../../extensions/undo-extension/undo-extension.js";
 import { saveStateToFile, loadStateFromFile } from "../../utils/state-file-io.js";
 import { dockStatePersistence } from "../docking/dock-state-persistence.js";
 

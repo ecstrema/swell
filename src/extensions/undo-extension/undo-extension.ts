@@ -7,7 +7,11 @@
 
 import { Extension, ExtensionContext } from "../types.js";
 import { UndoTreePanel } from "../../components/panels/undo-tree-panel.js";
-import { UndoManager } from "../../undo/undo-manager.js";
+import { UndoManager } from "./undo-manager.js";
+
+// Re-export types that external code needs
+export type { UndoableOperation } from "./undo-tree.js";
+export { UndoManager } from "./undo-manager.js";
 
 // Ensure the custom element is registered
 if (!customElements.get('undo-tree-panel')) {
@@ -29,7 +33,6 @@ export class UndoExtension implements Extension {
         id: 'core/undo',
         name: 'Undo Extension',
         description: 'Provides undo/redo functionality and history visualization',
-        version: '1.0.0',
     };
 
     private undoManager: UndoManager;

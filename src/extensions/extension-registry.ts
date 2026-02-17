@@ -20,7 +20,7 @@ import {
 import { Command, ShortcutBinding } from "../shortcuts/types.js";
 import { CommandRegistry } from "../shortcuts/command-registry.js";
 import { ShortcutManager } from "../shortcuts/shortcut-manager.js";
-import { SettingMetadata, settingsRegister } from "../settings/settings-register.js";
+import { SettingMetadata, settingsRegister } from "../extensions/settings-extension/settings-extension.js";
 import { MenuItemConfig, SubmenuConfig } from "../menu-api/menu-api.js";
 
 /**

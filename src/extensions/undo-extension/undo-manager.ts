@@ -1,4 +1,4 @@
-import { UndoTree, UndoableOperation } from '../undo/undo-tree.js';
+import { UndoTree, UndoableOperation } from './undo-tree.js';
 import { CompositeOperation } from './composite-operation.js';
 
 /**

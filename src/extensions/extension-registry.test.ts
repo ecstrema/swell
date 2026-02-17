@@ -28,7 +28,6 @@ describe('Extension Registry', () => {
                 metadata: {
                     id: 'test/provider',
                     name: 'Provider Extension',
-                    version: '1.0.0',
                 },
                 activate: async (context: ExtensionContext) => {
                     return {
@@ -43,7 +42,6 @@ describe('Extension Registry', () => {
                 metadata: {
                     id: 'test/consumer',
                     name: 'Consumer Extension',
-                    version: '1.0.0',
                     dependencies: ['test/provider'],
                 },
                 activate: async (context: ExtensionContext) => {
@@ -68,7 +66,6 @@ describe('Extension Registry', () => {
                 metadata: {
                     id: 'test/no-api',
                     name: 'No API Extension',
-                    version: '1.0.0',
                 },
                 activate: async (context: ExtensionContext) => {
                     // No return value = no API
@@ -99,7 +96,6 @@ describe('Extension Registry', () => {
                 metadata: {
                     id: 'test/complex-api',
                     name: 'Complex API Extension',
-                    version: '1.0.0',
                 },
                 activate: async (context: ExtensionContext): Promise<TestAPI> => {
                     return {
@@ -126,7 +122,6 @@ describe('Extension Registry', () => {
                 metadata: {
                     id: 'test/shared-provider',
                     name: 'Shared Provider',
-                    version: '1.0.0',
                 },
                 activate: async () => {
                     return { shared: 'value' };
@@ -140,7 +135,6 @@ describe('Extension Registry', () => {
                 metadata: {
                     id: 'test/consumer1',
                     name: 'Consumer 1',
-                    version: '1.0.0',
                 },
                 activate: async (context: ExtensionContext) => {
                     api1 = await context.getExtension('test/shared-provider');
@@ -151,7 +145,6 @@ describe('Extension Registry', () => {
                 metadata: {
                     id: 'test/consumer2',
                     name: 'Consumer 2',
-                    version: '1.0.0',
                 },
                 activate: async (context: ExtensionContext) => {
                     api2 = await context.getExtension('test/shared-provider');
@@ -177,7 +170,6 @@ describe('Extension Registry', () => {
                 metadata: {
                     id: 'test/simple',
                     name: 'Simple Extension',
-                    version: '1.0.0',
                 },
                 activate: async () => {},
             };
@@ -194,7 +186,6 @@ describe('Extension Registry', () => {
                 metadata: {
                     id: 'test/duplicate',
                     name: 'Duplicate Extension',
-                    version: '1.0.0',
                 },
                 activate: async () => {},
             };
@@ -203,7 +194,6 @@ describe('Extension Registry', () => {
                 metadata: {
                     id: 'test/duplicate',
                     name: 'Duplicate Extension 2',
-                    version: '2.0.0',
                 },
                 activate: async () => {},
             };
@@ -225,7 +215,6 @@ describe('Extension Registry', () => {
                 metadata: {
                     id: 'test/metadata',
                     name: 'Metadata Test',
-                    version: '1.0.0',
                 },
                 activate: async (context: ExtensionContext) => {
                     receivedMetadata = context.getMetadata();
@@ -237,7 +226,6 @@ describe('Extension Registry', () => {
             expect(receivedMetadata).toBeDefined();
             expect(receivedMetadata.id).toBe('test/metadata');
             expect(receivedMetadata.name).toBe('Metadata Test');
-            expect(receivedMetadata.version).toBe('1.0.0');
         });
     });
 });

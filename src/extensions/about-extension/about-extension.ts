@@ -19,7 +19,6 @@ export class AboutExtension implements Extension {
         id: 'core/about',
         name: 'About Extension',
         description: 'Provides application information and about page',
-        version: '1.0.0',
         dependencies: ['core/settings'],
     };
 

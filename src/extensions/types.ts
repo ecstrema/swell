@@ -6,7 +6,7 @@
  */
 
 import { Command, ShortcutBinding } from "../shortcuts/types.js";
-import { SettingMetadata } from "../settings/settings-register.js";
+import { SettingMetadata } from "./settings-extension/settings-extension.js";
 import { MenuItemConfig, SubmenuConfig } from "../menu-api/menu-api.js";
 
 /**
@@ -24,8 +24,6 @@ export interface ExtensionMetadata {
     name: string;
     /** Brief description of what the extension provides */
     description?: string;
-    /** Version string */
-    version: string;
     /** List of extension IDs that this extension depends on */
     dependencies?: ExtensionId[];
 }

@@ -18,7 +18,6 @@ export class CommandsExtension implements Extension {
         id: 'core/commands',
         name: 'Keyboard Shortcuts Editor',
         description: 'View and customize keyboard shortcuts for all registered commands',
-        version: '1.0.0',
     };
 
     async activate(context: ExtensionContext): Promise<void> {

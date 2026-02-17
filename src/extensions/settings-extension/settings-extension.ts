@@ -7,7 +7,12 @@
 
 import { Extension, ExtensionContext } from "../types.js";
 import { SettingsPage } from "../../components/settings-page/settings-page.js";
-import { settingsRegister, SettingMetadata } from "../../settings/settings-register.js";
+import { settingsRegister, SettingMetadata } from "./settings-register.js";
+
+// Re-export types and functions that external code needs
+export type { SettingMetadata, SettingValue } from "./settings-register.js";
+export { settingsRegister } from "./settings-register.js";
+export { getSetting, setSetting } from "./settings-storage.js";
 
 // Ensure the custom element is registered
 if (!customElements.get('settings-page')) {
@@ -29,7 +34,6 @@ export class SettingsExtension implements Extension {
         id: 'core/settings',
         name: 'Settings Extension',
         description: 'Provides settings page and configuration interface',
-        version: '1.0.0',
     };
 
     async activate(context: ExtensionContext): Promise<SettingsAPI> {

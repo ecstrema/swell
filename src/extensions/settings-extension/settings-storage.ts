@@ -1,6 +1,6 @@
 // Settings storage layer for reading/writing settings to JSON file
 
-import { isTauri } from '../backend/index.js';
+import { isTauri } from '../../backend/index.js';
 import { invoke } from '@tauri-apps/api/core';
 import { settingsRegister, SettingValue } from './settings-register.js';
 

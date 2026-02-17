@@ -548,7 +548,7 @@ export class FileDisplay extends HTMLElement {
   /**
    * Add a signal with undo support
    */
-  private addSignalUndoable(name: string, ref: number) {
+  private addSignalUndoable(name: string, ref: number, path?: string) {
     // Check if signal is already selected
     if (this.selectedSignals.some(s => s.ref === ref)) {
       return;
@@ -557,20 +557,20 @@ export class FileDisplay extends HTMLElement {
     if (this.executeUndoableOperation) {
       const operation = {
         do: () => {
-          this.addSignal(name, ref);
+          this.addSignal(name, ref, path);
         },
         undo: () => {
           this.removeSignal(ref);
         },
         redo: () => {
-          this.addSignal(name, ref);
+          this.addSignal(name, ref, path);
         },
         getDescription: () => `Add signal ${name}`
       };
       this.executeUndoableOperation(operation);
     } else {
       // Fallback if undo system not available
-      this.addSignal(name, ref);
+      this.addSignal(name, ref, path);
     }
   }
 
@@ -586,6 +586,8 @@ export class FileDisplay extends HTMLElement {
 
     const signal = this.selectedSignals[signalIndex];
     const name = signal.name;
+    const path = signal.path;
+    const showFullPath = signal.showFullPath;
     const savedIndex = signalIndex;
 
     if (this.executeUndoableOperation) {
@@ -595,7 +597,7 @@ export class FileDisplay extends HTMLElement {
         },
         undo: () => {
           // Restore signal at its original position
-          this.addSignalAtIndex(name, ref, savedIndex);
+          this.addSignalAtIndex(name, ref, savedIndex, path, showFullPath);
         },
         redo: () => {
           this.removeSignal(ref);
@@ -645,7 +647,7 @@ export class FileDisplay extends HTMLElement {
   /**
    * Add a signal at a specific index (used for undo/redo)
    */
-  private addSignalAtIndex(name: string, ref: number, index: number) {
+  private addSignalAtIndex(name: string, ref: number, index: number, path?: string, showFullPath?: boolean) {
     // Check if signal is already selected
     if (this.selectedSignals.some(s => s.ref === ref)) {
       return;
@@ -657,7 +659,14 @@ export class FileDisplay extends HTMLElement {
     canvas.height = 32;
 
     // Insert at the specified index
-    this.selectedSignals.splice(index, 0, { name, ref, canvas, isTimeline: false });
+    this.selectedSignals.splice(index, 0, { 
+      name, 
+      ref, 
+      path, 
+      showFullPath: showFullPath ?? false, 
+      canvas, 
+      isTimeline: false 
+    });
     
     // Update the selected signals tree
     this.updateSelectedSignalsTree();

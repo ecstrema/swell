@@ -11,6 +11,7 @@ export class DockManager extends HTMLElement {
     null;
   private _draggedStack: DockStack | null = null;
   private _dropOverlay: HTMLElement | null = null;
+  private _onLayoutChange: ((layout: DockLayout) => void) | null = null;
 
   constructor() {
     super();

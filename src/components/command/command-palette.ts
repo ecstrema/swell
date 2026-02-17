@@ -80,67 +80,6 @@ export class CommandPalette extends HTMLElement {
         palette?.addEventListener('click', (e) => {
             e.stopPropagation();
         });
-
-        // Delegated click handler for result items
-        this.resultsContainer?.addEventListener('click', (e) => {
-            const target = e.target as HTMLElement;
-            const resultItem = target.closest('.result-item') as HTMLElement;
-            
-            if (resultItem) {
-                if (this.isSelectionMode) {
-                    const optionId = resultItem.getAttribute('data-option-id');
-                    if (optionId) {
-                        const option = this.filteredOptions.find(opt => opt.id === optionId);
-                        if (option && this.selectionResolve) {
-                            const value = option.value;
-                            const resolve = this.selectionResolve;
-                            
-                            // Reset state before resolving
-                            this.isSelectionMode = false;
-                            this.selectionOptions = [];
-                            this.filteredOptions = [];
-                            this.selectionResolve = null;
-                            this.selectionReject = null;
-                            
-                            // Close and resolve
-                            this.isOpen = false;
-                            this.classList.remove('open');
-                            resolve(value);
-                        }
-                    }
-                } else {
-                    const commandId = resultItem.getAttribute('data-command-id');
-                    if (commandId) {
-                        this.commandRegistry.execute(commandId);
-                        this.close();
-                    }
-                }
-            }
-        });
-
-        // Delegated mouseover handler for result items
-        this.resultsContainer?.addEventListener('mouseover', (e) => {
-            const target = e.target as HTMLElement;
-            const resultItem = target.closest('.result-item') as HTMLElement;
-            
-            if (resultItem) {
-                const indexAttr = resultItem.getAttribute('data-index');
-                if (indexAttr) {
-                    const index = parseInt(indexAttr, 10);
-                    
-                    // Only update if the index has changed to avoid unnecessary re-renders
-                    if (this.selectedIndex !== index) {
-                        this.selectedIndex = index;
-                        
-                        if (this.isSelectionMode) {
-                            this.renderSelection();
-                        } else {
-                            this.render();
-                        }
-                    }
-                }
-            }
-        });
     }
 
     open() {
@@ -321,8 +260,6 @@ export class CommandPalette extends HTMLElement {
         this.filteredCommands.forEach((command, index) => {
             const item = document.createElement('div');
             item.className = 'result-item';
-            item.setAttribute('data-index', index.toString());
-            item.setAttribute('data-command-id', command.id);
             if (index === this.selectedIndex) {
                 item.classList.add('selected');
             }
@@ -360,6 +297,18 @@ export class CommandPalette extends HTMLElement {
                 }
             }
 
+            // Click handler
+            item.addEventListener('click', () => {
+                this.selectedIndex = index;
+                this.executeSelected();
+            });
+
+            // Mouse over handler
+            item.addEventListener('mouseenter', () => {
+                this.selectedIndex = index;
+                this.render();
+            });
+
             this.resultsContainer!.appendChild(item);
         });
 
@@ -386,8 +335,6 @@ export class CommandPalette extends HTMLElement {
         this.filteredOptions.forEach((option, index) => {
             const item = document.createElement('div');
             item.className = 'result-item';
-            item.setAttribute('data-index', index.toString());
-            item.setAttribute('data-option-id', option.id);
             if (index === this.selectedIndex) {
                 item.classList.add('selected');
             }
@@ -414,6 +361,18 @@ export class CommandPalette extends HTMLElement {
                 label.textContent = option.label;
                 item.appendChild(label);
             }
+
+            // Click handler
+            item.addEventListener('click', () => {
+                this.selectedIndex = index;
+                this.selectOption();
+            });
+
+            // Mouse over handler
+            item.addEventListener('mouseenter', () => {
+                this.selectedIndex = index;
+                this.renderSelection();
+            });
 
             this.resultsContainer!.appendChild(item);
         });

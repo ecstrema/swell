@@ -11,6 +11,8 @@ export class DockManager extends HTMLElement {
     null;
   private _draggedStack: DockStack | null = null;
   private _dropOverlay: HTMLElement | null = null;
+  private _onLayoutChange: ((layout: DockLayout) => void) | null = null;
+  private _suppressLayoutChangeNotification: boolean = false;
 
   constructor() {
     super();
@@ -18,9 +20,36 @@ export class DockManager extends HTMLElement {
     this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(dockManagerCss)];
   }
 
+  /**
+   * Register a callback to be invoked when the layout changes
+   * @param callback Function to call with the new layout
+   */
+  public onLayoutChange(callback: (layout: DockLayout) => void): void {
+    this._onLayoutChange = callback;
+  }
+
+  /**
+   * Notify listeners that the layout has changed
+   */
+  private notifyLayoutChange(): void {
+    if (this._onLayoutChange && this._layout && !this._suppressLayoutChangeNotification) {
+      this._onLayoutChange(this._layout);
+    }
+  }
+
   set layout(value: DockLayout) {
     this._layout = value;
     this.render();
+    this.notifyLayoutChange();
+  }
+
+  /**
+   * Set layout without triggering change notifications (used when restoring saved state)
+   */
+  public setLayoutSilent(value: DockLayout): void {
+    this._suppressLayoutChangeNotification = true;
+    this.layout = value;
+    this._suppressLayoutChangeNotification = false;
   }
 
   get layout(): DockLayout | null {
@@ -118,6 +147,7 @@ export class DockManager extends HTMLElement {
     stack.children.splice(insertIndex, 0, pane);
     
     this.render();
+    this.notifyLayoutChange();
   }
 
   getDraggedPane() {
@@ -198,6 +228,7 @@ export class DockManager extends HTMLElement {
     }
     
     this.render();
+    this.notifyLayoutChange();
   }
 
   private getDropZone(
@@ -500,6 +531,7 @@ export class DockManager extends HTMLElement {
         this.simplifyBoxes(this._layout.root);
       }
       this.render();
+      this.notifyLayoutChange();
       return true;
     }
     return false;

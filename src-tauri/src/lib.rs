@@ -9,6 +9,7 @@ use tauri_plugin_cli::CliExt;
 use std::sync::Mutex;
 
 const OPENED_FILES_KEY: &str = "opened_files";
+const DOCK_STATE_KEY: &str = "dock_state";
 const STORE_NAME: &str = "store.json";
 const SETTINGS_STORE_NAME: &str = "settings.json";
 
@@ -138,6 +139,32 @@ fn read_text_file(path: String) -> Result<String, String> {
         .map_err(|e| format!("Failed to read file '{}': {}", path, e))
 }
 
+#[tauri::command]
+fn save_dock_state(state: String, app_handle: tauri::AppHandle) -> Result<(), String> {
+    let store = app_handle.store(STORE_NAME);
+    
+    // Parse the JSON string to validate it
+    let parsed: serde_json::Value = serde_json::from_str(&state)
+        .map_err(|e| format!("Failed to parse dock state: {}", e))?;
+    
+    store.set(DOCK_STATE_KEY, parsed);
+    store.save().map_err(|e| format!("Failed to save dock state: {}", e))?;
+    
+    Ok(())
+}
+
+#[tauri::command]
+fn load_dock_state(app_handle: tauri::AppHandle) -> Result<String, String> {
+    let store = app_handle.store(STORE_NAME);
+    
+    if let Some(value) = store.get(DOCK_STATE_KEY) {
+        serde_json::to_string(&value)
+            .map_err(|e| format!("Failed to serialize dock state: {}", e))
+    } else {
+        Err("No dock state found".to_string())
+    }
+}
+
 fn get_nested_value(value: Option<&serde_json::Value>, path: &str) -> Option<serde_json::Value> {
     let parts: Vec<&str> = path.split('/').collect();
     let mut current = value?;
@@ -220,7 +247,9 @@ pub fn run() {
             get_all_settings,
             get_startup_files,
             write_text_file,
-            read_text_file
+            read_text_file,
+            save_dock_state,
+            load_dock_state
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

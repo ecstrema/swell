@@ -219,12 +219,24 @@ export class TreeView extends HTMLElement {
             this.style.setProperty('--tree-branch-justify', 'flex-end');
             this.style.setProperty('--tree-branch-direction', 'row-reverse');
             this.style.setProperty('--tree-text-align', 'right');
+            // For right alignment, indent from the right side
+            this.style.setProperty('--tree-indent-left', '0');
+            this.style.setProperty('--tree-indent-right', 'var(--tree-indent, 20px)');
+            // Adjust summary margins for right alignment
+            this.style.setProperty('--tree-summary-margin-left', '0');
+            this.style.setProperty('--tree-summary-margin-right', 'calc(-1 * var(--tree-indent, 20px))');
         } else {
             this.style.setProperty('--tree-leaf-justify', 'flex-start');
             this.style.setProperty('--tree-leaf-direction', 'row');
             this.style.setProperty('--tree-branch-justify', 'flex-start');
             this.style.setProperty('--tree-branch-direction', 'row');
             this.style.setProperty('--tree-text-align', 'left');
+            // For left alignment, indent from the left side
+            this.style.setProperty('--tree-indent-left', 'var(--tree-indent, 20px)');
+            this.style.setProperty('--tree-indent-right', '0');
+            // Adjust summary margins for left alignment
+            this.style.setProperty('--tree-summary-margin-left', 'calc(-1 * var(--tree-indent, 20px))');
+            this.style.setProperty('--tree-summary-margin-right', '0');
         }
     }
 

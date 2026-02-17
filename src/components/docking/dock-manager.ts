@@ -12,6 +12,7 @@ export class DockManager extends HTMLElement {
   private _draggedStack: DockStack | null = null;
   private _dropOverlay: HTMLElement | null = null;
   private _onLayoutChange: ((layout: DockLayout) => void) | null = null;
+  private _suppressLayoutChangeNotification: boolean = false;
 
   constructor() {
     super();
@@ -31,7 +32,7 @@ export class DockManager extends HTMLElement {
    * Notify listeners that the layout has changed
    */
   private notifyLayoutChange(): void {
-    if (this._onLayoutChange && this._layout) {
+    if (this._onLayoutChange && this._layout && !this._suppressLayoutChangeNotification) {
       this._onLayoutChange(this._layout);
     }
   }
@@ -39,6 +40,16 @@ export class DockManager extends HTMLElement {
   set layout(value: DockLayout) {
     this._layout = value;
     this.render();
+    this.notifyLayoutChange();
+  }
+
+  /**
+   * Set layout without triggering change notifications (used when restoring saved state)
+   */
+  public setLayoutSilent(value: DockLayout): void {
+    this._suppressLayoutChangeNotification = true;
+    this.layout = value;
+    this._suppressLayoutChangeNotification = false;
   }
 
   get layout(): DockLayout | null {

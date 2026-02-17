@@ -39,8 +39,8 @@ export class DockStatePersistence {
             // Validate the layout with arktype schema
             const validation = DockLayoutSchema(layout);
             
-            if (!validation.ok) {
-                console.error('Dock layout validation failed:', validation.problems);
+            if (validation instanceof Error) {
+                console.error('Dock layout validation failed:', validation.message);
                 return;
             }
 
@@ -96,13 +96,13 @@ export class DockStatePersistence {
             // Validate with arktype schema
             const validation = DockLayoutSchema(parsed);
             
-            if (!validation.ok) {
-                console.error('Dock layout validation failed during load:', validation.problems);
+            if (validation instanceof Error) {
+                console.error('Dock layout validation failed during load:', validation.message);
                 return null;
             }
 
             console.log('Dock state loaded successfully');
-            return validation.value as DockLayout;
+            return parsed as DockLayout;
         } catch (error) {
             console.error('Failed to load dock state:', error);
             return null;

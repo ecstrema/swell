@@ -265,7 +265,7 @@ export class AppMain extends HTMLElement {
         const savedLayout = await dockStatePersistence.loadState();
         if (savedLayout) {
             console.log('Restoring saved dock layout');
-            this.dockManager.layout = savedLayout;
+            this.dockManager.setLayoutSilent(savedLayout);
         }
     }
 

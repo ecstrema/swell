@@ -105,12 +105,16 @@ export class CommandPalette extends HTMLElement {
             
             if (resultItem && resultItem.hasAttribute('data-index')) {
                 const index = parseInt(resultItem.getAttribute('data-index')!, 10);
-                this.selectedIndex = index;
                 
-                if (this.isSelectionMode) {
-                    this.renderSelection();
-                } else {
-                    this.render();
+                // Only update if the index has changed to avoid unnecessary re-renders
+                if (this.selectedIndex !== index) {
+                    this.selectedIndex = index;
+                    
+                    if (this.isSelectionMode) {
+                        this.renderSelection();
+                    } else {
+                        this.render();
+                    }
                 }
             }
         });

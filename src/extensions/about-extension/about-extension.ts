@@ -2,10 +2,12 @@
  * About Extension
  * 
  * Provides the about page with application information.
+ * Demonstrates dependency on the settings extension.
  */
 
 import { Extension, ExtensionContext } from "../types.js";
 import { AboutPane } from "../../components/about/about-pane.js";
+import type { SettingsAPI } from "../settings-extension/settings-extension.js";
 
 // Ensure the custom element is registered
 if (!customElements.get('about-pane')) {
@@ -18,6 +20,7 @@ export class AboutExtension implements Extension {
         name: 'About Extension',
         description: 'Provides application information and about page',
         version: '1.0.0',
+        dependencies: ['core/settings'],
     };
 
     async activate(context: ExtensionContext): Promise<void> {
@@ -27,6 +30,18 @@ export class AboutExtension implements Extension {
         if (!paneManager || !dockManager) {
             console.warn('About extension: PaneManager or DockManager not available');
             return;
+        }
+
+        // Get the settings extension to register our settings
+        const settingsAPI = await context.getExtension<SettingsAPI>('core/settings');
+        if (settingsAPI) {
+            // Register a setting for the about page
+            settingsAPI.registerSetting({
+                path: 'About/Show Version Info',
+                description: 'Show detailed version information in the about page',
+                type: 'boolean',
+                defaultValue: true,
+            });
         }
 
         // Register the about page

@@ -12,14 +12,7 @@ export class Minimap extends HTMLElement {
   private _visibleStart: number = 0;
   private _visibleEnd: number = 1000000;
   private canvas: HTMLCanvasElement | null = null;
-  private scrollbarThumb: HTMLElement | null = null;
-  private isDragging = false;
-  private dragStartX = 0;
-  private dragStartScrollLeft = 0;
   private boundHandleResize: () => void;
-  private boundHandleScrollbarMouseDown: (e: MouseEvent) => void;
-  private boundHandleScrollbarMouseMove: (e: MouseEvent) => void;
-  private boundHandleScrollbarMouseUp: () => void;
   private boundHandleCanvasClick: (e: MouseEvent) => void;
   private boundHandleThemeChanged: (event: Event) => void;
   private resizeObserver: ResizeObserver | null = null;
@@ -29,9 +22,6 @@ export class Minimap extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.shadowRoot!.adoptedStyleSheets = [css(minimapCss)];
     this.boundHandleResize = this.handleResize.bind(this);
-    this.boundHandleScrollbarMouseDown = this.handleScrollbarMouseDown.bind(this);
-    this.boundHandleScrollbarMouseMove = this.handleScrollbarMouseMove.bind(this);
-    this.boundHandleScrollbarMouseUp = this.handleScrollbarMouseUp.bind(this);
     this.boundHandleCanvasClick = this.handleCanvasClick.bind(this);
     this.boundHandleThemeChanged = this.handleThemeChanged.bind(this);
   }
@@ -55,13 +45,6 @@ export class Minimap extends HTMLElement {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
     }
-    
-    // Clean up document-level listeners in case they're still active
-    if (this.isDragging) {
-      document.removeEventListener('mousemove', this.boundHandleScrollbarMouseMove);
-      document.removeEventListener('mouseup', this.boundHandleScrollbarMouseUp);
-      this.isDragging = false;
-    }
   }
 
   /**
@@ -71,7 +54,6 @@ export class Minimap extends HTMLElement {
     this._startTime = range.start;
     this._endTime = range.end;
     this.updateCanvas();
-    this.updateScrollbar();
   }
 
   /**
@@ -88,7 +70,6 @@ export class Minimap extends HTMLElement {
     this._visibleStart = range.start;
     this._visibleEnd = range.end;
     this.updateCanvas();
-    this.updateScrollbar();
   }
 
   /**
@@ -102,16 +83,10 @@ export class Minimap extends HTMLElement {
     this.shadowRoot!.innerHTML = `
       <div class="minimap-container">
         <canvas class="minimap-canvas"></canvas>
-        <div class="scrollbar">
-          <div class="scrollbar-track">
-            <div class="scrollbar-thumb"></div>
-          </div>
-        </div>
       </div>
     `;
 
     this.canvas = this.shadowRoot!.querySelector('.minimap-canvas');
-    this.scrollbarThumb = this.shadowRoot!.querySelector('.scrollbar-thumb');
     
     if (this.canvas) {
       // Set canvas size to match container with high-DPI support
@@ -126,11 +101,6 @@ export class Minimap extends HTMLElement {
   }
 
   private setupEventListeners() {
-    // Scrollbar dragging
-    if (this.scrollbarThumb) {
-      this.scrollbarThumb.addEventListener('mousedown', this.boundHandleScrollbarMouseDown);
-    }
-    
     // Canvas click to jump to position
     if (this.canvas) {
       this.canvas.addEventListener('click', this.boundHandleCanvasClick);
@@ -149,11 +119,6 @@ export class Minimap extends HTMLElement {
   }
 
   private removeEventListeners() {
-    // Remove scrollbar listeners
-    if (this.scrollbarThumb) {
-      this.scrollbarThumb.removeEventListener('mousedown', this.boundHandleScrollbarMouseDown);
-    }
-    
     // Remove canvas listeners
     if (this.canvas) {
       this.canvas.removeEventListener('click', this.boundHandleCanvasClick);
@@ -163,46 +128,8 @@ export class Minimap extends HTMLElement {
     window.removeEventListener('resize', this.boundHandleResize);
   }
 
-  private handleScrollbarMouseDown(e: MouseEvent) {
-    e.preventDefault();
-    this.isDragging = true;
-    this.dragStartX = e.clientX;
-    const thumbRect = this.scrollbarThumb!.getBoundingClientRect();
-    this.dragStartScrollLeft = thumbRect.left;
-    
-    document.addEventListener('mousemove', this.boundHandleScrollbarMouseMove);
-    document.addEventListener('mouseup', this.boundHandleScrollbarMouseUp);
-  }
-
-  private handleScrollbarMouseMove(e: MouseEvent) {
-    if (!this.isDragging) return;
-    
-    const track = this.shadowRoot!.querySelector('.scrollbar-track') as HTMLElement;
-    if (!track) return;
-    
-    const trackRect = track.getBoundingClientRect();
-    const thumbRect = this.scrollbarThumb!.getBoundingClientRect();
-    const deltaX = e.clientX - this.dragStartX;
-    const newLeft = this.dragStartScrollLeft + deltaX - trackRect.left;
-    
-    // Calculate new scroll position as percentage
-    const maxLeft = trackRect.width - thumbRect.width;
-    const percentage = Math.max(0, Math.min(1, newLeft / maxLeft));
-    
-    // Calculate new visible range
-    const totalRange = this._endTime - this._startTime;
-    const visibleRange = this._visibleEnd - this._visibleStart;
-    const maxStart = this._endTime - visibleRange;
-    const newStart = this._startTime + (maxStart - this._startTime) * percentage;
-    
-    this.setVisibleRange(newStart, newStart + visibleRange);
-  }
-
-  private handleScrollbarMouseUp() {
-    this.isDragging = false;
-    document.removeEventListener('mousemove', this.boundHandleScrollbarMouseMove);
-    document.removeEventListener('mouseup', this.boundHandleScrollbarMouseUp);
-  }
+  // Scrollbar methods removed - no longer needed as per requirements
+  // The minimap should not have a separate scrollbar, only the canvas
 
   private handleCanvasClick(e: MouseEvent) {
     if (!this.canvas) return;
@@ -250,7 +177,6 @@ export class Minimap extends HTMLElement {
     this._visibleStart = start;
     this._visibleEnd = end;
     this.updateCanvas();
-    this.updateScrollbar();
     
     // Dispatch event for other components (like timeline) to listen to
     this.dispatchEvent(new CustomEvent('range-changed', {
@@ -342,23 +268,7 @@ export class Minimap extends HTMLElement {
     }
   }
 
-  private updateScrollbar() {
-    if (!this.scrollbarThumb) return;
-    
-    const totalRange = this._endTime - this._startTime;
-    const visibleRange = this._visibleEnd - this._visibleStart;
-    
-    // Calculate thumb width as percentage of visible range
-    const thumbWidth = Math.max(20, (visibleRange / totalRange) * 100);
-    this.scrollbarThumb.style.width = thumbWidth + '%';
-    
-    // Calculate thumb position
-    const scrollableRange = totalRange - visibleRange;
-    const scrollPosition = scrollableRange > 0 
-      ? ((this._visibleStart - this._startTime) / scrollableRange) * (100 - thumbWidth)
-      : 0;
-    this.scrollbarThumb.style.left = scrollPosition + '%';
-  }
+  // updateScrollbar method removed - no longer needed as per requirements
 
   /**
    * Format time value for display

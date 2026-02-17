@@ -12,13 +12,16 @@ import '../trees/selected-signals-tree.js';
 import '../timeline/timeline.js';
 import '../minimap/minimap.js';
 import '../panels/resizable-panel.js';
+import '../primitives/split-button.js';
 
 interface SelectedSignal {
   name: string;
   ref: number;
   canvas?: HTMLCanvasElement;
   timeline?: Timeline;
+  minimap?: Minimap;
   isTimeline?: boolean;
+  isMinimap?: boolean;
 }
 
 interface HierarchyNode {
@@ -26,6 +29,12 @@ interface HierarchyNode {
   var_ref?: number;
   children?: HierarchyNode[];
 }
+
+// Constants for ref numbering
+// Signal refs are positive integers from the waveform file
+// Timeline refs are negative starting from -1
+// Minimap refs use an offset to avoid conflicts with both
+const MINIMAP_REF_OFFSET = -1000;
 
 export class FileDisplay extends HTMLElement {
   private _filename: string = '';
@@ -39,12 +48,14 @@ export class FileDisplay extends HTMLElement {
   private boundHandleMinimapRangeChanged: (event: Event) => void;
   private boundHandleZoomCommand: (event: Event) => void;
   private boundHandleAddTimeline: () => void;
+  private boundHandleAddMinimap: () => void;
   private boundHandleSignalsReordered: (event: Event) => void;
   private boundHandleThemeChanged: (event: Event) => void;
   private visibleStart: number = 0;
   private visibleEnd: number = 1000000;
   private timeRangeInitialized: boolean = false;
   private timelineCounter: number = 0;
+  private minimapCounter: number = 0;
   private resizeObserver: ResizeObserver | null = null;
   private saveStateTimeout: number | null = null;
   private stateRestored: boolean = false;
@@ -59,6 +70,7 @@ export class FileDisplay extends HTMLElement {
     this.boundHandleMinimapRangeChanged = this.handleMinimapRangeChanged.bind(this);
     this.boundHandleZoomCommand = this.handleZoomCommand.bind(this);
     this.boundHandleAddTimeline = this.handleAddTimeline.bind(this);
+    this.boundHandleAddMinimap = this.handleAddMinimap.bind(this);
     this.boundHandleSignalsReordered = this.handleSignalsReordered.bind(this);
     this.boundHandleThemeChanged = this.handleThemeChanged.bind(this);
 
@@ -103,6 +115,11 @@ export class FileDisplay extends HTMLElement {
       if (signal.isTimeline) {
         return {
           _type: 'timeline' as const,
+          name: signal.name
+        };
+      } else if (signal.isMinimap) {
+        return {
+          _type: 'minimap' as const,
           name: signal.name
         };
       } else {
@@ -166,11 +183,14 @@ export class FileDisplay extends HTMLElement {
       // Clear current signals
       this.selectedSignals = [];
       this.timelineCounter = 0;
+      this.minimapCounter = 0;
       
       // Restore items from the flat list
       for (const item of state.items) {
         if (item._type === 'timeline') {
           this.addTimelineSignal();
+        } else if (item._type === 'minimap') {
+          this.addMinimapSignal();
         } else if (item._type === 'signal') {
           // Verify signal still exists in hierarchy
           const found = findSignalByRef(hierarchy, item.ref);
@@ -182,7 +202,7 @@ export class FileDisplay extends HTMLElement {
         }
       }
       
-      // Update minimap and all timeline signals with the restored range
+      // Update minimap and all timeline/minimap signals with the restored range
       if (this.timeRangeInitialized) {
         this.minimap.totalRange = { start: this.visibleStart, end: this.visibleEnd };
         this.minimap.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
@@ -191,6 +211,10 @@ export class FileDisplay extends HTMLElement {
           if (signal.isTimeline && signal.timeline) {
             signal.timeline.totalRange = { start: this.visibleStart, end: this.visibleEnd };
             signal.timeline.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
+          }
+          if (signal.isMinimap && signal.minimap) {
+            signal.minimap.totalRange = { start: this.visibleStart, end: this.visibleEnd };
+            signal.minimap.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
           }
         });
       }
@@ -270,12 +294,21 @@ export class FileDisplay extends HTMLElement {
     const { start, end } = customEvent.detail;
     this.setVisibleRange(start, end);
     
-    // Synchronize all other timelines in the same file
+    // Synchronize all other timelines and minimaps in the same file
+    // Skip the component that triggered the event to avoid circular updates
     this.selectedSignals.forEach(signal => {
       if (signal.isTimeline && signal.timeline && signal.timeline !== event.target) {
         signal.timeline.visibleRange = { start, end };
       }
+      if (signal.isMinimap && signal.minimap && signal.minimap !== event.target) {
+        signal.minimap.visibleRange = { start, end };
+      }
     });
+    
+    // Also synchronize the bottom minimap if it's not the source
+    if (this.minimap && this.minimap !== event.target) {
+      this.minimap.visibleRange = { start, end };
+    }
     
     // Save state after range changes
     this.debouncedSaveState();
@@ -313,7 +346,15 @@ export class FileDisplay extends HTMLElement {
       if (signal.isTimeline && signal.timeline) {
         signal.timeline.visibleRange = { start, end };
       }
+      if (signal.isMinimap && signal.minimap && signal.minimap !== event.target) {
+        signal.minimap.visibleRange = { start, end };
+      }
     });
+    
+    // Also synchronize the bottom minimap if it's not the source
+    if (this.minimap && this.minimap !== event.target) {
+      this.minimap.visibleRange = { start, end };
+    }
     
     // Save state after range changes
     this.debouncedSaveState();
@@ -345,8 +386,40 @@ export class FileDisplay extends HTMLElement {
     this.debouncedSaveState();
   }
 
+  private addMinimapSignal() {
+    this.minimapCounter++;
+    const minimap = new Minimap();
+    const name = `Minimap ${this.minimapCounter}`;
+    
+    // Set up time range if already initialized
+    if (this.timeRangeInitialized) {
+      minimap.totalRange = { start: this.visibleStart, end: this.visibleEnd };
+      minimap.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
+    }
+    
+    // Use negative refs for minimaps to avoid conflicts with signal refs and timelines
+    // Signal refs are always positive integers from the waveform file
+    // Timeline refs are negative starting from -1
+    this.selectedSignals.push({
+      name,
+      ref: MINIMAP_REF_OFFSET - this.minimapCounter,
+      isMinimap: true,
+      minimap
+    });
+    
+    this.updateSelectedSignalsTree();
+    
+    // Save state after adding minimap
+    this.debouncedSaveState();
+  }
+
   private handleAddTimeline() {
     this.addTimelineSignal();
+    this.render();
+  }
+
+  private handleAddMinimap() {
+    this.addMinimapSignal();
     this.render();
   }
 
@@ -828,7 +901,7 @@ export class FileDisplay extends HTMLElement {
         // Note: ItemGroup support can be added in future when needed
       }
       
-      // Update minimap and all timeline signals with the restored range
+      // Update minimap and all timeline/minimap signals with the restored range
       if (this.timeRangeInitialized) {
         this.minimap.totalRange = { start: this.visibleStart, end: this.visibleEnd };
         this.minimap.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
@@ -837,6 +910,10 @@ export class FileDisplay extends HTMLElement {
           if (signal.isTimeline && signal.timeline) {
             signal.timeline.totalRange = { start: this.visibleStart, end: this.visibleEnd };
             signal.timeline.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
+          }
+          if (signal.isMinimap && signal.minimap) {
+            signal.minimap.totalRange = { start: this.visibleStart, end: this.visibleEnd };
+            signal.minimap.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
           }
         });
       }
@@ -873,28 +950,31 @@ export class FileDisplay extends HTMLElement {
     if (treeContainer) {
       treeContainer.appendChild(this.selectedSignalsTree);
       
-      // Add "Add Timeline" button at the bottom of the tree
-      const addTimelineBtn = document.createElement('button');
-      addTimelineBtn.className = 'add-timeline-btn';
-      addTimelineBtn.textContent = '+ Add Timeline';
-      addTimelineBtn.addEventListener('click', this.boundHandleAddTimeline);
-      treeContainer.appendChild(addTimelineBtn);
+      // Add split button at the bottom of the tree
+      const splitButton = document.createElement('app-split-button');
+      splitButton.setAttribute('left-label', '+ Add Timeline');
+      splitButton.setAttribute('right-label', '+ Add Minimap');
+      splitButton.addEventListener('left-click', this.boundHandleAddTimeline);
+      splitButton.addEventListener('right-click', this.boundHandleAddMinimap);
+      treeContainer.appendChild(splitButton);
     }
 
-    // Append minimap first, then timelines and canvases to the waveforms container
+    // Append signals (including inline timelines and minimaps) to the waveforms container
     this.signalsContainer = this.shadowRoot.querySelector('#waveforms-container');
     if (this.signalsContainer) {
-      // Add minimap at the top
-      this.signalsContainer.appendChild(this.minimap);
-      
-      // Then add all the signals
+      // Add all the signals (timelines, minimaps, and signal canvases)
       this.selectedSignals.forEach(signal => {
         if (signal.isTimeline && signal.timeline) {
           this.signalsContainer!.appendChild(signal.timeline);
+        } else if (signal.isMinimap && signal.minimap) {
+          this.signalsContainer!.appendChild(signal.minimap);
         } else if (signal.canvas) {
           this.signalsContainer!.appendChild(signal.canvas);
         }
       });
+      
+      // Add the fixed minimap at the bottom of the page
+      this.signalsContainer.appendChild(this.minimap);
     }
   }
 }

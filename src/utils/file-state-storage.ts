@@ -24,6 +24,14 @@ export interface ItemTimeline {
 }
 
 /**
+ * Item representing a minimap in the waveform display
+ */
+export interface ItemMinimap {
+    _type: 'minimap';
+    name?: string;
+}
+
+/**
  * Item representing a collapsible group of items
  */
 export interface ItemGroup {
@@ -36,7 +44,7 @@ export interface ItemGroup {
 /**
  * Union type for all possible items in the display
  */
-export type Item = ItemSignal | ItemTimeline | ItemGroup;
+export type Item = ItemSignal | ItemTimeline | ItemMinimap | ItemGroup;
 
 /**
  * State information for a single file that should be persisted

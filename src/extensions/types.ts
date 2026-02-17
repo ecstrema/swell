@@ -55,6 +55,31 @@ export interface ThemeRegistration {
 }
 
 /**
+ * App APIs that extensions can access
+ */
+export interface AppAPIs {
+    /**
+     * Get the UndoManager for undo/redo operations
+     */
+    getUndoManager?: () => any;
+
+    /**
+     * Get the FileManager for file operations
+     */
+    getFileManager?: () => any;
+
+    /**
+     * Get the PaneManager for managing panes
+     */
+    getPaneManager?: () => any;
+
+    /**
+     * Get the DockManager for dock operations
+     */
+    getDockManager?: () => any;
+}
+
+/**
  * Extension context - provides APIs for extensions to interact with the app
  */
 export interface ExtensionContext {
@@ -97,6 +122,11 @@ export interface ExtensionContext {
      * Get the extension's own metadata
      */
     getMetadata(): ExtensionMetadata;
+
+    /**
+     * Access to app-wide APIs (optional services provided by the host app)
+     */
+    app: AppAPIs;
 }
 
 /**

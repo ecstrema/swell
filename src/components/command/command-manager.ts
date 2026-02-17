@@ -2,6 +2,10 @@ import { CommandRegistry, ShortcutManager, defaultShortcuts } from "../../shortc
 import { CommandPalette } from "./command-palette.js";
 import { ExtensionRegistry } from "../../extensions/index.js";
 import { CommandsExtension } from "../../extensions/commands-extension/index.js";
+import { SettingsExtension } from "../../extensions/settings-extension/index.js";
+import { AboutExtension } from "../../extensions/about-extension/index.js";
+import { UndoExtension } from "../../extensions/undo-extension/index.js";
+import type { AppAPIs } from "../../extensions/types.js";
 
 /**
  * Manages the command registry, shortcuts, command palette, and extensions
@@ -47,12 +51,21 @@ export class CommandManager {
     }
 
     /**
+     * Set app-wide APIs that extensions can access
+     */
+    setAppAPIs(apis: AppAPIs): void {
+        this.extensionRegistry.setAppAPIs(apis);
+    }
+
+    /**
      * Initialize extensions
      */
     async initializeExtensions(): Promise<void> {
-        // Register the commands extension
-        const commandsExtension = new CommandsExtension();
-        await this.extensionRegistry.register(commandsExtension);
+        // Register core extensions
+        await this.extensionRegistry.register(new CommandsExtension());
+        await this.extensionRegistry.register(new SettingsExtension());
+        await this.extensionRegistry.register(new AboutExtension());
+        await this.extensionRegistry.register(new UndoExtension());
     }
 
     /**
@@ -69,16 +82,10 @@ export class CommandManager {
     initializeShortcuts(commandHandlers: {
         onFileOpen: () => void,
         onFileQuit: () => Promise<void>,
-        onEditUndo: () => void,
-        onEditRedo: () => void,
         onZoomIn: () => void,
         onZoomOut: () => void,
         onZoomFit: () => void,
         onToggleSignalSelection: () => void,
-        onToggleUndoHistory: () => void,
-        onShowSettings: () => void,
-        onShowAbout: () => void,
-        onShowUndoTree: () => void
     }): void {
         // Register commands that can be triggered by shortcuts or menu items
         // Using hierarchical naming: core/category/action
@@ -94,20 +101,6 @@ export class CommandManager {
             label: 'Quit',
             description: 'Quit the application',
             handler: commandHandlers.onFileQuit
-        });
-
-        this.commandRegistry.register({
-            id: 'core/edit/undo',
-            label: 'Undo',
-            description: 'Undo the last action',
-            handler: commandHandlers.onEditUndo
-        });
-
-        this.commandRegistry.register({
-            id: 'core/edit/redo',
-            label: 'Redo',
-            description: 'Redo the last undone action',
-            handler: commandHandlers.onEditRedo
         });
 
         this.commandRegistry.register({
@@ -136,37 +129,6 @@ export class CommandManager {
             label: 'Toggle Signal Selection View',
             description: 'Show or hide the signal selection panel',
             handler: commandHandlers.onToggleSignalSelection
-        });
-
-        this.commandRegistry.register({
-            id: 'core/view/toggle-undo-history',
-            label: 'Toggle Undo History View',
-            description: 'Show or hide the undo history panel',
-            handler: commandHandlers.onToggleUndoHistory
-        });
-
-        // Register show settings command
-        this.commandRegistry.register({
-            id: 'core/view/show-settings',
-            label: 'Show Settings',
-            description: 'Open the settings page',
-            handler: commandHandlers.onShowSettings
-        });
-
-        // Register show about command
-        this.commandRegistry.register({
-            id: 'core/view/show-about',
-            label: 'Show About',
-            description: 'Show application information',
-            handler: commandHandlers.onShowAbout
-        });
-
-        // Register show undo tree command
-        this.commandRegistry.register({
-            id: 'core/view/show-undo-tree',
-            label: 'Show Undo Tree',
-            description: 'Show the undo tree visualization',
-            handler: commandHandlers.onShowUndoTree
         });
 
         // Register command palette command
@@ -202,12 +164,6 @@ export class CommandManager {
         this.shortcutManager.register({
             shortcut: 'Ctrl+K',
             commandId: 'core/command-palette/toggle'
-        });
-
-        // Register keyboard shortcut to open settings (Ctrl+, or Cmd+,)
-        this.shortcutManager.register({
-            shortcut: 'Ctrl+,',
-            commandId: 'core/view/show-settings'
         });
 
         // Activate the shortcut system

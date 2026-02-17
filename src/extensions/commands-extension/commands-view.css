@@ -145,6 +145,7 @@
 }
 
 .commands-view__recording-message--error {
+    /* TODO: Consider defining --color-error in the theme system for consistency */
     color: #e74c3c;
 }
 
@@ -179,11 +180,13 @@
 }
 
 .commands-view__button--clear {
+    /* TODO: Consider defining --color-danger in the theme system for consistency */
     color: #e74c3c;
     border-color: #e74c3c;
 }
 
 .commands-view__button--clear:hover {
+    /* TODO: Consider defining --color-danger in the theme system for consistency */
     background: #e74c3c;
     color: white;
 }

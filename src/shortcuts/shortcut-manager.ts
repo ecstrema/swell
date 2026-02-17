@@ -148,7 +148,7 @@ export class ShortcutManager {
      */
     isShortcutInUse(shortcut: KeyboardShortcut, excludeCommandId?: string): boolean {
         return this.bindings.some(b => 
-            b.shortcut === shortcut && b.commandId !== excludeCommandId
+            b.shortcut === shortcut && (!excludeCommandId || b.commandId !== excludeCommandId)
         );
     }
 

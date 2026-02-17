@@ -24,6 +24,7 @@ export class CommandsView extends HTMLElement {
     private filteredCommands: Command[] = [];
     private editingCell: HTMLTableCellElement | null = null;
     private recordingDispose: (() => void) | null = null;
+    private cellData = new WeakMap<HTMLTableCellElement, { currentShortcut: KeyboardShortcut | null, commandId: string }>();
 
     constructor() {
         super();
@@ -194,17 +195,15 @@ export class CommandsView extends HTMLElement {
                 shortcutDisplay.setShortcut(shortcuts[0]);
                 shortcutCell.appendChild(shortcutDisplay);
 
-                // Store the current shortcut for editing
-                (shortcutCell as any).currentShortcut = shortcuts[0];
-                (shortcutCell as any).commandId = command.id;
+                // Store the current shortcut for editing using WeakMap
+                this.cellData.set(shortcutCell, { currentShortcut: shortcuts[0], commandId: command.id });
             } else {
                 const emptyShortcut = document.createElement('span');
                 emptyShortcut.className = 'commands-view__empty-shortcut';
                 emptyShortcut.textContent = 'No shortcut';
                 shortcutCell.appendChild(emptyShortcut);
 
-                (shortcutCell as any).currentShortcut = null;
-                (shortcutCell as any).commandId = command.id;
+                this.cellData.set(shortcutCell, { currentShortcut: null, commandId: command.id });
             }
 
             // Make the shortcut cell clickable to edit
@@ -224,7 +223,8 @@ export class CommandsView extends HTMLElement {
         }
 
         this.editingCell = cell;
-        const currentShortcut = (cell as any).currentShortcut;
+        const cellInfo = this.cellData.get(cell);
+        const currentShortcut = cellInfo?.currentShortcut ?? null;
 
         // Clear the cell and show recording UI
         cell.innerHTML = '';
@@ -279,10 +279,14 @@ export class CommandsView extends HTMLElement {
                     buttonContainer.insertBefore(saveButton, cancelButton);
                 } else {
                     // Update the existing save button to use the new shortcut
-                    saveButton.onclick = (e) => {
+                    // Remove all existing listeners by cloning the button
+                    const newSaveButton = saveButton.cloneNode(true) as HTMLButtonElement;
+                    newSaveButton.addEventListener('click', (e) => {
                         e.stopPropagation();
                         this.saveShortcut(commandId, currentShortcut, trimmed);
-                    };
+                    });
+                    saveButton.replaceWith(newSaveButton);
+                    saveButton = newSaveButton;
                 }
             }
         });
@@ -300,13 +304,16 @@ export class CommandsView extends HTMLElement {
         }
 
         // Restore the original shortcut display
-        const commandId = (this.editingCell as any).commandId;
-        const command = this.allCommands.find(c => c.id === commandId);
+        const cellInfo = this.cellData.get(this.editingCell);
+        const commandId = cellInfo?.commandId;
         
-        if (command) {
-            const row = this.editingCell.parentElement as HTMLTableRowElement;
-            const newRow = this.createCommandRow(command);
-            row.replaceWith(newRow);
+        if (commandId) {
+            const command = this.allCommands.find(c => c.id === commandId);
+            if (command) {
+                const row = this.editingCell.parentElement as HTMLTableRowElement;
+                const newRow = this.createCommandRow(command);
+                row.replaceWith(newRow);
+            }
         }
 
         this.editingCell = null;

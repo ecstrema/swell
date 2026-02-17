@@ -8,29 +8,67 @@
 
 .display-container {
     display: flex;
-    flex: 1;
-    overflow-y: auto;
-}
-
-.signals-tree-container {
-    flex-shrink: 0;
-    display: flex;
     flex-direction: column;
-    height: 100%;
+    flex: 1;
     overflow: hidden;
 }
 
-app-split-button {
-    margin: 1rem;
+.command-bar {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+    background-color: var(--color-bg-surface);
 }
 
-.waveforms-container {
+.command-button {
+    padding: 0.5rem 1rem;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.command-button:hover {
+    background-color: var(--color-bg-hover);
+}
+
+.grid-scroll-container {
     flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    min-height: 100%;
+}
+
+.signal-labels {
     display: flex;
     flex-direction: column;
-    gap: 0;
-    padding: 0;
-    margin: 0;
+    border-right: 1px solid var(--color-border);
+    background-color: var(--color-bg-surface);
+}
+
+.signal-label {
+    display: flex;
+    align-items: center;
+    padding: 0 0.75rem;
+    height: 32px;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.signal-canvases {
+    display: flex;
+    flex-direction: column;
 }
 
 canvas {

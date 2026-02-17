@@ -1079,52 +1079,64 @@ export class FileDisplay extends HTMLElement {
 
     this.shadowRoot.innerHTML = `
       <div class="display-container">
-        <app-resizable-panel 
-          direction="horizontal" 
-          initial-size="250px" 
-          min-size="200px" 
-          max-size="600px">
-          <div slot="panel" class="signals-tree-container" id="signals-tree-container"></div>
-          <div slot="content" class="waveforms-container" id="waveforms-container">
-            ${this.selectedSignals.length === 0
-              ? '<div class="empty-message">Select signals from the left panel to display them here</div>'
-              : ''}
+        <div class="command-bar">
+          <button id="add-timeline-btn" class="command-button">+ Add Timeline</button>
+          <button id="add-minimap-btn" class="command-button">+ Add Minimap</button>
+        </div>
+        <div class="grid-scroll-container">
+          <div class="grid-container">
+            <div class="signal-labels" id="signal-labels"></div>
+            <div class="signal-canvases" id="signal-canvases"></div>
           </div>
-        </app-resizable-panel>
+        </div>
       </div>
     `;
 
-    // Insert the selected signals tree
-    const treeContainer = this.shadowRoot.querySelector('#signals-tree-container');
-    if (treeContainer) {
-      treeContainer.appendChild(this.selectedSignalsTree);
-      
-      // Add split button at the bottom of the tree
-      const splitButton = document.createElement('app-split-button');
-      splitButton.setAttribute('left-label', '+ Add Timeline');
-      splitButton.setAttribute('right-label', '+ Add Minimap');
-      splitButton.addEventListener('left-click', this.boundHandleAddTimeline);
-      splitButton.addEventListener('right-click', this.boundHandleAddMinimap);
-      treeContainer.appendChild(splitButton);
+    // Set up command bar button listeners
+    const addTimelineBtn = this.shadowRoot.querySelector('#add-timeline-btn');
+    const addMinimapBtn = this.shadowRoot.querySelector('#add-minimap-btn');
+    if (addTimelineBtn) {
+      addTimelineBtn.addEventListener('click', this.boundHandleAddTimeline);
+    }
+    if (addMinimapBtn) {
+      addMinimapBtn.addEventListener('click', this.boundHandleAddMinimap);
     }
 
-    // Append signals (including inline timelines and minimaps) to the waveforms container
-    this.signalsContainer = this.shadowRoot.querySelector('#waveforms-container');
-    if (this.signalsContainer) {
-      // Add all the signals (timelines, minimaps, and signal canvases)
+    // Get containers
+    const labelsContainer = this.shadowRoot.querySelector('#signal-labels');
+    const canvasesContainer = this.shadowRoot.querySelector('#signal-canvases');
+    
+    if (labelsContainer && canvasesContainer) {
+      // Add all the signals (timelines, minimaps, and signal canvases) in grid layout
       this.selectedSignals.forEach(signal => {
+        // Create label element
+        const label = document.createElement('div');
+        label.className = 'signal-label';
+        label.textContent = signal.name;
+        label.dataset.ref = signal.ref.toString();
+        labelsContainer.appendChild(label);
+        
+        // Add corresponding canvas/timeline/minimap
         if (signal.isTimeline && signal.timeline) {
-          this.signalsContainer!.appendChild(signal.timeline);
+          canvasesContainer.appendChild(signal.timeline);
         } else if (signal.isMinimap && signal.minimap) {
-          this.signalsContainer!.appendChild(signal.minimap);
+          canvasesContainer.appendChild(signal.minimap);
         } else if (signal.canvas) {
-          this.signalsContainer!.appendChild(signal.canvas);
+          canvasesContainer.appendChild(signal.canvas);
         }
       });
       
-      // Add the fixed minimap at the bottom of the page
-      this.signalsContainer.appendChild(this.minimap);
+      // Add the fixed minimap at the bottom
+      if (this.selectedSignals.length > 0) {
+        const minimapLabel = document.createElement('div');
+        minimapLabel.className = 'signal-label';
+        minimapLabel.textContent = 'Overview';
+        labelsContainer.appendChild(minimapLabel);
+        canvasesContainer.appendChild(this.minimap);
+      }
     }
+    
+    this.signalsContainer = canvasesContainer as HTMLDivElement;
   }
 }
 

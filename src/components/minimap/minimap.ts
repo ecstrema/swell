@@ -87,7 +87,6 @@ export class Minimap extends HTMLElement {
     `;
 
     this.canvas = this.shadowRoot!.querySelector('.minimap-canvas');
-    this.scrollbarThumb = null; // No longer using scrollbar thumb
     
     if (this.canvas) {
       // Set canvas size to match container with high-DPI support

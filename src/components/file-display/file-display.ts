@@ -29,6 +29,12 @@ interface HierarchyNode {
   children?: HierarchyNode[];
 }
 
+// Constants for ref numbering
+// Signal refs are positive integers from the waveform file
+// Timeline refs are negative starting from -1
+// Minimap refs use an offset to avoid conflicts with both
+const MINIMAP_REF_OFFSET = -1000;
+
 export class FileDisplay extends HTMLElement {
   private _filename: string = '';
   private selectedSignals: SelectedSignal[] = [];
@@ -287,7 +293,8 @@ export class FileDisplay extends HTMLElement {
     const { start, end } = customEvent.detail;
     this.setVisibleRange(start, end);
     
-    // Synchronize all other timelines in the same file
+    // Synchronize all other timelines and minimaps in the same file
+    // Skip the component that triggered the event to avoid circular updates
     this.selectedSignals.forEach(signal => {
       if (signal.isTimeline && signal.timeline && signal.timeline !== event.target) {
         signal.timeline.visibleRange = { start, end };
@@ -297,7 +304,7 @@ export class FileDisplay extends HTMLElement {
       }
     });
     
-    // Also synchronize the bottom minimap
+    // Also synchronize the bottom minimap if it's not the source
     if (this.minimap && this.minimap !== event.target) {
       this.minimap.visibleRange = { start, end };
     }
@@ -389,12 +396,12 @@ export class FileDisplay extends HTMLElement {
       minimap.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
     }
     
-    // Use negative refs for minimaps (starting from -1000) to avoid conflicts with signal refs and timelines
+    // Use negative refs for minimaps to avoid conflicts with signal refs and timelines
     // Signal refs are always positive integers from the waveform file
     // Timeline refs are negative starting from -1
     this.selectedSignals.push({
       name,
-      ref: -1000 - this.minimapCounter,
+      ref: MINIMAP_REF_OFFSET - this.minimapCounter,
       isMinimap: true,
       minimap
     });

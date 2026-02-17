@@ -11,6 +11,8 @@ export interface ItemSignal {
     _type: 'signal';
     ref: number;
     name: string;
+    path?: string; // Full hierarchical path
+    showFullPath?: boolean; // Whether to display the full path or just the name
     format?: 'clock' | 'binary' | 'hex' | 'ascii' | 'decimal';
     color?: string;
 }

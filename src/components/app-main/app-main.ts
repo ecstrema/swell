@@ -122,9 +122,6 @@ export class AppMain extends HTMLElement {
             menuBar.setShortcutManager(this.commandManager.getShortcutManager());
         }
 
-        // Initialize command palette
-        this.commandManager.initializeCommandPalette();
-
         // Set up event listeners for cross-cutting concerns that require coordination
         this.setupEventListeners();
 
@@ -382,8 +379,15 @@ export class AppMain extends HTMLElement {
             }
         ];
 
-        const commandPalette = this.commandManager.getCommandPalette();
-        if (!commandPalette) return;
+        // Get command palette from extension
+        const extensionRegistry = this.commandManager.getExtensionRegistry();
+        const commandPaletteAPI = await extensionRegistry.getExtension<any>('core/command-palette');
+        const commandPalette = commandPaletteAPI?.getCommandPalette?.();
+        
+        if (!commandPalette) {
+            console.warn('Command palette not available');
+            return;
+        }
 
         try {
             const options = exampleFiles.map((ex: any) => ({

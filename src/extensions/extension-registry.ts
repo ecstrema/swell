@@ -293,6 +293,10 @@ export class ExtensionRegistry {
             getExtension: <T = any>(extensionId: ExtensionId): Promise<T | undefined> => {
                 return this.getExtension<T>(extensionId);
             },
+
+            getCommandRegistry: () => this.commandRegistry,
+
+            getShortcutManager: () => this.shortcutManager,
             
             dependencies,
         };

@@ -105,6 +105,16 @@ export interface ExtensionContext {
     getExtension<T = any>(extensionId: ExtensionId): Promise<T | undefined>;
 
     /**
+     * Get the command registry (for advanced use cases like command palette)
+     */
+    getCommandRegistry(): any;
+
+    /**
+     * Get the shortcut manager (for advanced use cases like command palette)
+     */
+    getShortcutManager(): any;
+
+    /**
      * APIs from dependencies declared in extension metadata
      * Maps dependency extension ID to its API
      */

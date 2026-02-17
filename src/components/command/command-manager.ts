@@ -1,16 +1,13 @@
 import { CommandRegistry, ShortcutManager, defaultShortcuts } from "../../shortcuts/index.js";
-import { CommandPalette } from "./command-palette.js";
 import { ExtensionRegistry } from "../../extensions/index.js";
-import type { AppAPIs } from "../../extensions/types.js";
 
 /**
- * Manages the command registry, shortcuts, command palette, and extensions
+ * Manages the command registry, shortcuts, and extensions
  */
 export class CommandManager {
     private commandRegistry: CommandRegistry;
     private shortcutManager: ShortcutManager;
     private extensionRegistry: ExtensionRegistry;
-    private commandPalette: CommandPalette | null = null;
 
     constructor() {
         this.commandRegistry = new CommandRegistry();
@@ -37,28 +34,6 @@ export class CommandManager {
      */
     getExtensionRegistry(): ExtensionRegistry {
         return this.extensionRegistry;
-    }
-
-    /**
-     * Get the command palette
-     */
-    getCommandPalette(): CommandPalette | null {
-        return this.commandPalette;
-    }
-
-    /**
-     * Set app-wide APIs that extensions can access
-     */
-    setAppAPIs(apis: AppAPIs): void {
-        this.extensionRegistry.setAppAPIs(apis);
-    }
-
-    /**
-     * Initialize the command palette
-     */
-    initializeCommandPalette(): void {
-        this.commandPalette = new CommandPalette(this.commandRegistry, this.shortcutManager);
-        document.body.appendChild(this.commandPalette);
     }
 
     /**

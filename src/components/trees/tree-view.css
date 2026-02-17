@@ -184,6 +184,16 @@ details[open] > summary > .tree-chevron {
     cursor: not-allowed;
 }
 
+.branch-checkbox {
+    cursor: pointer;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.branch-checkbox:disabled {
+    cursor: not-allowed;
+}
+
 .empty-msg {
     padding: 20px;
     text-align: center;

@@ -361,4 +361,252 @@ describe('FilesTree Component', () => {
     expect(events[0].detail.name).toBe('signal1');
     expect(events[0].detail.ref).toBe(2);
   });
+
+  it('should show checkboxes on branch nodes', () => {
+    const hierarchy: HierarchyRoot = {
+      name: 'top',
+      ref: 0,
+      vars: [
+        { name: 'signal1', ref: 1 }
+      ],
+      scopes: [
+        {
+          name: 'module1',
+          ref: 2,
+          vars: [
+            { name: 'signal2', ref: 3 }
+          ],
+          scopes: []
+        }
+      ]
+    };
+    
+    element.hierarchyData = hierarchy;
+    
+    const shadowRoot = element.shadowRoot;
+    // Should have checkboxes on both leaf and branch nodes
+    const leafCheckbox = shadowRoot?.querySelector('.leaf-checkbox') as HTMLInputElement;
+    const branchCheckbox = shadowRoot?.querySelector('.branch-checkbox') as HTMLInputElement;
+    
+    expect(leafCheckbox).toBeTruthy();
+    expect(branchCheckbox).toBeTruthy();
+  });
+
+  it('should set branch checkbox to checked when all descendants are selected', () => {
+    const hierarchy: HierarchyRoot = {
+      name: 'top',
+      ref: 0,
+      vars: [],
+      scopes: [
+        {
+          name: 'module1',
+          ref: 1,
+          vars: [
+            { name: 'signal1', ref: 2 },
+            { name: 'signal2', ref: 3 }
+          ],
+          scopes: []
+        }
+      ]
+    };
+    
+    element.hierarchyData = hierarchy;
+    
+    // Initially no signals selected
+    let branchCheckbox = element.shadowRoot?.querySelector('.branch-checkbox') as HTMLInputElement;
+    expect(branchCheckbox.checked).toBe(false);
+    expect(branchCheckbox.indeterminate).toBe(false);
+    
+    // Select all descendant signals
+    element.selectedSignalRefs = [2, 3];
+    
+    // Branch checkbox should now be fully checked
+    branchCheckbox = element.shadowRoot?.querySelector('.branch-checkbox') as HTMLInputElement;
+    expect(branchCheckbox.checked).toBe(true);
+    expect(branchCheckbox.indeterminate).toBe(false);
+  });
+
+  it('should set branch checkbox to indeterminate when some descendants are selected', () => {
+    const hierarchy: HierarchyRoot = {
+      name: 'top',
+      ref: 0,
+      vars: [],
+      scopes: [
+        {
+          name: 'module1',
+          ref: 1,
+          vars: [
+            { name: 'signal1', ref: 2 },
+            { name: 'signal2', ref: 3 }
+          ],
+          scopes: []
+        }
+      ]
+    };
+    
+    element.hierarchyData = hierarchy;
+    
+    // Select only one of two signals
+    element.selectedSignalRefs = [2];
+    
+    // Branch checkbox should be indeterminate
+    const branchCheckbox = element.shadowRoot?.querySelector('.branch-checkbox') as HTMLInputElement;
+    expect(branchCheckbox.checked).toBe(false);
+    expect(branchCheckbox.indeterminate).toBe(true);
+  });
+
+  it('should handle nested hierarchy indeterminate state correctly', () => {
+    const hierarchy: HierarchyRoot = {
+      name: 'top',
+      ref: 0,
+      vars: [],
+      scopes: [
+        {
+          name: 'module1',
+          ref: 1,
+          vars: [
+            { name: 'signal1', ref: 2 }
+          ],
+          scopes: [
+            {
+              name: 'submodule',
+              ref: 3,
+              vars: [
+                { name: 'signal2', ref: 4 },
+                { name: 'signal3', ref: 5 }
+              ],
+              scopes: []
+            }
+          ]
+        }
+      ]
+    };
+    
+    element.hierarchyData = hierarchy;
+    
+    // Select one nested signal
+    element.selectedSignalRefs = [4];
+    
+    // Both parent and grandparent should be indeterminate
+    const branchCheckboxes = element.shadowRoot?.querySelectorAll('.branch-checkbox') as NodeListOf<HTMLInputElement>;
+    expect(branchCheckboxes.length).toBe(2);
+    
+    // Both should be indeterminate since not all descendants are selected
+    branchCheckboxes.forEach(checkbox => {
+      expect(checkbox.checked).toBe(false);
+      expect(checkbox.indeterminate).toBe(true);
+    });
+  });
+
+  it('should toggle all descendants when branch checkbox is clicked', async () => {
+    const hierarchy: HierarchyRoot = {
+      name: 'top',
+      ref: 0,
+      vars: [],
+      scopes: [
+        {
+          name: 'module1',
+          ref: 1,
+          vars: [
+            { name: 'signal1', ref: 2 },
+            { name: 'signal2', ref: 3 }
+          ],
+          scopes: [
+            {
+              name: 'submodule',
+              ref: 4,
+              vars: [
+                { name: 'signal3', ref: 5 }
+              ],
+              scopes: []
+            }
+          ]
+        }
+      ]
+    };
+    
+    element.filename = 'test.vcd';
+    element.hierarchyData = hierarchy;
+    
+    // Collect events
+    const events: CustomEvent[] = [];
+    const eventPromise = new Promise<void>((resolve) => {
+      let eventCount = 0;
+      element.addEventListener('checkbox-toggle', (e: Event) => {
+        events.push(e as CustomEvent);
+        eventCount++;
+        // Should receive 3 events (one for each descendant signal)
+        if (eventCount === 3) {
+          resolve();
+        }
+      });
+    });
+    
+    const shadowRoot = element.shadowRoot;
+    const branchCheckbox = shadowRoot?.querySelector('.branch-checkbox') as HTMLInputElement;
+    
+    // Click the branch checkbox to select all descendants
+    branchCheckbox.click();
+    
+    await eventPromise;
+    
+    // Should have events for all 3 descendant signals
+    expect(events.length).toBe(3);
+    expect(events.map(e => e.detail.ref).sort()).toEqual([2, 3, 5]);
+    expect(events.every(e => e.detail.checked === true)).toBe(true);
+  });
+
+  it('should uncheck all descendants when checked branch checkbox is clicked', async () => {
+    const hierarchy: HierarchyRoot = {
+      name: 'top',
+      ref: 0,
+      vars: [],
+      scopes: [
+        {
+          name: 'module1',
+          ref: 1,
+          vars: [
+            { name: 'signal1', ref: 2 },
+            { name: 'signal2', ref: 3 }
+          ],
+          scopes: []
+        }
+      ]
+    };
+    
+    element.filename = 'test.vcd';
+    element.hierarchyData = hierarchy;
+    
+    // Pre-select all signals
+    element.selectedSignalRefs = [2, 3];
+    
+    // Collect events
+    const events: CustomEvent[] = [];
+    const eventPromise = new Promise<void>((resolve) => {
+      let eventCount = 0;
+      element.addEventListener('checkbox-toggle', (e: Event) => {
+        events.push(e as CustomEvent);
+        eventCount++;
+        if (eventCount === 2) {
+          resolve();
+        }
+      });
+    });
+    
+    const shadowRoot = element.shadowRoot;
+    const branchCheckbox = shadowRoot?.querySelector('.branch-checkbox') as HTMLInputElement;
+    
+    // Verify it's checked
+    expect(branchCheckbox.checked).toBe(true);
+    
+    // Click to uncheck all
+    branchCheckbox.click();
+    
+    await eventPromise;
+    
+    // Should have unchecked events for both signals
+    expect(events.length).toBe(2);
+    expect(events.map(e => e.detail.ref).sort()).toEqual([2, 3]);
+    expect(events.every(e => e.detail.checked === false)).toBe(true);
+  });
 });

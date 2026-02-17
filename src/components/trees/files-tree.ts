@@ -55,18 +55,50 @@ export class FilesTree extends TreeView {
                 }));
             },
             onCheckboxChange: (node: TreeNode, checked: boolean) => {
-                this.dispatchEvent(new CustomEvent('checkbox-toggle', {
-                    detail: { name: node.name, ref: node.id, filename: this._filename, checked },
-                    bubbles: true,
-                    composed: true
-                }));
+                // For branch nodes, toggle all descendants recursively
+                if (node.children && node.children.length > 0) {
+                    const allDescendantSignals = this.getAllDescendantSignals(node);
+                    allDescendantSignals.forEach(signal => {
+                        this.dispatchEvent(new CustomEvent('checkbox-toggle', {
+                            detail: { name: signal.name, ref: signal.ref, filename: this._filename, checked },
+                            bubbles: true,
+                            composed: true
+                        }));
+                    });
+                } else {
+                    // For leaf nodes, just toggle the single signal
+                    this.dispatchEvent(new CustomEvent('checkbox-toggle', {
+                        detail: { name: node.name, ref: node.id, filename: this._filename, checked },
+                        bubbles: true,
+                        composed: true
+                    }));
+                }
             },
             leafNodeClass: 'var-node',
             scopeNodeClass: 'tree-node',
             showCheckboxes: true,
             showFilter: true,
             isChecked: (node: TreeNode) => {
-                return this._selectedSignalRefs.has(node.id as number);
+                // For leaf nodes, check if the signal is selected
+                if (!node.children || node.children.length === 0) {
+                    return this._selectedSignalRefs.has(node.id as number);
+                }
+                // For branch nodes, return true if ALL descendants are selected
+                const allDescendantSignals = this.getAllDescendantSignals(node);
+                return allDescendantSignals.length > 0 && allDescendantSignals.every(signal => this._selectedSignalRefs.has(signal.ref));
+            },
+            isIndeterminate: (node: TreeNode) => {
+                // Only branch nodes can be indeterminate
+                if (!node.children || node.children.length === 0) {
+                    return false;
+                }
+                // A branch is indeterminate if some (but not all) descendants are selected
+                const allDescendantSignals = this.getAllDescendantSignals(node);
+                if (allDescendantSignals.length === 0) {
+                    return false;
+                }
+                const selectedCount = allDescendantSignals.filter(signal => this._selectedSignalRefs.has(signal.ref)).length;
+                return selectedCount > 0 && selectedCount < allDescendantSignals.length;
             },
             branchIconButtons: (node: TreeNode) => {
                 // Add button to add all direct child signals (non-recursively)
@@ -209,6 +241,33 @@ export class FilesTree extends TreeView {
                 }));
             }
         });
+    }
+    
+    /**
+     * Get all descendant signals (leaf nodes) recursively from a node
+     */
+    private getAllDescendantSignals(node: TreeNode): Array<{ref: number, name: string}> {
+        const signals: Array<{ref: number, name: string}> = [];
+        
+        if (!node.children || node.children.length === 0) {
+            // This is a leaf node (signal)
+            signals.push({ref: node.id as number, name: node.name});
+        } else {
+            // This is a branch node, recursively collect from children
+            node.children.forEach(child => {
+                signals.push(...this.getAllDescendantSignals(child));
+            });
+        }
+        
+        return signals;
+    }
+    
+    /**
+     * Get all descendant signal refs (leaf nodes) recursively from a node
+     * @deprecated Use getAllDescendantSignals instead for better event details
+     */
+    private getAllDescendantSignalRefs(node: TreeNode): number[] {
+        return this.getAllDescendantSignals(node).map(s => s.ref);
     }
 }
 

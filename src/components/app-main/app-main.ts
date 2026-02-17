@@ -20,7 +20,7 @@ import { saveStateToFile, loadStateFromFile } from "../../utils/state-file-io.js
 import { dockStatePersistence } from "../docking/dock-state-persistence.js";
 
 // Setting paths
-const SETTING_SIGNAL_SELECTION_VISIBLE = 'Interface/Signal Selection Visible';
+const SETTING_NETLIST_VISIBLE = 'Interface/Netlist Visible';
 const SETTING_UNDO_HISTORY_VISIBLE = 'Interface/Undo History Visible';
 
 
@@ -86,7 +86,7 @@ export class AppMain extends HTMLElement {
         `;
 
         // Register components for the docking system
-        this.dockManager.registerContent('signal-selection', () => this.hierarchyTree);
+        this.dockManager.registerContent('netlist', () => this.hierarchyTree);
         this.dockManager.registerContent('file-view', () => this.fileViewContainer);
 
         // Set up dock state persistence - save state whenever layout changes
@@ -331,8 +331,8 @@ export class AppMain extends HTMLElement {
                 // Dispatch zoom-fit event for the active file display
                 this.dispatchZoomCommand('zoom-fit');
             },
-            onToggleSignalSelection: () => {
-                this.toggleSignalSelection();
+            onToggleNetlist: () => {
+                this.toggleNetlist();
             },
         });
 
@@ -501,26 +501,26 @@ export class AppMain extends HTMLElement {
 
         // Update layout to show/hide sidebar based on file count and user preference
         if (fileIds.length > 0) {
-            // Get user preference for signal selection visibility
-            let signalSelectionVisible = true;
+            // Get user preference for netlist visibility
+            let netlistVisible = true;
             let undoHistoryVisible = false; // Default to false - don't show undo history automatically
             try {
                 const { getSetting } = await import('../../settings/settings-storage.js');
-                signalSelectionVisible = (await getSetting(SETTING_SIGNAL_SELECTION_VISIBLE)) ?? true;
+                netlistVisible = (await getSetting(SETTING_NETLIST_VISIBLE)) ?? true;
                 undoHistoryVisible = (await getSetting(SETTING_UNDO_HISTORY_VISIBLE)) ?? false;
             } catch (error) {
                 console.warn('Failed to load visibility settings:', error);
             }
             
             // Only show sidebar if user wants it visible
-            if (signalSelectionVisible) {
+            if (netlistVisible) {
                 this.dockLayoutHelper.updateSidebarVisibility(true);
             }
             
             // Restore undo history visibility if user had it open
             if (undoHistoryVisible && this.dockLayoutHelper.isSidebarVisible()) {
                 // Only restore undo pane if sidebar is visible and undo pane is not already there
-                // The sidebar visibility check ensures undo history respects signal selection visibility
+                // The sidebar visibility check ensures undo history respects netlist visibility
                 if (!this.dockLayoutHelper.isUndoPaneVisible()) {
                     // toggleUndoPaneVisibility() will add the pane since it's currently not visible
                     this.dockLayoutHelper.toggleUndoPaneVisibility();
@@ -529,7 +529,7 @@ export class AppMain extends HTMLElement {
             
             // Update menu checkbox to reflect current state
             if (this.menuBar) {
-                this.menuBar.updateMenuItemChecked('toggle-signal-selection', this.dockLayoutHelper.isSidebarVisible());
+                this.menuBar.updateMenuItemChecked('toggle-netlist', this.dockLayoutHelper.isSidebarVisible());
                 this.menuBar.updateMenuItemChecked('toggle-undo-history', this.dockLayoutHelper.isUndoPaneVisible());
             }
         } else {
@@ -732,22 +732,22 @@ export class AppMain extends HTMLElement {
     }
 
     /**
-     * Toggle the signal selection view visibility
+     * Toggle the netlist view visibility
      */
-    private async toggleSignalSelection() {
+    private async toggleNetlist() {
         const newVisibility = this.dockLayoutHelper.toggleSidebarVisibility();
         
         // Update the menu checkbox state
         if (this.menuBar) {
-            this.menuBar.updateMenuItemChecked('toggle-signal-selection', newVisibility);
+            this.menuBar.updateMenuItemChecked('toggle-netlist', newVisibility);
         }
         
         // Persist the setting
         try {
             const { setSetting } = await import('../../settings/settings-storage.js');
-            await setSetting(SETTING_SIGNAL_SELECTION_VISIBLE, newVisibility);
+            await setSetting(SETTING_NETLIST_VISIBLE, newVisibility);
         } catch (error) {
-            console.warn('Failed to persist signal selection visibility setting:', error);
+            console.warn('Failed to persist netlist visibility setting:', error);
         }
     }
 

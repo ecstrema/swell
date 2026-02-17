@@ -85,7 +85,7 @@ export class CommandManager {
         onZoomIn: () => void,
         onZoomOut: () => void,
         onZoomFit: () => void,
-        onToggleSignalSelection: () => void,
+        onToggleNetlist: () => void,
     }): void {
         // Register commands that can be triggered by shortcuts or menu items
         // Using hierarchical naming: core/category/action
@@ -125,10 +125,10 @@ export class CommandManager {
         });
 
         this.commandRegistry.register({
-            id: 'core/view/toggle-signal-selection',
-            label: 'Toggle Signal Selection View',
-            description: 'Show or hide the signal selection panel',
-            handler: commandHandlers.onToggleSignalSelection
+            id: 'core/view/toggle-netlist',
+            label: 'Toggle Netlist View',
+            description: 'Show or hide the netlist panel',
+            handler: commandHandlers.onToggleNetlist
         });
 
         // Register command palette command

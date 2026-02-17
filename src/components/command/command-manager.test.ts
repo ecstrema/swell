@@ -24,7 +24,7 @@ describe('CommandManager', () => {
             onZoomIn: vi.fn(),
             onZoomOut: vi.fn(),
             onZoomFit: vi.fn(),
-            onToggleSignalSelection: vi.fn(),
+            onToggleNetlist: vi.fn(),
             onToggleUndoHistory: vi.fn(),
             onShowSettings: vi.fn(),
             onShowAbout: vi.fn(),
@@ -130,7 +130,7 @@ describe('CommandManager', () => {
             expect(registry.get('core/view/zoom-in')).toBeDefined();
             expect(registry.get('core/view/zoom-out')).toBeDefined();
             expect(registry.get('core/view/zoom-fit')).toBeDefined();
-            expect(registry.get('core/view/toggle-signal-selection')).toBeDefined();
+            expect(registry.get('core/view/toggle-netlist')).toBeDefined();
             expect(registry.get('core/command-palette/toggle')).toBeDefined();
         });
     });

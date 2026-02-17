@@ -105,8 +105,8 @@ settingsRegister.register({
 });
 
 settingsRegister.register({
-    path: 'Interface/Signal Selection Visible',
-    description: 'Show or hide the signal selection panel',
+    path: 'Interface/Netlist Visible',
+    description: 'Show or hide the netlist panel',
     type: 'boolean',
     defaultValue: true
 });

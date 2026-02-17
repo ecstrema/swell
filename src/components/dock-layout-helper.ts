@@ -120,12 +120,12 @@ export class DockLayoutHelper {
                     type: 'stack',
                     id: 'sidebar-stack',
                     weight: SIDEBAR_DEFAULT_WEIGHT,
-                    activeId: 'signal-selection-pane',
+                    activeId: 'netlist-pane',
                     children: [
                         {
-                            id: 'signal-selection-pane',
-                            title: 'Signal Selection',
-                            contentId: 'signal-selection',
+                            id: 'netlist-pane',
+                            title: 'Netlist',
+                            contentId: 'netlist',
                             closable: false
                         }
                     ]
@@ -172,12 +172,12 @@ export class DockLayoutHelper {
                 type: 'stack',
                 id: 'sidebar-stack',
                 weight: SIDEBAR_DEFAULT_WEIGHT,
-                activeId: 'signal-selection-pane',
+                activeId: 'netlist-pane',
                 children: [
                     {
-                        id: 'signal-selection-pane',
-                        title: 'Signal Selection',
-                        contentId: 'signal-selection',
+                        id: 'netlist-pane',
+                        title: 'Netlist',
+                        contentId: 'netlist',
                         closable: false
                     }
                 ]

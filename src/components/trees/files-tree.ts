@@ -25,7 +25,7 @@ export interface HierarchyRoot {
 
 /**
  * FilesTree component displays the hierarchical structure of signals from loaded waveform files.
- * It extends TreeView to provide file-specific functionality for signal selection.
+ * It extends TreeView to provide file-specific functionality for netlist.
  */
 export class FilesTree extends TreeView {
     private _hierarchyData: HierarchyRoot | null = null;

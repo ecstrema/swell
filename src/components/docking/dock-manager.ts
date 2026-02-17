@@ -19,6 +19,23 @@ export class DockManager extends HTMLElement {
     this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(dockManagerCss)];
   }
 
+  /**
+   * Register a callback to be invoked when the layout changes
+   * @param callback Function to call with the new layout
+   */
+  public onLayoutChange(callback: (layout: DockLayout) => void): void {
+    this._onLayoutChange = callback;
+  }
+
+  /**
+   * Notify listeners that the layout has changed
+   */
+  private notifyLayoutChange(): void {
+    if (this._onLayoutChange && this._layout) {
+      this._onLayoutChange(this._layout);
+    }
+  }
+
   set layout(value: DockLayout) {
     this._layout = value;
     this.render();
@@ -119,6 +136,7 @@ export class DockManager extends HTMLElement {
     stack.children.splice(insertIndex, 0, pane);
     
     this.render();
+    this.notifyLayoutChange();
   }
 
   getDraggedPane() {
@@ -199,6 +217,7 @@ export class DockManager extends HTMLElement {
     }
     
     this.render();
+    this.notifyLayoutChange();
   }
 
   private getDropZone(
@@ -501,6 +520,7 @@ export class DockManager extends HTMLElement {
         this.simplifyBoxes(this._layout.root);
       }
       this.render();
+      this.notifyLayoutChange();
       return true;
     }
     return false;

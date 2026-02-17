@@ -17,6 +17,7 @@ import { PaneManager } from "../panels/pane-manager.js";
 import { UndoManager } from "../../undo/undo-manager.js";
 import { UndoableOperation } from "../../undo/undo-tree.js";
 import { saveStateToFile, loadStateFromFile } from "../../utils/state-file-io.js";
+import { dockStatePersistence } from "../docking/dock-state-persistence.js";
 
 // Setting paths
 const SETTING_SIGNAL_SELECTION_VISIBLE = 'Interface/Signal Selection Visible';
@@ -88,7 +89,12 @@ export class AppMain extends HTMLElement {
         this.dockManager.registerContent('signal-selection', () => this.hierarchyTree);
         this.dockManager.registerContent('file-view', () => this.fileViewContainer);
 
-        // Set initial layout (sidebar will be added when files are opened)
+        // Set up dock state persistence - save state whenever layout changes
+        this.dockManager.onLayoutChange((layout) => {
+            dockStatePersistence.saveState(layout);
+        });
+
+        // Set initial layout (will be replaced by saved state if available)
         this.dockManager.layout = {
             root: {
                 type: 'box',
@@ -109,6 +115,9 @@ export class AppMain extends HTMLElement {
     }
 
     async connectedCallback() {
+        // Restore dock layout from saved state
+        await this.restoreDockLayout();
+
         // Restore session (web only - Tauri handles this on startup)
         await restoreSession();
 
@@ -244,6 +253,20 @@ export class AppMain extends HTMLElement {
     disconnectedCallback() {
         // Clean up command manager (includes shortcuts and command palette)
         this.commandManager.deactivate();
+        
+        // Cancel any pending dock state saves
+        dockStatePersistence.cancelPendingSave();
+    }
+
+    /**
+     * Restore saved dock layout from persistent storage
+     */
+    private async restoreDockLayout() {
+        const savedLayout = await dockStatePersistence.loadState();
+        if (savedLayout) {
+            console.log('Restoring saved dock layout');
+            this.dockManager.layout = savedLayout;
+        }
     }
 
     /**

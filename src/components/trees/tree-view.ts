@@ -51,12 +51,17 @@ export interface TreeViewConfig {
     scopeNodeClass?: string;
     
     /**
-     * Function to determine if a leaf node should show a checkbox as checked
+     * Function to determine if a node should show a checkbox as checked
      */
     isChecked?: (node: TreeNode) => boolean;
     
     /**
-     * Whether to show checkboxes for leaf nodes
+     * Function to determine if a node should show a checkbox in indeterminate state
+     */
+    isIndeterminate?: (node: TreeNode) => boolean;
+    
+    /**
+     * Whether to show checkboxes for all nodes (both leaf and branch nodes)
      */
     showCheckboxes?: boolean;
     
@@ -409,6 +414,25 @@ export class TreeView extends HTMLElement {
         chevronSpan.className = 'tree-chevron';
         chevronSpan.innerHTML = ChevronRightIcon;
         summary.appendChild(chevronSpan);
+        
+        // Add checkbox if enabled
+        if (this._config.showCheckboxes) {
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'branch-checkbox';
+            checkbox.checked = this._config.isChecked ? this._config.isChecked(node) : false;
+            checkbox.indeterminate = this._config.isIndeterminate ? this._config.isIndeterminate(node) : false;
+            
+            // Prevent checkbox click from triggering details toggle
+            checkbox.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Call the checkbox change handler if provided
+                if (this._config.onCheckboxChange) {
+                    this._config.onCheckboxChange(node, checkbox.checked);
+                }
+            });
+            summary.appendChild(checkbox);
+        }
         
         // Create a wrapper for content (text + icon buttons)
         const summaryContent = document.createElement('div');

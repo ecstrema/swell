@@ -55,18 +55,50 @@ export class FilesTree extends TreeView {
                 }));
             },
             onCheckboxChange: (node: TreeNode, checked: boolean) => {
-                this.dispatchEvent(new CustomEvent('checkbox-toggle', {
-                    detail: { name: node.name, ref: node.id, filename: this._filename, checked },
-                    bubbles: true,
-                    composed: true
-                }));
+                // For branch nodes, toggle all descendants recursively
+                if (node.children && node.children.length > 0) {
+                    const allDescendantRefs = this.getAllDescendantSignalRefs(node);
+                    allDescendantRefs.forEach(ref => {
+                        this.dispatchEvent(new CustomEvent('checkbox-toggle', {
+                            detail: { name: '', ref: ref, filename: this._filename, checked },
+                            bubbles: true,
+                            composed: true
+                        }));
+                    });
+                } else {
+                    // For leaf nodes, just toggle the single signal
+                    this.dispatchEvent(new CustomEvent('checkbox-toggle', {
+                        detail: { name: node.name, ref: node.id, filename: this._filename, checked },
+                        bubbles: true,
+                        composed: true
+                    }));
+                }
             },
             leafNodeClass: 'var-node',
             scopeNodeClass: 'tree-node',
             showCheckboxes: true,
             showFilter: true,
             isChecked: (node: TreeNode) => {
-                return this._selectedSignalRefs.has(node.id as number);
+                // For leaf nodes, check if the signal is selected
+                if (!node.children || node.children.length === 0) {
+                    return this._selectedSignalRefs.has(node.id as number);
+                }
+                // For branch nodes, return true if ALL descendants are selected
+                const allDescendantRefs = this.getAllDescendantSignalRefs(node);
+                return allDescendantRefs.length > 0 && allDescendantRefs.every(ref => this._selectedSignalRefs.has(ref));
+            },
+            isIndeterminate: (node: TreeNode) => {
+                // Only branch nodes can be indeterminate
+                if (!node.children || node.children.length === 0) {
+                    return false;
+                }
+                // A branch is indeterminate if some (but not all) descendants are selected
+                const allDescendantRefs = this.getAllDescendantSignalRefs(node);
+                if (allDescendantRefs.length === 0) {
+                    return false;
+                }
+                const selectedCount = allDescendantRefs.filter(ref => this._selectedSignalRefs.has(ref)).length;
+                return selectedCount > 0 && selectedCount < allDescendantRefs.length;
             },
             branchIconButtons: (node: TreeNode) => {
                 // Add button to add all direct child signals (non-recursively)
@@ -209,6 +241,25 @@ export class FilesTree extends TreeView {
                 }));
             }
         });
+    }
+    
+    /**
+     * Get all descendant signal refs (leaf nodes) recursively from a node
+     */
+    private getAllDescendantSignalRefs(node: TreeNode): number[] {
+        const refs: number[] = [];
+        
+        if (!node.children || node.children.length === 0) {
+            // This is a leaf node (signal)
+            refs.push(node.id as number);
+        } else {
+            // This is a branch node, recursively collect from children
+            node.children.forEach(child => {
+                refs.push(...this.getAllDescendantSignalRefs(child));
+            });
+        }
+        
+        return refs;
     }
 }
 

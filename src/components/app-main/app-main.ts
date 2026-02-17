@@ -605,7 +605,7 @@ export class AppMain extends HTMLElement {
 
     activateCommandsViewPane() {
         // Activate the pane first
-        this.paneManager.activatePane('commands-view-pane', 'All Commands', 'commands-view', true);
+        this.paneManager.activatePane('commands-view-pane', 'Keyboard Shortcuts', 'commands-view', true);
         
         // Then wire up the commands view with dependencies
         // Need to wait a tick for the element to be in the DOM

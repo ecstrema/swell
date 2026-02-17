@@ -259,6 +259,7 @@ export class CommandsView extends HTMLElement {
         cell.appendChild(buttonContainer);
 
         // Start recording the shortcut
+        let saveButton: HTMLButtonElement | null = null;
         this.recordingDispose = ShoSho.record((shortcut: KeyboardShortcut) => {
             // Trim the shortcut to get a clean value
             const trimmed = shortcut.trim();
@@ -266,15 +267,23 @@ export class CommandsView extends HTMLElement {
             if (trimmed) {
                 recordingMessage.textContent = `Recorded: ${ShoSho.format(trimmed)}`;
                 
-                // Add a save button after recording
-                const saveButton = document.createElement('button');
-                saveButton.className = 'commands-view__button commands-view__button--save';
-                saveButton.textContent = 'Save';
-                saveButton.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.saveShortcut(commandId, currentShortcut, trimmed);
-                });
-                buttonContainer.insertBefore(saveButton, cancelButton);
+                // Add or update the save button after recording
+                if (!saveButton) {
+                    saveButton = document.createElement('button');
+                    saveButton.className = 'commands-view__button commands-view__button--save';
+                    saveButton.textContent = 'Save';
+                    saveButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        this.saveShortcut(commandId, currentShortcut, trimmed);
+                    });
+                    buttonContainer.insertBefore(saveButton, cancelButton);
+                } else {
+                    // Update the existing save button to use the new shortcut
+                    saveButton.onclick = (e) => {
+                        e.stopPropagation();
+                        this.saveShortcut(commandId, currentShortcut, trimmed);
+                    };
+                }
             }
         });
     }

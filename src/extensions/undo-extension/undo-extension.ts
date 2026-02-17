@@ -160,9 +160,59 @@ export class UndoExtension implements Extension {
             ],
         });
 
+        // Populate demo undo tree with sample data (for demonstration purposes)
+        // This can be removed once real undo operations are being used
+        this.populateDemoUndoTree();
+
         // Return the API for other extensions to use
         return {
             getUndoManager: () => this.undoManager,
         };
+    }
+
+    /**
+     * Populate the undo tree with demo data to show branching
+     * This demonstrates the branching undo functionality
+     */
+    private populateDemoUndoTree(): void {
+        // Create demo operations that track state changes
+        let demoState = { step: 0, value: 'Empty' };
+
+        // Helper to create demo operations
+        const createDemoOperation = (newStep: number, newValue: string, description: string) => {
+            const oldStep = demoState.step;
+            const oldValue = demoState.value;
+
+            return {
+                do: () => {
+                    demoState = { step: newStep, value: newValue };
+                    console.log(`Do: ${description}`, demoState);
+                },
+                undo: () => {
+                    demoState = { step: oldStep, value: oldValue };
+                    console.log(`Undo: ${description}`, demoState);
+                },
+                redo: () => {
+                    demoState = { step: newStep, value: newValue };
+                    console.log(`Redo: ${description}`, demoState);
+                },
+                getDescription: () => description
+            };
+        };
+
+        // Create initial states
+        this.undoManager.execute(createDemoOperation(1, 'Initial state', 'Initial state'));
+        this.undoManager.execute(createDemoOperation(2, 'Added signal A', 'Add signal A'));
+        this.undoManager.execute(createDemoOperation(3, 'Modified signal A', 'Modify signal A'));
+
+        // Create a branch
+        this.undoManager.undo();
+        this.undoManager.execute(createDemoOperation(4, 'Added signal B', 'Add signal B'));
+
+        // Create another branch
+        this.undoManager.undo();
+        this.undoManager.execute(createDemoOperation(5, 'Removed signal A', 'Remove signal A'));
+
+        console.log('Demo undo tree populated with branching structure');
     }
 }

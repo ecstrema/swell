@@ -1,4 +1,4 @@
-import { restoreSession, getStartupFiles } from "../../backend/index.js";
+import { restoreSession } from "../../backend/index.js";
 import "../../extensions/menu-extension/menu-bar.ts";
 import { MenuBar } from "../../extensions/menu-extension/menu-bar.js";
 import "../../extensions/waveform-file-extension/trees/files-tree.ts";
@@ -14,14 +14,12 @@ import { FileManager } from "../../extensions/waveform-file-extension/file-manag
 import { CommandManager } from "../command/command-manager.js";
 import { DockLayoutHelper } from "../dock-layout-helper.js";
 import { PaneManager } from "../panels/pane-manager.js";
-import { UndoManager, UndoableOperation } from "../../extensions/undo-extension/undo-extension.js";
-import { saveStateToFile, loadStateFromFile } from "../../utils/state-file-io.js";
+import { UndoManager } from "../../extensions/undo-extension/undo-extension.js";
 import { dockStatePersistence } from "../../extensions/dock-extension/dock-state-persistence.js";
 
 // Setting paths
 const SETTING_NETLIST_VISIBLE = 'Interface/Netlist Visible';
 const SETTING_UNDO_HISTORY_VISIBLE = 'Interface/Undo History Visible';
-
 
 
 export class AppMain extends HTMLElement {
@@ -120,13 +118,13 @@ export class AppMain extends HTMLElement {
         // Restore session (web only - Tauri handles this on startup)
         await restoreSession();
 
-        // Handle startup files from command-line arguments (Tauri only)
-        await this.handleStartupFiles();
-
         // Initialize extensions
         await this.initializeExtensions();
 
-        // Initialize shortcut system
+        // Handle startup files from command-line arguments (Tauri only)
+        await this.handleStartupFiles();
+
+        // Initialize shortcut system (now minimal - most moved to extensions)
         this.initializeShortcuts();
 
         // Pass shortcut manager to menu bar and store reference
@@ -139,22 +137,129 @@ export class AppMain extends HTMLElement {
         // Initialize command palette
         this.commandManager.initializeCommandPalette();
 
-        // Add demo undo tree command
-        this.initializeDemoUndoTree();
-
-        // Listeners
-        this.addEventListener('file-open-request', () => this.handleFileOpen());
-
-        // Listen for open example request - execute the command which will show the selection palette
-        this.addEventListener('open-example-request', () => {
-            this.commandManager.getCommandRegistry().execute('open-example');
-        });
+        // Set up event listeners for extension events and cross-cutting concerns
+        this.setupEventListeners();
 
         // Listen for file picker button click in empty state
         const filePickerBtn = this.fileViewContainer.querySelector('#file-picker-btn');
         if (filePickerBtn) {
             filePickerBtn.addEventListener('click', () => this.handleFileOpen());
         }
+
+        await this.refreshFiles();
+    }
+
+    disconnectedCallback() {
+        // Clean up command manager (includes shortcuts and command palette)
+        this.commandManager.deactivate();
+
+        // Cancel any pending dock state saves
+        dockStatePersistence.cancelPendingSave();
+    }
+
+    /**
+     * Restore saved dock layout from persistent storage
+     */
+    private async restoreDockLayout() {
+        const savedLayout = await dockStatePersistence.loadState();
+        if (savedLayout) {
+            console.log('Restoring saved dock layout');
+            this.dockManager.setLayoutSilent(savedLayout);
+        }
+    }
+
+    /**
+     * Initialize extensions
+     */
+    private async initializeExtensions() {
+        const extensionRegistry = this.commandManager.getExtensionRegistry();
+        
+        // Provide app APIs to extensions BEFORE registering them
+        this.commandManager.setAppAPIs({
+            getUndoManager: () => this.undoManager,
+            getFileManager: () => this.fileManager,
+            getPaneManager: () => this.paneManager,
+            getDockManager: () => this.dockManager,
+        });
+        
+        // Import and register all default extensions
+        const { getAllExtensions } = await import('../../extensions/all-extensions.js');
+        const extensions = getAllExtensions();
+        
+        for (const extension of extensions) {
+            await extensionRegistry.register(extension);
+        }
+        
+        // Get the undo manager from the undo extension
+        const undoAPI = await extensionRegistry.getExtension<any>('core/undo');
+        if (undoAPI && undoAPI.getUndoManager) {
+            this.undoManager = undoAPI.getUndoManager();
+        } else {
+            console.warn('Undo manager not available from undo extension');
+        }
+
+        // Update app APIs now that undoManager is available
+        this.commandManager.setAppAPIs({
+            getUndoManager: () => this.undoManager,
+            getFileManager: () => this.fileManager,
+            getPaneManager: () => this.paneManager,
+            getDockManager: () => this.dockManager,
+        });
+
+        // Register pages from extensions with the dock manager
+        const pages = extensionRegistry.getPages();
+
+        for (const page of pages) {
+            // Register each page's factory with the dock manager
+            this.dockManager.registerContent(page.id, page.factory);
+        }
+
+        // Update the show commands command to actually open the commands view
+        this.commandManager.getCommandRegistry().register({
+            id: 'core/commands/show',
+            label: 'Show All Commands',
+            description: 'Display all registered commands with their shortcuts',
+            handler: () => {
+                // Activate the commands view pane
+                this.activateCommandsViewPane();
+            },
+        });
+    }
+
+    /**
+     * Set up event listeners for extension events and cross-cutting concerns
+     */
+    private setupEventListeners() {
+        // Listen for file open request from extensions
+        this.addEventListener('file-open-request', () => this.handleFileOpen());
+
+        // Listen for open example request - execute the command which will show the selection palette
+        this.addEventListener('open-example-request', (e: Event) => {
+            const customEvent = e as CustomEvent<{ examples?: any[] }>;
+            this.handleOpenExampleRequest(customEvent.detail.examples);
+        });
+
+        // Listen for zoom commands from extensions
+        window.addEventListener('zoom-command', (e: Event) => {
+            const customEvent = e as CustomEvent<{ action: 'zoom-in' | 'zoom-out' | 'zoom-fit' }>;
+            this.dispatchZoomCommand(customEvent.detail.action);
+        });
+
+        // Listen for toggle netlist from extension
+        window.addEventListener('toggle-netlist', () => {
+            this.toggleNetlist();
+        });
+
+        // Listen for toggle undo history from extension
+        window.addEventListener('toggle-undo-history', () => {
+            this.toggleUndoHistory();
+        });
+
+        // Listen for file activate request from extensions
+        window.addEventListener('file-activate-request', (e: Event) => {
+            const customEvent = e as CustomEvent<{ fileId: string }>;
+            this.setActiveFile(customEvent.detail.fileId);
+        });
 
         // Listen for settings open request - execute the settings command
         this.addEventListener('settings-open-request', () => {
@@ -247,75 +352,16 @@ export class AppMain extends HTMLElement {
                 this.hierarchyTree.selectedSignalRefs = signalRefs;
             }
         });
-
-        await this.refreshFiles();
-    }
-
-    disconnectedCallback() {
-        // Clean up command manager (includes shortcuts and command palette)
-        this.commandManager.deactivate();
-
-        // Cancel any pending dock state saves
-        dockStatePersistence.cancelPendingSave();
     }
 
     /**
-     * Restore saved dock layout from persistent storage
+     * Initialize the shortcut system with commands and bindings
+     * (Most shortcuts are now registered by extensions)
      */
-    private async restoreDockLayout() {
-        const savedLayout = await dockStatePersistence.loadState();
-        if (savedLayout) {
-            console.log('Restoring saved dock layout');
-            this.dockManager.setLayoutSilent(savedLayout);
-        }
-    }
-
-    /**
-     * Initialize extensions
-     */
-    private async initializeExtensions() {
-        const extensionRegistry = this.commandManager.getExtensionRegistry();
+    private initializeShortcuts() {
+        // Most shortcuts are now registered in extensions
+        // This just sets up any app-specific shortcuts that don't belong in extensions
         
-        // Provide app APIs to extensions BEFORE registering them
-        this.commandManager.setAppAPIs({
-            getUndoManager: () => this.undoManager,
-            getFileManager: () => this.fileManager,
-            getPaneManager: () => this.paneManager,
-            getDockManager: () => this.dockManager,
-        });
-        
-        // Import and register all default extensions
-        const { getAllExtensions } = await import('../../extensions/all-extensions.js');
-        const extensions = getAllExtensions();
-        
-        for (const extension of extensions) {
-            await extensionRegistry.register(extension);
-        }
-        
-        // Get the undo manager from the undo extension
-        const undoAPI = await extensionRegistry.getExtension<any>('core/undo');
-        if (undoAPI && undoAPI.getUndoManager) {
-            this.undoManager = undoAPI.getUndoManager();
-        } else {
-            console.warn('Undo manager not available from undo extension');
-        }
-
-        // Update app APIs now that undoManager is available
-        this.commandManager.setAppAPIs({
-            getUndoManager: () => this.undoManager,
-            getFileManager: () => this.fileManager,
-            getPaneManager: () => this.paneManager,
-            getDockManager: () => this.dockManager,
-        });
-
-        // Register pages from extensions with the dock manager
-        const pages = extensionRegistry.getPages();
-
-        for (const page of pages) {
-            // Register each page's factory with the dock manager
-            this.dockManager.registerContent(page.id, page.factory);
-        }
-
         // Update the show commands command to actually open the commands view
         this.commandManager.getCommandRegistry().register({
             id: 'core/commands/show',
@@ -329,66 +375,11 @@ export class AppMain extends HTMLElement {
     }
 
     /**
-     * Initialize the shortcut system with commands and bindings
+     * Handle open example request with command palette
      */
-    private initializeShortcuts() {
-        this.commandManager.initializeShortcuts({
-            onFileOpen: () => this.handleFileOpen(),
-            onFileQuit: async () => {
-                // Only available in Tauri, not on web
-                const { isTauri } = await import('../../backend/index.js');
-                if (isTauri) {
-                    const { getCurrentWindow } = await import('@tauri-apps/api/window');
-                    await getCurrentWindow().close();
-                }
-            },
-            onZoomIn: () => {
-                // Dispatch zoom-in event for the active file display
-                this.dispatchZoomCommand('zoom-in');
-            },
-            onZoomOut: () => {
-                // Dispatch zoom-out event for the active file display
-                this.dispatchZoomCommand('zoom-out');
-            },
-            onZoomFit: () => {
-                // Dispatch zoom-fit event for the active file display
-                this.dispatchZoomCommand('zoom-fit');
-            },
-            onToggleNetlist: () => {
-                this.toggleNetlist();
-            },
-        });
-
-        // Register save/load state commands
-        this.commandManager.getCommandRegistry().register({
-            id: 'file-save-state',
-            label: 'Save State As...',
-            handler: () => this.handleSaveState()
-        });
-
-        this.commandManager.getCommandRegistry().register({
-            id: 'file-load-state',
-            label: 'Load State...',
-            handler: () => this.handleLoadState()
-        });
-
-        // Set up undo manager change listener to update the panel
-        if (this.undoManager) {
-            this.undoManager.setOnChange(() => {
-                this.undoTreePanel.refresh();
-            });
-        }
-
-        // Register "Open Example..." command that uses selection mode
-        this.registerOpenExampleCommand();
-    }
-
-    /**
-     * Register command for opening example files using selection mode
-     */
-    private registerOpenExampleCommand() {
-        // Define example files with their descriptions
-        const examples = [
+    private async handleOpenExampleRequest(examples?: any[]) {
+        // Use default examples if not provided
+        const exampleFiles = examples || [
             {
                 filename: 'simple.vcd',
                 description: 'Basic VCD waveform example with simple signals'
@@ -411,88 +402,27 @@ export class AppMain extends HTMLElement {
             }
         ];
 
-        // Register a single command that opens the selection palette
-        this.commandManager.getCommandRegistry().register({
-            id: 'open-example',
-            label: 'Open Example...',
-            handler: async () => {
-                const commandPalette = this.commandManager.getCommandPalette();
-                if (!commandPalette) return;
+        const commandPalette = this.commandManager.getCommandPalette();
+        if (!commandPalette) return;
 
-                try {
-                    const options = examples.map(ex => ({
-                        id: ex.filename,
-                        label: ex.filename,
-                        description: ex.description,
-                        value: ex.filename
-                    }));
+        try {
+            const options = exampleFiles.map((ex: any) => ({
+                id: ex.filename,
+                label: ex.filename,
+                description: ex.description,
+                value: ex.filename
+            }));
 
-                    const selectedFilename = await commandPalette.showSelection(
-                        options,
-                        'Select an example file...'
-                    );
+            const selectedFilename = await commandPalette.showSelection(
+                options,
+                'Select an example file...'
+            );
 
-                    await this.handleOpenExample(selectedFilename);
-                } catch (error) {
-                    // User cancelled or error occurred
-                    console.log('Example selection cancelled');
-                }
-            }
-        });
-    }
-
-    /**
-     * Initialize demo undo tree with sample data
-     * This demonstrates the branching undo functionality
-     */
-    private initializeDemoUndoTree() {
-        // The command is now registered in command-manager as 'view-show-undo-tree'
-        // No need to register it here
-    }
-
-    /**
-     * Populate the undo tree with demo data to show branching
-     */
-    private populateDemoUndoTree() {
-        // Create demo operations that track state changes
-        let demoState = { step: 0, value: 'Empty' };
-
-        // Helper to create demo operations
-        const createDemoOperation = (newStep: number, newValue: string, description: string): UndoableOperation => {
-            const oldStep = demoState.step;
-            const oldValue = demoState.value;
-
-            return {
-                do: () => {
-                    demoState = { step: newStep, value: newValue };
-                    console.log(`Do: ${description}`, demoState);
-                },
-                undo: () => {
-                    demoState = { step: oldStep, value: oldValue };
-                    console.log(`Undo: ${description}`, demoState);
-                },
-                redo: () => {
-                    demoState = { step: newStep, value: newValue };
-                    console.log(`Redo: ${description}`, demoState);
-                },
-                getDescription: () => description
-            };
-        };
-
-        // Create initial states
-        this.undoManager.execute(createDemoOperation(1, 'Initial state', 'Initial state'));
-        this.undoManager.execute(createDemoOperation(2, 'Added signal A', 'Add signal A'));
-        this.undoManager.execute(createDemoOperation(3, 'Modified signal A', 'Modify signal A'));
-
-        // Create a branch
-        this.undoManager.undo();
-        this.undoManager.execute(createDemoOperation(4, 'Added signal B', 'Add signal B'));
-
-        // Create another branch
-        this.undoManager.undo();
-        this.undoManager.execute(createDemoOperation(5, 'Removed signal A', 'Remove signal A'));
-
-        console.log('Demo undo tree populated with branching structure');
+            await this.handleOpenExample(selectedFilename);
+        } catch (error) {
+            // User cancelled or error occurred
+            console.log('Example selection cancelled');
+        }
     }
 
     async refreshFiles() {
@@ -580,25 +510,10 @@ export class AppMain extends HTMLElement {
     }
 
     async handleStartupFiles() {
-        try {
-            const startupFiles = await getStartupFiles();
-            if (startupFiles.length > 0) {
-                console.log(`Opening ${startupFiles.length} file(s) from command-line arguments:`, startupFiles);
-
-                for (const filePath of startupFiles) {
-                    const fileId = await this.fileManager.openFilePath(filePath);
-                    if (fileId) {
-                        console.log(`Successfully opened: ${filePath}`);
-                    } else {
-                        console.error(`Failed to open file: ${filePath}`);
-                    }
-                }
-
-                // Refresh the file list to display the newly opened files
-                // This will be called by refreshFiles in connectedCallback
-            }
-        } catch (err) {
-            console.error("Error handling startup files:", err);
+        // Delegate to waveform file extension
+        const waveformAPI = await this.commandManager.getExtensionRegistry().getExtension<any>('core/waveform-file');
+        if (waveformAPI && waveformAPI.handleStartupFiles) {
+            await waveformAPI.handleStartupFiles();
         }
     }
 
@@ -669,73 +584,6 @@ export class AppMain extends HTMLElement {
     executeOperation(operation: UndoableOperation) {
         if (this.undoManager) {
             this.undoManager.execute(operation);
-        }
-    }
-
-    /**
-     * Handle save state command
-     */
-    async handleSaveState() {
-        const activeFileId = this.fileManager.getActiveFileId();
-        if (!activeFileId) {
-            console.warn('No active file to save state');
-            return;
-        }
-
-        const activeRes = this.fileManager.getFileResources(activeFileId);
-        if (!activeRes) {
-            console.warn('Active file resources not found');
-            return;
-        }
-
-        try {
-            const state = activeRes.element.getCurrentState();
-            await saveStateToFile(activeFileId, state);
-            console.log('State saved successfully');
-        } catch (err) {
-            console.error('Failed to save state:', err);
-            alert(`Failed to save state: ${err instanceof Error ? err.message : 'Unknown error'}`);
-        }
-    }
-
-    /**
-     * Handle load state command
-     */
-    async handleLoadState() {
-        try {
-            const loaded = await loadStateFromFile();
-            if (!loaded) {
-                // User cancelled
-                return;
-            }
-
-            const { filename, state } = loaded;
-
-            // Check if the file is currently open
-            const fileId = this.fileManager.getFileIdFromFilename(filename);
-            if (!fileId) {
-                alert(`The waveform file "${filename}" is not currently open. Please open it first.`);
-                return;
-            }
-
-            const fileRes = this.fileManager.getFileResources(fileId);
-            if (!fileRes) {
-                console.warn('File resources not found');
-                return;
-            }
-
-            // Apply the state to the file display
-            await fileRes.element.applyState(state);
-
-            // Switch to the file if it's not active
-            if (this.fileManager.getActiveFileId() !== fileId) {
-                this.setActiveFile(fileId);
-            }
-
-            console.log('State loaded successfully');
-        } catch (err) {
-            console.error('Failed to load state:', err);
-            alert(`Failed to load state: ${err instanceof Error ? err.message : 'Unknown error'}`);
         }
     }
 

@@ -8,6 +8,7 @@ import { Timeline } from '../timeline/timeline.js';
 import { Minimap } from '../minimap/minimap.js';
 import { saveFileState, loadFileState, FileState, Item, ItemSignal, ItemTimeline } from '../../utils/file-state-storage.js';
 import { getSetting } from '../../settings/settings-storage.js';
+import { UndoableOperation } from '../../undo/undo-tree.js';
 import '../trees/selected-signals-tree.js';
 import '../timeline/timeline.js';
 import '../minimap/minimap.js';
@@ -60,7 +61,7 @@ export class FileDisplay extends HTMLElement {
   private saveStateTimeout: number | null = null;
   private stateRestored: boolean = false;
   private alternatingRowPattern: number = 3;
-  private executeUndoableOperation: ((operation: any) => void) | null = null;
+  private executeUndoableOperation: ((operation: UndoableOperation) => void) | null = null;
 
   constructor() {
     super();
@@ -110,7 +111,7 @@ export class FileDisplay extends HTMLElement {
   /**
    * Set callback for executing undoable operations
    */
-  setUndoableOperationExecutor(executor: (operation: any) => void) {
+  setUndoableOperationExecutor(executor: (operation: UndoableOperation) => void) {
     this.executeUndoableOperation = executor;
   }
 

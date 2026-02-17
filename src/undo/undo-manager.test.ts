@@ -96,7 +96,7 @@ describe('UndoManager Batching', () => {
             undoManager.cancelBatch();
             
             expect(undoManager.isBatching()).toBe(false);
-            expect(state.signals).toEqual([]); // Operation not executed
+            expect(state.signals).toEqual([]); // Operations undone by cancelBatch
             expect(undoManager.canUndo()).toBe(false); // Nothing in undo tree
         });
     });

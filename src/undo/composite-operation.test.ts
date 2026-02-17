@@ -54,7 +54,7 @@ describe('CompositeOperation', () => {
 
         it('should update description with operation count', () => {
             composite.addOperation(createTestOperation(state, 5, 'Add 5'));
-            expect(composite.getDescription()).toBe('Test composite (1 operations)');
+            expect(composite.getDescription()).toBe('Test composite (1 operation)');
 
             composite.addOperation(createTestOperation(state, 10, 'Add 10'));
             expect(composite.getDescription()).toBe('Test composite (2 operations)');

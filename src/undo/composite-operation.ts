@@ -8,7 +8,6 @@
 export class CompositeOperation implements UndoableOperation {
     private operations: UndoableOperation[] = [];
     private description: string;
-    private executed: boolean = false;
 
     constructor(description: string) {
         this.description = description;
@@ -62,6 +61,9 @@ export class CompositeOperation implements UndoableOperation {
     getDescription(): string {
         if (this.operations.length === 0) {
             return this.description;
+        }
+        if (this.operations.length === 1) {
+            return `${this.description} (1 operation)`;
         }
         return `${this.description} (${this.operations.length} operations)`;
     }

@@ -35,14 +35,16 @@ export class WaveformFileExtension implements Extension {
         description: 'Provides waveform file loading, display, and management',
     };
 
-    private fileManager: FileManager | null = null;
+    private fileManager: FileManager;
     private context: ExtensionContext | null = null;
+
+    constructor() {
+        // Create the file manager
+        this.fileManager = new FileManager();
+    }
 
     async activate(context: ExtensionContext): Promise<WaveformFileAPI> {
         this.context = context;
-        
-        // The file manager is created by app-main
-        // This extension ensures the custom elements are registered
         
         // Register file-related commands
         this.registerFileCommands(context);
@@ -60,13 +62,6 @@ export class WaveformFileExtension implements Extension {
             getFileManager: () => this.fileManager,
             handleStartupFiles: () => this.handleStartupFiles(),
         };
-    }
-
-    /**
-     * Set the file manager instance (called by app-main after creating it)
-     */
-    setFileManager(fileManager: FileManager): void {
-        this.fileManager = fileManager;
     }
 
     /**

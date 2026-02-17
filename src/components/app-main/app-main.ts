@@ -22,11 +22,13 @@ const SETTING_NETLIST_VISIBLE = 'Interface/Netlist Visible';
 const SETTING_UNDO_HISTORY_VISIBLE = 'Interface/Undo History Visible';
 
 export class AppMain extends HTMLElement {
-    // Managers
-    private fileManager: FileManager;
+    // Command manager (extension registry coordinator) - stays in app-main
     private commandManager: CommandManager;
-    private dockLayoutHelper: DockLayoutHelper;
-    private paneManager: PaneManager;
+    
+    // Managers obtained from extensions
+    private fileManager: FileManager | null = null;
+    private dockLayoutHelper: DockLayoutHelper | null = null;
+    private paneManager: PaneManager | null = null;
     private undoManager: UndoManager | null = null;
 
     // Docking system
@@ -38,10 +40,8 @@ export class AppMain extends HTMLElement {
     constructor() {
         super();
 
-        // Initialize managers
-        this.fileManager = new FileManager();
+        // Initialize command manager (extension registry)
         this.commandManager = new CommandManager();
-        // Note: undoManager will be obtained from the undo extension during initialization
 
         this.attachShadow({ mode: 'open' });
         this.shadowRoot!.adoptedStyleSheets = [css(appMainCss)];
@@ -58,9 +58,7 @@ export class AppMain extends HTMLElement {
 
         this.dockManager = this.shadowRoot!.getElementById('main-dock') as DockManager;
 
-        // Initialize dock helpers after dock manager is created
-        this.dockLayoutHelper = new DockLayoutHelper(this.dockManager);
-        this.paneManager = new PaneManager(this.dockManager, this.dockLayoutHelper);
+        // Note: Dock helpers will be obtained from dock extension after initialization
 
         // Initialize docked elements
         this.hierarchyTree = new FilesTree();
@@ -170,20 +168,41 @@ export class AppMain extends HTMLElement {
     private async initializeExtensions() {
         const extensionRegistry = this.commandManager.getExtensionRegistry();
         
-        // Provide app APIs to extensions BEFORE registering them
-        this.commandManager.setAppAPIs({
-            getUndoManager: () => this.undoManager,
-            getFileManager: () => this.fileManager,
-            getPaneManager: () => this.paneManager,
-            getDockManager: () => this.dockManager,
-        });
-        
         // Import and register all default extensions
         const { getAllExtensions } = await import('../../extensions/all-extensions.js');
         const extensions = getAllExtensions();
         
         for (const extension of extensions) {
             await extensionRegistry.register(extension);
+        }
+        
+        // Get managers from extensions
+        
+        // Get file manager from waveform extension
+        const waveformAPI = await extensionRegistry.getExtension<any>('core/waveform-file');
+        if (waveformAPI && waveformAPI.getFileManager) {
+            this.fileManager = waveformAPI.getFileManager();
+        } else {
+            console.error('File manager not available from waveform extension');
+        }
+        
+        // Get dock helpers from dock extension
+        const dockAPI = await extensionRegistry.getExtension<any>('core/dock');
+        if (dockAPI) {
+            // Initialize the dock system with our dock manager
+            if (dockAPI.initializeDockSystem) {
+                dockAPI.initializeDockSystem(this.dockManager);
+            }
+            
+            // Get the dock layout helper and pane manager
+            if (dockAPI.getDockLayoutHelper) {
+                this.dockLayoutHelper = dockAPI.getDockLayoutHelper();
+            }
+            if (dockAPI.getPaneManager) {
+                this.paneManager = dockAPI.getPaneManager();
+            }
+        } else {
+            console.error('Dock API not available from dock extension');
         }
         
         // Get the undo manager from the undo extension
@@ -194,7 +213,7 @@ export class AppMain extends HTMLElement {
             console.warn('Undo manager not available from undo extension');
         }
 
-        // Update app APIs now that undoManager is available
+        // Provide app APIs to extensions after getting managers
         this.commandManager.setAppAPIs({
             getUndoManager: () => this.undoManager,
             getFileManager: () => this.fileManager,
@@ -289,6 +308,8 @@ export class AppMain extends HTMLElement {
         this.addEventListener('pane-close', (e: any) => {
             const paneId = e.detail.id;
 
+            if (!this.paneManager) return;
+
             // Handle settings pane close
             if (paneId === 'settings-pane') {
                 this.paneManager.closePane('settings-pane');
@@ -329,7 +350,7 @@ export class AppMain extends HTMLElement {
             const customEvent = e as CustomEvent<{ filename: string; signalRefs: number[] }>;
             const { filename, signalRefs } = customEvent.detail;
             // Only update if this is for the active file
-            if (filename === this.fileManager.getActiveFileId()) {
+            if (this.fileManager && filename === this.fileManager.getActiveFileId()) {
                 this.hierarchyTree.selectedSignalRefs = signalRefs;
             }
         });
@@ -387,9 +408,16 @@ export class AppMain extends HTMLElement {
     }
 
     async refreshFiles() {
+        if (!this.fileManager || !this.dockLayoutHelper) {
+            console.warn('Managers not initialized yet');
+            return;
+        }
+
         const { fileIds, activeFileId } = await this.fileManager.refreshFiles(
             // onFileAdded callback
             async (id: string) => {
+                if (!this.fileManager || !this.dockLayoutHelper) return;
+                
                 const fileDisplay = this.fileManager.getFileResources(id)?.element;
                 if (fileDisplay) {
                     // Set up undo operation executor for the file display
@@ -406,6 +434,7 @@ export class AppMain extends HTMLElement {
             },
             // onFileRemoved callback
             (id: string) => {
+                if (!this.dockLayoutHelper) return;
                 this.dockLayoutHelper.removeDockPane(id);
             }
         );
@@ -429,12 +458,12 @@ export class AppMain extends HTMLElement {
             }
 
             // Only show sidebar if user wants it visible
-            if (netlistVisible) {
+            if (netlistVisible && this.dockLayoutHelper) {
                 this.dockLayoutHelper.updateSidebarVisibility(true);
             }
 
             // Restore undo history visibility if user had it open
-            if (undoHistoryVisible && this.dockLayoutHelper.isSidebarVisible()) {
+            if (undoHistoryVisible && this.dockLayoutHelper && this.dockLayoutHelper.isSidebarVisible()) {
                 // Only restore undo pane if sidebar is visible and undo pane is not already there
                 // The sidebar visibility check ensures undo history respects netlist visibility
                 if (!this.dockLayoutHelper.isUndoPaneVisible()) {
@@ -444,17 +473,23 @@ export class AppMain extends HTMLElement {
             }
 
             // Update menu checkbox to reflect current state
-            if (this.menuBar) {
+            if (this.menuBar && this.dockLayoutHelper) {
                 this.menuBar.updateMenuItemChecked('toggle-netlist', this.dockLayoutHelper.isSidebarVisible());
                 this.menuBar.updateMenuItemChecked('toggle-undo-history', this.dockLayoutHelper.isUndoPaneVisible());
             }
         } else {
             // Hide sidebar when no files are open
-            this.dockLayoutHelper.updateSidebarVisibility(false);
+            if (this.dockLayoutHelper) {
+                this.dockLayoutHelper.updateSidebarVisibility(false);
+            }
         }
     }
 
     async handleFileOpen() {
+        if (!this.fileManager) {
+            console.warn('File manager not initialized yet');
+            return;
+        }
         const fileId = await this.fileManager.handleFileOpen();
         if (fileId) {
             await this.refreshFiles();
@@ -463,6 +498,10 @@ export class AppMain extends HTMLElement {
     }
 
     async handleOpenExample(filename: string) {
+        if (!this.fileManager) {
+            console.warn('File manager not initialized yet');
+            return;
+        }
         const fileId = await this.fileManager.handleOpenExample(filename);
         if (fileId) {
             await this.refreshFiles();
@@ -479,6 +518,11 @@ export class AppMain extends HTMLElement {
     }
 
     setActiveFile(id: string) {
+        if (!this.fileManager || !this.dockLayoutHelper) {
+            console.warn('Managers not initialized yet');
+            return;
+        }
+        
         if (!this.fileManager.hasFile(id)) return;
 
         this.fileManager.setActiveFileId(id);
@@ -505,11 +549,20 @@ export class AppMain extends HTMLElement {
     }
 
     async closeFile(id: string) {
+        if (!this.fileManager) {
+            console.warn('File manager not initialized yet');
+            return;
+        }
         await this.fileManager.closeFile(id);
         await this.refreshFiles();
     }
 
     activateCommandsViewPane() {
+        if (!this.paneManager) {
+            console.warn('Pane manager not initialized yet');
+            return;
+        }
+        
         // Activate the pane first
         this.paneManager.activatePane('commands-view-pane', 'Keyboard Shortcuts', 'commands-view', true);
 

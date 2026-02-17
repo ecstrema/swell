@@ -21,7 +21,6 @@ import { dockStatePersistence } from "../../extensions/dock-extension/dock-state
 const SETTING_NETLIST_VISIBLE = 'Interface/Netlist Visible';
 const SETTING_UNDO_HISTORY_VISIBLE = 'Interface/Undo History Visible';
 
-
 export class AppMain extends HTMLElement {
     // Managers
     private fileManager: FileManager;
@@ -124,9 +123,6 @@ export class AppMain extends HTMLElement {
         // Handle startup files from command-line arguments (Tauri only)
         await this.handleStartupFiles();
 
-        // Initialize shortcut system (now minimal - most moved to extensions)
-        this.initializeShortcuts();
-
         // Pass shortcut manager to menu bar and store reference
         const menuBar = this.shadowRoot!.querySelector('app-menu-bar');
         if (menuBar instanceof MenuBar) {
@@ -137,7 +133,7 @@ export class AppMain extends HTMLElement {
         // Initialize command palette
         this.commandManager.initializeCommandPalette();
 
-        // Set up event listeners for extension events and cross-cutting concerns
+        // Set up event listeners for cross-cutting concerns that require coordination
         this.setupEventListeners();
 
         // Listen for file picker button click in empty state
@@ -227,7 +223,8 @@ export class AppMain extends HTMLElement {
     }
 
     /**
-     * Set up event listeners for extension events and cross-cutting concerns
+     * Set up event listeners for cross-cutting concerns that require coordination
+     * Most event handling is now delegated to extensions
      */
     private setupEventListeners() {
         // Listen for file open request from extensions
@@ -237,22 +234,6 @@ export class AppMain extends HTMLElement {
         this.addEventListener('open-example-request', (e: Event) => {
             const customEvent = e as CustomEvent<{ examples?: any[] }>;
             this.handleOpenExampleRequest(customEvent.detail.examples);
-        });
-
-        // Listen for zoom commands from extensions
-        window.addEventListener('zoom-command', (e: Event) => {
-            const customEvent = e as CustomEvent<{ action: 'zoom-in' | 'zoom-out' | 'zoom-fit' }>;
-            this.dispatchZoomCommand(customEvent.detail.action);
-        });
-
-        // Listen for toggle netlist from extension
-        window.addEventListener('toggle-netlist', () => {
-            this.toggleNetlist();
-        });
-
-        // Listen for toggle undo history from extension
-        window.addEventListener('toggle-undo-history', () => {
-            this.toggleUndoHistory();
         });
 
         // Listen for file activate request from extensions
@@ -351,26 +332,6 @@ export class AppMain extends HTMLElement {
             if (filename === this.fileManager.getActiveFileId()) {
                 this.hierarchyTree.selectedSignalRefs = signalRefs;
             }
-        });
-    }
-
-    /**
-     * Initialize the shortcut system with commands and bindings
-     * (Most shortcuts are now registered by extensions)
-     */
-    private initializeShortcuts() {
-        // Most shortcuts are now registered in extensions
-        // This just sets up any app-specific shortcuts that don't belong in extensions
-        
-        // Update the show commands command to actually open the commands view
-        this.commandManager.getCommandRegistry().register({
-            id: 'core/commands/show',
-            label: 'Show All Commands',
-            description: 'Display all registered commands with their shortcuts',
-            handler: () => {
-                // Activate the commands view pane
-                this.activateCommandsViewPane();
-            },
         });
     }
 
@@ -584,65 +545,6 @@ export class AppMain extends HTMLElement {
     executeOperation(operation: UndoableOperation) {
         if (this.undoManager) {
             this.undoManager.execute(operation);
-        }
-    }
-
-    /**
-     * Dispatch zoom command to the active file display
-     */
-    private dispatchZoomCommand(action: 'zoom-in' | 'zoom-out' | 'zoom-fit') {
-        const activeFileId = this.fileManager.getActiveFileId();
-        if (!activeFileId) return;
-
-        const activeRes = this.fileManager.getFileResources(activeFileId);
-        if (!activeRes) return;
-
-        const event = new CustomEvent('zoom-command', {
-            detail: { action },
-            bubbles: false,
-            composed: false
-        });
-
-        activeRes.element.dispatchEvent(event);
-    }
-
-    /**
-     * Toggle the netlist view visibility
-     */
-    private async toggleNetlist() {
-        const newVisibility = this.dockLayoutHelper.toggleSidebarVisibility();
-
-        // Update the menu checkbox state
-        if (this.menuBar) {
-            this.menuBar.updateMenuItemChecked('toggle-netlist', newVisibility);
-        }
-
-        // Persist the setting
-        try {
-            const { setSetting } = await import('../../extensions/settings-extension/settings-extension.js');
-            await setSetting(SETTING_NETLIST_VISIBLE, newVisibility);
-        } catch (error) {
-            console.warn('Failed to persist netlist visibility setting:', error);
-        }
-    }
-
-    /**
-     * Toggle the undo history pane visibility
-     */
-    private async toggleUndoHistory() {
-        const newVisibility = this.dockLayoutHelper.toggleUndoPaneVisibility();
-
-        // Update the menu checkbox state
-        if (this.menuBar) {
-            this.menuBar.updateMenuItemChecked('toggle-undo-history', newVisibility);
-        }
-
-        // Persist the setting
-        try {
-            const { setSetting } = await import('../../extensions/settings-extension/settings-extension.js');
-            await setSetting(SETTING_UNDO_HISTORY_VISIBLE, newVisibility);
-        } catch (error) {
-            console.warn('Failed to persist undo history visibility setting:', error);
         }
     }
 }

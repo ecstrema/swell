@@ -34,6 +34,9 @@ export class CoreUIExtension implements Extension {
 
         // Register quit command (Tauri only)
         this.registerQuitCommand(context);
+        
+        // Listen for window-level zoom events and dispatch to active file
+        this.setupZoomEventHandling(context);
     }
 
     /**
@@ -127,11 +130,7 @@ export class CoreUIExtension implements Extension {
             id: 'core/view/toggle-netlist',
             label: 'Toggle Netlist View',
             description: 'Show or hide the netlist/hierarchy view',
-            handler: () => {
-                // Dispatch event for app-main to handle
-                const event = new CustomEvent('toggle-netlist', { bubbles: true });
-                window.dispatchEvent(event);
-            },
+            handler: () => this.toggleNetlist(),
         });
 
         context.registerShortcut({
@@ -166,11 +165,7 @@ export class CoreUIExtension implements Extension {
             id: 'core/view/toggle-undo-history-enhanced',
             label: 'Toggle Undo History (Enhanced)',
             description: 'Toggle undo history visibility with sidebar management',
-            handler: () => {
-                // Dispatch event for app-main to handle
-                const event = new CustomEvent('toggle-undo-history', { bubbles: true });
-                window.dispatchEvent(event);
-            },
+            handler: () => this.toggleUndoHistory(),
         });
     }
 
@@ -213,5 +208,105 @@ export class CoreUIExtension implements Extension {
                 },
             ],
         });
+    }
+
+    /**
+     * Set up zoom event handling - dispatch zoom commands to the active file display
+     */
+    private setupZoomEventHandling(context: ExtensionContext): void {
+        window.addEventListener('zoom-command', (e: Event) => {
+            const customEvent = e as CustomEvent<{ action: 'zoom-in' | 'zoom-out' | 'zoom-fit' }>;
+            this.dispatchZoomCommand(customEvent.detail.action);
+        });
+    }
+
+    /**
+     * Dispatch zoom command to the active file display
+     */
+    private dispatchZoomCommand(action: 'zoom-in' | 'zoom-out' | 'zoom-fit'): void {
+        if (!this.context) return;
+
+        const fileManager = this.context.app.getFileManager?.();
+        if (!fileManager) return;
+
+        const activeFileId = fileManager.getActiveFileId();
+        if (!activeFileId) return;
+
+        const activeRes = fileManager.getFileResources(activeFileId);
+        if (!activeRes) return;
+
+        const event = new CustomEvent('zoom-command', {
+            detail: { action },
+            bubbles: false,
+            composed: false
+        });
+
+        activeRes.element.dispatchEvent(event);
+    }
+
+    /**
+     * Toggle the netlist view visibility
+     */
+    private async toggleNetlist(): Promise<void> {
+        if (!this.context) return;
+
+        const dockManager = this.context.app.getDockManager?.();
+        if (!dockManager) return;
+
+        // Import DockLayoutHelper to access the sidebar toggle logic
+        const { DockLayoutHelper } = await import('../../components/dock-layout-helper.js');
+        const dockLayoutHelper = new DockLayoutHelper(dockManager);
+        
+        const newVisibility = dockLayoutHelper.toggleSidebarVisibility();
+
+        // Update the menu checkbox state - get menu bar from app-main shadow root
+        const appMain = document.querySelector('app-main');
+        if (appMain && appMain.shadowRoot) {
+            const menuBar = appMain.shadowRoot.querySelector('app-menu-bar');
+            if (menuBar && typeof (menuBar as any).updateMenuItemChecked === 'function') {
+                (menuBar as any).updateMenuItemChecked('toggle-netlist', newVisibility);
+            }
+        }
+
+        // Persist the setting
+        try {
+            const { setSetting } = await import('../settings-extension/settings-extension.js');
+            await setSetting(SETTING_NETLIST_VISIBLE, newVisibility);
+        } catch (error) {
+            console.warn('Failed to persist netlist visibility setting:', error);
+        }
+    }
+
+    /**
+     * Toggle the undo history pane visibility
+     */
+    private async toggleUndoHistory(): Promise<void> {
+        if (!this.context) return;
+
+        const dockManager = this.context.app.getDockManager?.();
+        if (!dockManager) return;
+
+        // Import DockLayoutHelper to access the undo pane toggle logic
+        const { DockLayoutHelper } = await import('../../components/dock-layout-helper.js');
+        const dockLayoutHelper = new DockLayoutHelper(dockManager);
+        
+        const newVisibility = dockLayoutHelper.toggleUndoPaneVisibility();
+
+        // Update the menu checkbox state - get menu bar from app-main shadow root
+        const appMain = document.querySelector('app-main');
+        if (appMain && appMain.shadowRoot) {
+            const menuBar = appMain.shadowRoot.querySelector('app-menu-bar');
+            if (menuBar && typeof (menuBar as any).updateMenuItemChecked === 'function') {
+                (menuBar as any).updateMenuItemChecked('toggle-undo-history', newVisibility);
+            }
+        }
+
+        // Persist the setting
+        try {
+            const { setSetting } = await import('../settings-extension/settings-extension.js');
+            await setSetting(SETTING_UNDO_HISTORY_VISIBLE, newVisibility);
+        } catch (error) {
+            console.warn('Failed to persist undo history visibility setting:', error);
+        }
     }
 }

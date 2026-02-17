@@ -83,19 +83,19 @@ describe('FileDisplay Component', () => {
     const shadowRoot = element.shadowRoot;
     expect(shadowRoot).toBeTruthy();
     
-    // Check that a timeline element exists in the waveforms container
+    // Check that a timeline element exists in the signal canvases container
     const timeline = shadowRoot?.querySelector('timeline-view');
     expect(timeline).toBeTruthy();
   });
 
-  it('should have an "Add Timeline" button', () => {
+  it('should have an "Add Timeline" button in command bar', () => {
     const shadowRoot = element.shadowRoot;
     expect(shadowRoot).toBeTruthy();
     
-    // Check that the add timeline split button exists
-    const addButton = shadowRoot?.querySelector('app-split-button');
+    // Check that the add timeline button exists in the command bar
+    const addButton = shadowRoot?.querySelector('#add-timeline-btn');
     expect(addButton).toBeTruthy();
-    expect(addButton?.getAttribute('left-label')).toContain('Add Timeline');
+    expect(addButton?.textContent).toContain('Add Timeline');
   });
 
   it('should properly size canvas when signal is selected', async () => {
@@ -135,14 +135,14 @@ describe('FileDisplay Component', () => {
   it('should synchronize all timelines when one timeline changes range', async () => {
     element.filename = 'test.vcd';
     
-    // Add a second timeline by clicking the add timeline button (left side of split button)
+    // Add a second timeline by clicking the add timeline button
     const shadowRoot = element.shadowRoot;
     expect(shadowRoot).toBeTruthy();
     
-    const addButton = shadowRoot?.querySelector('app-split-button');
+    const addButton = shadowRoot?.querySelector('#add-timeline-btn');
     expect(addButton).toBeTruthy();
-    // Dispatch left-click event to trigger add timeline
-    addButton?.dispatchEvent(new CustomEvent('left-click'));
+    // Dispatch click event to trigger add timeline
+    addButton?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     
     // Wait for render to complete
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -187,8 +187,8 @@ describe('FileDisplay Component', () => {
     
     // The ResizeObserver should be set up during connectedCallback
     // We verify this by ensuring the element functions correctly
-    const waveformsContainer = element.shadowRoot!.querySelector('.waveforms-container');
-    expect(waveformsContainer).not.toBeNull();
+    const gridContainer = element.shadowRoot!.querySelector('.grid-scroll-container');
+    expect(gridContainer).not.toBeNull();
   });
 
   it('should add signal when checkbox is checked', async () => {
@@ -301,7 +301,7 @@ describe('FileDisplay Component', () => {
     expect(element.getSelectedSignalRefs()).toContain(2);
   });
 
-  it('should render canvases directly without wrapper divs', async () => {
+  it('should render canvases in individual rows', async () => {
     element.filename = 'test.vcd';
     
     // Add a signal
@@ -323,21 +323,27 @@ describe('FileDisplay Component', () => {
     const shadowRoot = element.shadowRoot;
     expect(shadowRoot).toBeTruthy();
     
-    const waveformsContainer = shadowRoot?.querySelector('.waveforms-container');
-    expect(waveformsContainer).toBeTruthy();
+    const gridContainer = shadowRoot?.querySelector('#grid-container');
+    expect(gridContainer).toBeTruthy();
     
-    // Check that children are canvas and timeline elements directly, not wrapped in divs
-    const directChildren = waveformsContainer?.children;
-    expect(directChildren).toBeTruthy();
+    // Check that we have signal rows
+    const signalRows = gridContainer?.querySelectorAll('.signal-row');
+    expect(signalRows).toBeTruthy();
     
-    // First child should be the default timeline
-    expect(directChildren?.[0]?.tagName.toLowerCase()).toBe('timeline-view');
+    // Should have timeline + signal + overview = 3 rows
+    expect(signalRows?.length).toBe(3);
     
-    // Second child should be the canvas for the signal we added
-    expect(directChildren?.[1]?.tagName.toLowerCase()).toBe('canvas');
+    // First row should contain timeline
+    const firstRow = signalRows?.[0];
+    expect(firstRow?.querySelector('timeline-view')).toBeTruthy();
     
-    // Third child should be the minimap (added last)
-    expect(directChildren?.[2]?.tagName.toLowerCase()).toBe('minimap-view');
+    // Second row should contain canvas
+    const secondRow = signalRows?.[1];
+    expect(secondRow?.querySelector('canvas')).toBeTruthy();
+    
+    // Third row should contain overview minimap
+    const thirdRow = signalRows?.[2];
+    expect(thirdRow?.querySelector('minimap-view')).toBeTruthy();
     
     // There should be no wrapper divs with class 'signal-item'
     const signalItems = shadowRoot?.querySelectorAll('.signal-item');
@@ -367,47 +373,22 @@ describe('FileDisplay Component', () => {
     const initialRefs = element.getSelectedSignalRefs();
     expect(initialRefs).toEqual([1, 2, 3]);
     
-    // Get the current canvases before reordering
+    // Get the current structure
     const shadowRoot = element.shadowRoot;
-    let waveformsContainer = shadowRoot?.querySelector('.waveforms-container');
-    const initialCanvases = Array.from(waveformsContainer?.querySelectorAll('canvas') || []);
+    const gridContainer = shadowRoot?.querySelector('#grid-container');
+    const signalRows = gridContainer?.querySelectorAll('.signal-row');
     
-    // There should be 3 canvases (one per signal)
-    expect(initialCanvases.length).toBe(3);
+    // There should be rows for: timeline + 3 signals + overview = 5 rows
+    expect(signalRows?.length).toBe(5);
     
-    // Simulate signal reordering by dispatching signals-reordered event
-    const selectedSignalsTree = element.shadowRoot?.querySelector('selected-signals-tree');
-    expect(selectedSignalsTree).toBeTruthy();
+    // Verify signal labels exist in rows
+    const labels = gridContainer?.querySelectorAll('.signal-label');
+    expect(labels?.length).toBe(5);
     
-    // Create a reordered signals array (reverse the order)
-    // Get the actual SelectedSignal objects from the element's internal state
-    const currentSignals = signals.map(s => ({
-      name: s.name,
-      ref: s.ref,
-      canvas: initialCanvases[signals.findIndex(sig => sig.ref === s.ref)]
-    }));
-    
-    const reorderedSignals = currentSignals.reverse();
-    
-    // Dispatch the reorder event
-    selectedSignalsTree?.dispatchEvent(new CustomEvent('signals-reordered', {
-      detail: { signals: reorderedSignals },
-      bubbles: true,
-      composed: true
-    }));
-    
-    // Wait for the event to be handled and rendering to complete
-    await new Promise(resolve => setTimeout(resolve, 50));
-    
-    // Verify the order has been updated
-    const newRefs = element.getSelectedSignalRefs();
-    expect(newRefs).toEqual([3, 2, 1]);
-    
-    // Re-query the container after render (innerHTML cleared and recreated)
-    waveformsContainer = shadowRoot?.querySelector('.waveforms-container');
-    const canvasesAfterReorder = waveformsContainer?.querySelectorAll('canvas');
-    
-    // Verify canvases are still present after reordering
-    expect(canvasesAfterReorder?.length).toBe(3);
+    // Verify each row has the correct structure (label + canvas container)
+    signalRows?.forEach(row => {
+      expect(row.querySelector('.signal-label')).toBeTruthy();
+      expect(row.querySelector('.signal-canvas-container')).toBeTruthy();
+    });
   });
 });

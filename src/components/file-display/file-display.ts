@@ -1088,52 +1088,80 @@ export class FileDisplay extends HTMLElement {
 
     this.shadowRoot.innerHTML = `
       <div class="display-container">
-        <app-resizable-panel 
-          direction="horizontal" 
-          initial-size="250px" 
-          min-size="200px" 
-          max-size="600px">
-          <div slot="panel" class="signals-tree-container" id="signals-tree-container"></div>
-          <div slot="content" class="waveforms-container" id="waveforms-container">
-            ${this.selectedSignals.length === 0
-              ? '<div class="empty-message">Select signals from the left panel to display them here</div>'
-              : ''}
-          </div>
-        </app-resizable-panel>
+        <div class="command-bar">
+          <button id="add-timeline-btn" class="command-button">+ Add Timeline</button>
+          <button id="add-minimap-btn" class="command-button">+ Add Minimap</button>
+        </div>
+        <div class="grid-scroll-container">
+          <div class="grid-container" id="grid-container"></div>
+        </div>
       </div>
     `;
 
-    // Insert the selected signals tree
-    const treeContainer = this.shadowRoot.querySelector('#signals-tree-container');
-    if (treeContainer) {
-      treeContainer.appendChild(this.selectedSignalsTree);
-      
-      // Add split button at the bottom of the tree
-      const splitButton = document.createElement('app-split-button');
-      splitButton.setAttribute('left-label', '+ Add Timeline');
-      splitButton.setAttribute('right-label', '+ Add Minimap');
-      splitButton.addEventListener('left-click', this.boundHandleAddTimeline);
-      splitButton.addEventListener('right-click', this.boundHandleAddMinimap);
-      treeContainer.appendChild(splitButton);
+    // Set up command bar button listeners
+    const addTimelineBtn = this.shadowRoot.querySelector('#add-timeline-btn');
+    const addMinimapBtn = this.shadowRoot.querySelector('#add-minimap-btn');
+    if (addTimelineBtn) {
+      addTimelineBtn.addEventListener('click', this.boundHandleAddTimeline);
+    }
+    if (addMinimapBtn) {
+      addMinimapBtn.addEventListener('click', this.boundHandleAddMinimap);
     }
 
-    // Append signals (including inline timelines and minimaps) to the waveforms container
-    this.signalsContainer = this.shadowRoot.querySelector('#waveforms-container');
-    if (this.signalsContainer) {
-      // Add all the signals (timelines, minimaps, and signal canvases)
+    // Get grid container
+    const gridContainer = this.shadowRoot.querySelector('#grid-container');
+    
+    if (gridContainer) {
+      // Add all the signals (timelines, minimaps, and signal canvases) as individual rows
       this.selectedSignals.forEach(signal => {
+        // Create row container
+        const row = document.createElement('div');
+        row.className = 'signal-row';
+        
+        // Create label element
+        const label = document.createElement('div');
+        label.className = 'signal-label';
+        label.textContent = signal.name;
+        // Store ref for potential future features (e.g., click to highlight, context menu)
+        label.dataset.ref = signal.ref.toString();
+        row.appendChild(label);
+        
+        // Create canvas container and add corresponding canvas/timeline/minimap
+        const canvasContainer = document.createElement('div');
+        canvasContainer.className = 'signal-canvas-container';
         if (signal.isTimeline && signal.timeline) {
-          this.signalsContainer!.appendChild(signal.timeline);
+          canvasContainer.appendChild(signal.timeline);
         } else if (signal.isMinimap && signal.minimap) {
-          this.signalsContainer!.appendChild(signal.minimap);
+          canvasContainer.appendChild(signal.minimap);
         } else if (signal.canvas) {
-          this.signalsContainer!.appendChild(signal.canvas);
+          canvasContainer.appendChild(signal.canvas);
         }
+        row.appendChild(canvasContainer);
+        
+        gridContainer.appendChild(row);
       });
       
-      // Add the fixed minimap at the bottom of the page
-      this.signalsContainer.appendChild(this.minimap);
+      // Add the fixed minimap at the bottom
+      if (this.selectedSignals.length > 0) {
+        const row = document.createElement('div');
+        row.className = 'signal-row';
+        
+        const minimapLabel = document.createElement('div');
+        minimapLabel.className = 'signal-label';
+        minimapLabel.textContent = 'Overview';
+        row.appendChild(minimapLabel);
+        
+        const canvasContainer = document.createElement('div');
+        canvasContainer.className = 'signal-canvas-container';
+        canvasContainer.appendChild(this.minimap);
+        row.appendChild(canvasContainer);
+        
+        gridContainer.appendChild(row);
+      }
     }
+    
+    // Store reference to the grid container for signal access
+    this.signalsContainer = gridContainer as HTMLDivElement;
   }
 }
 

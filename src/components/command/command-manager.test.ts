@@ -37,7 +37,7 @@ describe('CommandManager', () => {
     describe('Clear Local Storage Command', () => {
         it('should register clear local storage command', () => {
             const registry = commandManager.getCommandRegistry();
-            const command = registry.get('settings-clear-local-storage');
+            const command = registry.get('core/settings/clear-local-storage');
             
             expect(command).toBeDefined();
             expect(command?.label).toBe('Clear Local Storage');
@@ -57,7 +57,7 @@ describe('CommandManager', () => {
             
             // Execute the command
             const registry = commandManager.getCommandRegistry();
-            const command = registry.get('settings-clear-local-storage');
+            const command = registry.get('core/settings/clear-local-storage');
             command?.handler();
             
             // Verify confirm was called with the right message
@@ -94,7 +94,7 @@ describe('CommandManager', () => {
             
             // Execute the command
             const registry = commandManager.getCommandRegistry();
-            const command = registry.get('settings-clear-local-storage');
+            const command = registry.get('core/settings/clear-local-storage');
             command?.handler();
             
             // Verify confirm was called
@@ -125,16 +125,13 @@ describe('CommandManager', () => {
         it('should register all standard commands', () => {
             const registry = commandManager.getCommandRegistry();
             
-            expect(registry.get('file-open')).toBeDefined();
-            expect(registry.get('file-quit')).toBeDefined();
-            expect(registry.get('edit-undo')).toBeDefined();
-            expect(registry.get('edit-redo')).toBeDefined();
-            expect(registry.get('view-zoom-in')).toBeDefined();
-            expect(registry.get('view-zoom-out')).toBeDefined();
-            expect(registry.get('view-zoom-fit')).toBeDefined();
-            expect(registry.get('view-toggle-signal-selection')).toBeDefined();
-            expect(registry.get('view-toggle-undo-history')).toBeDefined();
-            expect(registry.get('command-palette-toggle')).toBeDefined();
+            expect(registry.get('core/file/open')).toBeDefined();
+            expect(registry.get('core/file/quit')).toBeDefined();
+            expect(registry.get('core/view/zoom-in')).toBeDefined();
+            expect(registry.get('core/view/zoom-out')).toBeDefined();
+            expect(registry.get('core/view/zoom-fit')).toBeDefined();
+            expect(registry.get('core/view/toggle-signal-selection')).toBeDefined();
+            expect(registry.get('core/command-palette/toggle')).toBeDefined();
         });
     });
 });

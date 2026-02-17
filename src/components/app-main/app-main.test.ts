@@ -5,7 +5,7 @@ import * as backend from '../../backend/index.js';
 // Mock the backend module
 vi.mock('../../backend/index.js', () => ({
     addFile: vi.fn(),
-    openFileDialog: vi.fn(),
+    openFileDialog: vi.fn(() => Promise.resolve(null)),
     getHierarchy: vi.fn(),
     getFiles: vi.fn(() => Promise.resolve([])),
     removeFile: vi.fn(),

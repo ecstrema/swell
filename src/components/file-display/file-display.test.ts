@@ -92,10 +92,10 @@ describe('FileDisplay Component', () => {
     const shadowRoot = element.shadowRoot;
     expect(shadowRoot).toBeTruthy();
     
-    // Check that the add timeline button exists
-    const addButton = shadowRoot?.querySelector('.add-timeline-btn');
+    // Check that the add timeline split button exists
+    const addButton = shadowRoot?.querySelector('app-split-button');
     expect(addButton).toBeTruthy();
-    expect(addButton?.textContent).toContain('Add Timeline');
+    expect(addButton?.getAttribute('left-label')).toContain('Add Timeline');
   });
 
   it('should properly size canvas when signal is selected', async () => {
@@ -135,13 +135,14 @@ describe('FileDisplay Component', () => {
   it('should synchronize all timelines when one timeline changes range', async () => {
     element.filename = 'test.vcd';
     
-    // Add a second timeline by clicking the add timeline button
+    // Add a second timeline by clicking the add timeline button (left side of split button)
     const shadowRoot = element.shadowRoot;
     expect(shadowRoot).toBeTruthy();
     
-    const addButton = shadowRoot?.querySelector('.add-timeline-btn') as HTMLButtonElement;
+    const addButton = shadowRoot?.querySelector('app-split-button');
     expect(addButton).toBeTruthy();
-    addButton.click();
+    // Dispatch left-click event to trigger add timeline
+    addButton?.dispatchEvent(new CustomEvent('left-click'));
     
     // Wait for render to complete
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -329,14 +330,14 @@ describe('FileDisplay Component', () => {
     const directChildren = waveformsContainer?.children;
     expect(directChildren).toBeTruthy();
     
-    // First child should be the minimap
-    expect(directChildren?.[0]?.tagName.toLowerCase()).toBe('minimap-view');
+    // First child should be the default timeline
+    expect(directChildren?.[0]?.tagName.toLowerCase()).toBe('timeline-view');
     
-    // Second child should be the default timeline
-    expect(directChildren?.[1]?.tagName.toLowerCase()).toBe('timeline-view');
+    // Second child should be the canvas for the signal we added
+    expect(directChildren?.[1]?.tagName.toLowerCase()).toBe('canvas');
     
-    // Third child should be the canvas for the signal we added
-    expect(directChildren?.[2]?.tagName.toLowerCase()).toBe('canvas');
+    // Third child should be the minimap (added last)
+    expect(directChildren?.[2]?.tagName.toLowerCase()).toBe('minimap-view');
     
     // There should be no wrapper divs with class 'signal-item'
     const signalItems = shadowRoot?.querySelectorAll('.signal-item');

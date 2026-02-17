@@ -36,8 +36,14 @@ export class DockStatePersistence {
      */
     private async saveStateImmediate(layout: DockLayout): Promise<void> {
         try {
+            // Add version to the layout before saving
+            const stateToSave = {
+                version: 0,
+                root: layout.root
+            };
+
             // Validate the layout with arktype schema
-            const validation = DockLayoutSchema(layout);
+            const validation = DockLayoutSchema(stateToSave);
             
             if (validation instanceof Error) {
                 console.error('Dock layout validation failed:', validation.message);
@@ -45,7 +51,7 @@ export class DockStatePersistence {
             }
 
             // Serialize to JSON
-            const json = JSON.stringify(layout, null, 2);
+            const json = JSON.stringify(stateToSave, null, 2);
 
             // Save based on platform
             if (isTauri) {
@@ -102,7 +108,8 @@ export class DockStatePersistence {
             }
 
             console.log('Dock state loaded successfully');
-            return parsed as DockLayout;
+            // Return only the root, as DockLayout type expects just { root: DockNode }
+            return { root: parsed.root } as DockLayout;
         } catch (error) {
             console.error('Failed to load dock state:', error);
             return null;

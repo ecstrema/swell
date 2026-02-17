@@ -29,6 +29,7 @@ export const dockSchemas = scope({
     },
     DockNode: 'DockBox|DockStack',
     DockLayout: {
+        version: '0',
         root: 'DockNode'
     }
 });

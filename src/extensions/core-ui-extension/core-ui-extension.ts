@@ -2,7 +2,7 @@
  * Core UI Extension
  * 
  * Manages UI coordination and view commands.
- * Handles netlist visibility, zoom commands, and theme updates.
+ * Handles netlist visibility and theme updates.
  */
 
 import { Extension, ExtensionContext } from "../types.js";
@@ -23,9 +23,6 @@ export class CoreUIExtension implements Extension {
     async activate(context: ExtensionContext): Promise<void> {
         this.context = context;
 
-        // Register zoom commands
-        this.registerZoomCommands(context);
-
         // Register netlist toggle command
         this.registerNetlistToggleCommand(context);
 
@@ -34,92 +31,6 @@ export class CoreUIExtension implements Extension {
 
         // Register quit command (Tauri only)
         this.registerQuitCommand(context);
-        
-        // Listen for window-level zoom events and dispatch to active file
-        this.setupZoomEventHandling(context);
-    }
-
-    /**
-     * Register zoom commands
-     */
-    private registerZoomCommands(context: ExtensionContext): void {
-        context.registerCommand({
-            id: 'core/view/zoom-in',
-            label: 'Zoom In',
-            description: 'Zoom in on the active waveform',
-            handler: () => {
-                const event = new CustomEvent('zoom-command', {
-                    detail: { action: 'zoom-in' },
-                    bubbles: true
-                });
-                window.dispatchEvent(event);
-            },
-        });
-
-        context.registerCommand({
-            id: 'core/view/zoom-out',
-            label: 'Zoom Out',
-            description: 'Zoom out on the active waveform',
-            handler: () => {
-                const event = new CustomEvent('zoom-command', {
-                    detail: { action: 'zoom-out' },
-                    bubbles: true
-                });
-                window.dispatchEvent(event);
-            },
-        });
-
-        context.registerCommand({
-            id: 'core/view/zoom-fit',
-            label: 'Zoom to Fit',
-            description: 'Fit the entire waveform in view',
-            handler: () => {
-                const event = new CustomEvent('zoom-command', {
-                    detail: { action: 'zoom-fit' },
-                    bubbles: true
-                });
-                window.dispatchEvent(event);
-            },
-        });
-
-        // Register shortcuts for zoom
-        context.registerShortcuts([
-            {
-                shortcut: 'Ctrl+=',
-                commandId: 'core/view/zoom-in',
-            },
-            {
-                shortcut: 'Ctrl+-',
-                commandId: 'core/view/zoom-out',
-            },
-            {
-                shortcut: 'Ctrl+0',
-                commandId: 'core/view/zoom-fit',
-            },
-        ]);
-
-        // Register menu items
-        context.registerMenu({
-            type: 'submenu',
-            label: 'View',
-            items: [
-                {
-                    type: 'item',
-                    label: 'Zoom In',
-                    action: 'core/view/zoom-in',
-                },
-                {
-                    type: 'item',
-                    label: 'Zoom Out',
-                    action: 'core/view/zoom-out',
-                },
-                {
-                    type: 'item',
-                    label: 'Zoom to Fit',
-                    action: 'core/view/zoom-fit',
-                },
-            ],
-        });
     }
 
     /**
@@ -208,40 +119,6 @@ export class CoreUIExtension implements Extension {
                 },
             ],
         });
-    }
-
-    /**
-     * Set up zoom event handling - dispatch zoom commands to the active file display
-     */
-    private setupZoomEventHandling(context: ExtensionContext): void {
-        window.addEventListener('zoom-command', (e: Event) => {
-            const customEvent = e as CustomEvent<{ action: 'zoom-in' | 'zoom-out' | 'zoom-fit' }>;
-            this.dispatchZoomCommand(customEvent.detail.action);
-        });
-    }
-
-    /**
-     * Dispatch zoom command to the active file display
-     */
-    private dispatchZoomCommand(action: 'zoom-in' | 'zoom-out' | 'zoom-fit'): void {
-        if (!this.context) return;
-
-        const fileManager = this.context.app.getFileManager?.();
-        if (!fileManager) return;
-
-        const activeFileId = fileManager.getActiveFileId();
-        if (!activeFileId) return;
-
-        const activeRes = fileManager.getFileResources(activeFileId);
-        if (!activeRes) return;
-
-        const event = new CustomEvent('zoom-command', {
-            detail: { action },
-            bubbles: false,
-            composed: false
-        });
-
-        activeRes.element.dispatchEvent(event);
     }
 
     /**

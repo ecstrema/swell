@@ -1,6 +1,6 @@
 /**
  * Test and demonstration file for the shortcut system
- * 
+ *
  * This file contains test scenarios to verify the shortcut system works correctly.
  * Run this in the browser console or as part of your app initialization.
  */
@@ -12,7 +12,7 @@ import { CommandRegistry, ShortcutManager, defaultShortcuts } from './index.js';
  */
 export function testCommandRegistry() {
     console.group('Test 1: Command Registry');
-    
+
     const registry = new CommandRegistry();
     let commandExecuted = false;
 
@@ -28,11 +28,11 @@ export function testCommandRegistry() {
 
     // Execute the command
     registry.execute('test-command');
-    
+
     console.assert(commandExecuted, 'Command should have been executed');
     console.assert(registry.has('test-command'), 'Command should be registered');
     console.assert(!registry.has('non-existent'), 'Non-existent command should return false');
-    
+
     console.log('✓ All command registry tests passed');
     console.groupEnd();
 }
@@ -42,12 +42,12 @@ export function testCommandRegistry() {
  */
 export function testShortcutMatching() {
     console.group('Test 2: Shortcut Matching');
-    
+
     const registry = new CommandRegistry();
     const shortcuts = new ShortcutManager(registry);
 
     let executed = false;
-    
+
     registry.register({
         id: 'test-action',
         label: 'Test Action',
@@ -66,7 +66,7 @@ export function testShortcutMatching() {
     const bindings = shortcuts.getBindings();
     console.assert(bindings.length === 1, 'Should have one binding');
     console.assert(bindings[0].commandId === 'test-action', 'Binding should map to test-action');
-    
+
     console.log('✓ All shortcut matching tests passed');
     console.groupEnd();
 }
@@ -76,7 +76,7 @@ export function testShortcutMatching() {
  */
 export function testMultipleShortcuts() {
     console.group('Test 3: Multiple Shortcuts');
-    
+
     const registry = new CommandRegistry();
     const shortcuts = new ShortcutManager(registry);
 
@@ -88,7 +88,7 @@ export function testMultipleShortcuts() {
 
     // Register multiple commands
     registry.register({
-        id: 'file-open',
+        id: 'core/file/open',
         label: 'Open',
         handler: () => { executed.open = true; }
     });
@@ -107,18 +107,18 @@ export function testMultipleShortcuts() {
 
     // Register shortcuts
     shortcuts.registerMany([
-        { shortcut: { key: 'o', ctrl: true }, commandId: 'file-open' },
+        { shortcut: { key: 'o', ctrl: true }, commandId: 'core/file/open' },
         { shortcut: { key: 's', ctrl: true }, commandId: 'file-save' },
         { shortcut: { key: 'w', ctrl: true }, commandId: 'file-close' }
     ]);
 
     console.assert(shortcuts.getBindings().length === 3, 'Should have 3 bindings');
-    
+
     // Get shortcuts for a specific command
-    const openShortcuts = shortcuts.getShortcutsForCommand('file-open');
-    console.assert(openShortcuts.length === 1, 'file-open should have 1 shortcut');
-    console.assert(openShortcuts[0].key === 'o', 'file-open shortcut should be "o"');
-    
+    const openShortcuts = shortcuts.getShortcutsForCommand('core/file/open');
+    console.assert(openShortcuts.length === 1, 'core/file/open should have 1 shortcut');
+    console.assert(openShortcuts[0].key === 'o', 'core/file/open shortcut should be "o"');
+
     console.log('✓ All multiple shortcuts tests passed');
     console.groupEnd();
 }
@@ -128,18 +128,18 @@ export function testMultipleShortcuts() {
  */
 export function testShortcutFormatting() {
     console.group('Test 4: Shortcut Formatting');
-    
+
     // Test various shortcut formats
     const tests = [
-        { 
+        {
             shortcut: { key: 'o', ctrl: true },
             expectedPattern: /Ctrl\+O|⌘\+O/
         },
-        { 
+        {
             shortcut: { key: 's', ctrl: true, shift: true },
             expectedPattern: /Ctrl\+Shift\+S|⌘\+Shift\+S/
         },
-        { 
+        {
             shortcut: { key: 'f', alt: true },
             expectedPattern: /Alt\+F/
         }
@@ -153,7 +153,7 @@ export function testShortcutFormatting() {
         );
         console.log(`✓ Formatted shortcut: ${formatted}`);
     }
-    
+
     console.log('✓ All shortcut formatting tests passed');
     console.groupEnd();
 }
@@ -163,9 +163,9 @@ export function testShortcutFormatting() {
  */
 export function testCommandUnregistration() {
     console.group('Test 5: Command Unregistration');
-    
+
     const registry = new CommandRegistry();
-    
+
     registry.register({
         id: 'temp-command',
         label: 'Temporary Command',
@@ -173,11 +173,11 @@ export function testCommandUnregistration() {
     });
 
     console.assert(registry.has('temp-command'), 'Command should be registered');
-    
+
     registry.unregister('temp-command');
-    
+
     console.assert(!registry.has('temp-command'), 'Command should be unregistered');
-    
+
     console.log('✓ All unregistration tests passed');
     console.groupEnd();
 }
@@ -187,11 +187,11 @@ export function testCommandUnregistration() {
  */
 export function testDefaultShortcuts() {
     console.group('Test 6: Default Shortcuts');
-    
+
     console.log('Default shortcuts array:', defaultShortcuts);
     console.assert(Array.isArray(defaultShortcuts), 'defaultShortcuts should be an array');
     console.log(`✓ Default shortcuts is properly configured (${defaultShortcuts.length} shortcuts)`);
-    
+
     console.groupEnd();
 }
 
@@ -203,7 +203,7 @@ export function runAllTests() {
     console.log('║        Shortcut System Test Suite                       ║');
     console.log('╚══════════════════════════════════════════════════════════╝');
     console.log('');
-    
+
     try {
         testCommandRegistry();
         testShortcutMatching();
@@ -211,12 +211,12 @@ export function runAllTests() {
         testShortcutFormatting();
         testCommandUnregistration();
         testDefaultShortcuts();
-        
+
         console.log('');
         console.log('╔══════════════════════════════════════════════════════════╗');
         console.log('║  ✓ ALL TESTS PASSED!                                    ║');
         console.log('╚══════════════════════════════════════════════════════════╝');
-        
+
         return true;
     } catch (error) {
         console.error('');
@@ -224,7 +224,7 @@ export function runAllTests() {
         console.error('║  ✗ TESTS FAILED!                                        ║');
         console.error('╚══════════════════════════════════════════════════════════╝');
         console.error(error);
-        
+
         return false;
     }
 }
@@ -241,6 +241,6 @@ if (typeof window !== 'undefined') {
         testCommandUnregistration,
         testDefaultShortcuts
     };
-    
+
     console.log('Shortcut system tests loaded. Run shortcutTests.runAllTests() to test.');
 }

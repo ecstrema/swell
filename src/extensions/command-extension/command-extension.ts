@@ -1,8 +1,9 @@
 
-import { Extension, ExtensionConstructor } from "../types.js";
+import { Extension } from "../types.js";
 import { CommandRegistry } from "../../shortcuts/command-registry.js";
 import { ShortcutManager } from "../../shortcuts/shortcut-manager.js";
-import { Command, ShortcutBinding } from "../../shortcuts/types.js";
+import { Command } from "../../shortcuts/types.js";
+import { defaultShortcuts } from "../../shortcuts/default-shortcuts.js";
 
 export class CommandExtension implements Extension {
     static readonly metadata = {
@@ -20,7 +21,8 @@ export class CommandExtension implements Extension {
     }
 
     async activate(): Promise<void> {
-        // No-op
+        // Load default keyboard shortcuts from the JSON configuration file
+        this.shortcutManager.registerMany(defaultShortcuts);
     }
 
     getCommandRegistry(): CommandRegistry {
@@ -33,14 +35,6 @@ export class CommandExtension implements Extension {
 
     registerCommand(command: Command) {
         this.commandRegistry.register(command);
-    }
-
-    registerShortcut(binding: ShortcutBinding) {
-        this.shortcutManager.register(binding);
-    }
-
-    registerShortcuts(bindings: ShortcutBinding[]) {
-        this.shortcutManager.registerMany(bindings);
     }
 
     executeCommand(commandId: string) {

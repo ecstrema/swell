@@ -76,10 +76,6 @@ export class SettingsExtension implements Extension {
             handler: () => this.openSettings(),
         });
 
-        this.commandExtension.registerShortcut({
-            shortcut: 'Ctrl+,',
-            commandId: 'core/settings/open',
-        });
     }
 
     private registerSettingsMenu(): void {

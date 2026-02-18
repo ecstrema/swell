@@ -51,11 +51,6 @@ export class CommandPaletteExtension implements Extension {
             handler: () => this.togglePalette(),
         });
 
-        // Register keyboard shortcut
-        this.commandExtension.registerShortcut({
-            shortcut: 'Ctrl+Shift+P',
-            commandId: 'core/command-palette/toggle',
-        });
     }
 
     getCommandPalette(): CommandPalette | null {

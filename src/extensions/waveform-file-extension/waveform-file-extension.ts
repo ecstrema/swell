@@ -58,7 +58,7 @@ export class WaveformFileExtension implements Extension {
     private registerFileCommands(): void {
         // Register file open command (dispatches event for app-main to handle coordination)
         this.commandExtension.registerCommand({
-            id: 'file-open',
+            id: 'core/file/open',
             label: 'Open File...',
             description: 'Open a waveform file',
             handler: () => this.dispatchFileOpenRequest(),
@@ -81,14 +81,6 @@ export class WaveformFileExtension implements Extension {
             description: 'Load a saved waveform state',
             handler: () => this.handleLoadState(),
         });
-
-        // Register shortcuts
-        this.commandExtension.registerShortcuts([
-            {
-                shortcut: 'Ctrl+O',
-                commandId: 'file-open',
-            },
-        ]);
     }
 
     /**
@@ -96,8 +88,8 @@ export class WaveformFileExtension implements Extension {
      */
     private registerFileMenus(): void {
         this.menuExtension.registerMenuItem('File/Open File...', () => {
-             this.commandExtension.executeCommand('file-open');
-        }, { id: 'file-open' });
+             this.commandExtension.executeCommand('core/file/open');
+        }, { id: 'core/file/open' });
 
         this.menuExtension.registerMenuItem('File/Open Example...', () => {
              // Dispatch event for examples dialog
@@ -139,22 +131,6 @@ export class WaveformFileExtension implements Extension {
             description: 'Fit the entire waveform in view',
             handler: () => this.dispatchZoomCommand('zoom-fit'),
         });
-
-        // Register shortcuts for zoom
-        this.commandExtension.registerShortcuts([
-            {
-                shortcut: 'Ctrl+=',
-                commandId: 'core/view/zoom-in',
-            },
-            {
-                shortcut: 'Ctrl+-',
-                commandId: 'core/view/zoom-out',
-            },
-            {
-                shortcut: 'Ctrl+0',
-                commandId: 'core/view/zoom-fit',
-            },
-        ]);
 
         this.menuExtension.registerMenuItem('View/Zoom/Zoom In', () => {
              this.dispatchZoomCommand('zoom-in');
@@ -214,21 +190,10 @@ export class WaveformFileExtension implements Extension {
     }
 
     /**
-     * Get the file manager from app APIs
-     */
-    private getFileManager(): FileManager | null {
-        return this.fileManager;
-    }
-
-    /**
      * Handle save state command
      */
     private async handleSaveState(): Promise<void> {
-        const fileManager = this.getFileManager();
-        if (!fileManager) {
-            console.warn('File manager not available');
-            return;
-        }
+        const fileManager = this.fileManager;
 
         const activeFileId = fileManager.getActiveFileId();
         if (!activeFileId) {
@@ -256,11 +221,7 @@ export class WaveformFileExtension implements Extension {
      * Handle load state command
      */
     private async handleLoadState(): Promise<void> {
-        const fileManager = this.getFileManager();
-        if (!fileManager) {
-            console.warn('File manager not available');
-            return;
-        }
+        const fileManager = this.fileManager;
 
         try {
             const loaded = await loadStateFromFile();
@@ -307,7 +268,7 @@ export class WaveformFileExtension implements Extension {
      * Dispatch file open request event (for app-main to handle coordination)
      */
     private dispatchFileOpenRequest(): void {
-        const event = new CustomEvent('file-open-request', { bubbles: true });
+        const event = new CustomEvent('core/file/open-request', { bubbles: true });
         window.dispatchEvent(event);
     }
 
@@ -315,11 +276,7 @@ export class WaveformFileExtension implements Extension {
      * Handle startup files from command-line arguments
      */
     async handleStartupFiles(): Promise<void> {
-        const fileManager = this.getFileManager();
-        if (!fileManager) {
-            console.warn('File manager not available');
-            return;
-        }
+        const fileManager = this.fileManager;
 
         try {
             const startupFiles = await getStartupFiles();
@@ -354,8 +311,7 @@ export class WaveformFileExtension implements Extension {
      * Dispatch zoom command to the active file display
      */
     private dispatchZoomCommand(action: 'zoom-in' | 'zoom-out' | 'zoom-fit'): void {
-        const fileManager = this.getFileManager();
-        if (!fileManager) return;
+        const fileManager = this.fileManager;
 
         const activeFileId = fileManager.getActiveFileId();
         if (!activeFileId) return;

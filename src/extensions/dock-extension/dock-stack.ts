@@ -23,20 +23,20 @@ export class DockStackComponent extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
         this.shadowRoot!.adoptedStyleSheets = [css(dockStackCss)];
-        
+
         // Set up drag and drop handlers once
         this._dragOverHandler = (e: DragEvent) => {
             if (this._manager && this._node) {
                 this._manager.handleDragOver(e, this._node, this);
             }
         };
-        
+
         this._dragLeaveHandler = () => {
             if (this._manager) {
                 this._manager.handleDragLeave();
             }
         };
-        
+
         this._dropHandler = (e: DragEvent) => {
             if (this._manager && this._node) {
                 this._manager.handleDrop(e, this._node, this);
@@ -79,19 +79,19 @@ export class DockStackComponent extends HTMLElement {
                     </div>
                 </div>
             `;
-            
+
             // Add event listener for the open file button
             const openFileBtn = this.shadowRoot!.querySelector('#open-file-btn');
             if (openFileBtn) {
                 openFileBtn.addEventListener('click', () => {
                     // Dispatch an event that the parent can listen to
-                    this.dispatchEvent(new CustomEvent('file-open-request', {
+                    this.dispatchEvent(new CustomEvent('core/file/open-request', {
                         bubbles: true,
                         composed: true
                     }));
                 });
             }
-            
+
             // Add event listener for the open example button
             const openExampleBtn = this.shadowRoot!.querySelector('#open-example-btn');
             if (openExampleBtn) {
@@ -103,7 +103,7 @@ export class DockStackComponent extends HTMLElement {
                     }));
                 });
             }
-            
+
             return;
         }
 
@@ -161,7 +161,7 @@ export class DockStackComponent extends HTMLElement {
         const tabs = this.shadowRoot!.querySelectorAll('.tab');
         tabs.forEach(tab => {
             const tabElement = tab as HTMLElement;
-            
+
             tabElement.addEventListener('dragstart', (e) => {
                 const id = tabElement.dataset.id!;
                 const pane = this._node!.children.find(p => p.id === id);
@@ -189,7 +189,7 @@ export class DockStackComponent extends HTMLElement {
                 if (!this._manager) return;
                 const draggedPane = this._manager.getDraggedPane();
                 if (!draggedPane) return;
-                
+
                 // Only accept tab drags (check types if available)
                 const hasTypes = e.dataTransfer?.types !== undefined;
                 if (hasTypes) {
@@ -198,21 +198,21 @@ export class DockStackComponent extends HTMLElement {
                         return;
                     }
                 }
-                
+
                 e.preventDefault();
 
                 // Check if we're dragging within the same stack
                 if (draggedPane.sourceStack.id === this._node!.id) {
                     // Only stop propagation when handling same-stack reordering
                     e.stopPropagation();
-                    
+
                     const rect = tabElement.getBoundingClientRect();
                     const midpoint = rect.left + rect.width / 2;
                     const isLeftSide = e.clientX < midpoint;
 
                     // Remove previous indicators
                     tabs.forEach(t => (t as HTMLElement).classList.remove('drag-over-left', 'drag-over-right'));
-                    
+
                     // Add indicator
                     if (isLeftSide) {
                         tabElement.classList.add('drag-over-left');
@@ -231,7 +231,7 @@ export class DockStackComponent extends HTMLElement {
                 if (!this._manager) return;
                 const draggedPane = this._manager.getDraggedPane();
                 if (!draggedPane) return;
-                
+
                 // Only accept tab drags (check types if available)
                 const hasTypes = e.dataTransfer?.types !== undefined;
                 if (hasTypes) {
@@ -240,22 +240,22 @@ export class DockStackComponent extends HTMLElement {
                         return;
                     }
                 }
-                
+
                 e.preventDefault();
 
                 // Check if we're dragging within the same stack
                 if (draggedPane.sourceStack.id === this._node!.id) {
                     // Only stop propagation when handling same-stack reordering
                     e.stopPropagation();
-                    
+
                     const targetId = tabElement.dataset.id!;
                     const targetIndex = this._node!.children.findIndex(p => p.id === targetId);
-                    
+
                     if (targetIndex !== -1) {
                         const rect = tabElement.getBoundingClientRect();
                         const midpoint = rect.left + rect.width / 2;
                         const isLeftSide = e.clientX < midpoint;
-                        
+
                         // Calculate insert index based on which side of the tab we're on
                         const insertIndex = isLeftSide ? targetIndex : targetIndex + 1;
                         this._manager.handleTabReorder(draggedPane.pane, this._node!, insertIndex);
@@ -283,7 +283,7 @@ export class DockStackComponent extends HTMLElement {
         if (!this._node) return;
         this._node.activeId = id;
         this.render();
-        
+
         // Emit event to notify parent that active pane changed
         this.dispatchEvent(new CustomEvent('pane-select', {
             detail: { id },

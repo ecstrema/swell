@@ -86,7 +86,6 @@ export class UndoExtension implements Extension {
         });
 
         this.registerShowUndoTreeCommand();
-        this.registerShortcuts();
         this.registerMenus();
     }
 
@@ -116,24 +115,6 @@ export class UndoExtension implements Extension {
         } catch (error) {
             console.warn('Failed to persist undo history visibility setting:', error);
         }
-    }
-
-    private registerShortcuts(): void {
-        // Register shortcuts
-        this.commandExtension.registerShortcuts([
-            {
-                shortcut: 'Ctrl+Z',
-                commandId: 'core/edit/undo',
-            },
-            {
-                shortcut: 'Ctrl+Shift+Z',
-                commandId: 'core/edit/redo',
-            },
-            {
-                shortcut: 'Ctrl+Y',
-                commandId: 'core/edit/redo',
-            },
-        ]);
     }
 
     private registerMenus(): void {

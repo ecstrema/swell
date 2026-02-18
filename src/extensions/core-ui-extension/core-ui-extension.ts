@@ -50,11 +50,6 @@ export class CoreUIExtension implements Extension {
             handler: () => this.toggleNetlist(),
         });
 
-        this.commandExtension.registerShortcut({
-            shortcut: 'Ctrl+Shift+H',
-            commandId: 'core/view/toggle-netlist',
-        });
-
         this.menuExtension.registerMenuItem('View/-', undefined, { type: 'separator' });
         this.menuExtension.registerMenuItem('View/Toggle Netlist', () => {
              this.toggleNetlist();
@@ -82,12 +77,6 @@ export class CoreUIExtension implements Extension {
                     await getCurrentWindow().close();
                 }
             },
-        });
-
-        // Register shortcut
-        this.commandExtension.registerShortcut({
-            shortcut: 'Ctrl+Q',
-            commandId: 'core/file/quit',
         });
 
         // Register menu item

@@ -26,6 +26,11 @@
       "description": "Redo last action"
     },
     {
+      "shortcut": "Ctrl+Y",
+      "commandId": "core/edit/redo",
+      "description": "Redo last action (alternate)"
+    },
+    {
       "shortcut": "Ctrl+=",
       "commandId": "core/view/zoom-in",
       "description": "Zoom in"
@@ -39,6 +44,21 @@
       "shortcut": "Ctrl+0",
       "commandId": "core/view/zoom-fit",
       "description": "Zoom to fit"
+    },
+    {
+      "shortcut": "Ctrl+Shift+H",
+      "commandId": "core/view/toggle-netlist",
+      "description": "Toggle netlist view"
+    },
+    {
+      "shortcut": "Ctrl+Shift+P",
+      "commandId": "core/command-palette/toggle",
+      "description": "Open the command palette"
+    },
+    {
+      "shortcut": "Ctrl+,",
+      "commandId": "core/settings/open",
+      "description": "Open settings"
     }
   ]
 }

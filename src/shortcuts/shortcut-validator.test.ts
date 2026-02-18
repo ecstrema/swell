@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { 
-    loadShortcutsFromJSON, 
-    validateShortcutsConfig, 
+import {
+    loadShortcutsFromJSON,
+    validateShortcutsConfig,
     convertToShortcutBindings,
-    ShortcutValidationError 
+    ShortcutValidationError
 } from './shortcut-validator.js';
 
 describe('Shortcut Validator', () => {
@@ -13,7 +13,7 @@ describe('Shortcut Validator', () => {
                 shortcuts: [
                     {
                         shortcut: 'Ctrl+O',
-                        commandId: 'file-open',
+                        commandId: 'core/file/open',
                         description: 'Open file'
                     },
                     {
@@ -49,11 +49,11 @@ describe('Shortcut Validator', () => {
             const config = {
                 shortcuts: [
                     {
-                        commandId: 'file-open'
+                        commandId: 'core/file/open'
                     }
                 ]
             };
-            
+
             expect(() => validateShortcutsConfig(config)).toThrow(ShortcutValidationError);
             expect(() => validateShortcutsConfig(config)).toThrow('missing \'shortcut\' field');
         });
@@ -66,7 +66,7 @@ describe('Shortcut Validator', () => {
                     }
                 ]
             };
-            
+
             expect(() => validateShortcutsConfig(config)).toThrow(ShortcutValidationError);
             expect(() => validateShortcutsConfig(config)).toThrow('missing \'commandId\' field');
         });
@@ -76,11 +76,11 @@ describe('Shortcut Validator', () => {
                 shortcuts: [
                     {
                         shortcut: '',
-                        commandId: 'file-open'
+                        commandId: 'core/file/open'
                     }
                 ]
             };
-            
+
             expect(() => validateShortcutsConfig(config1)).toThrow(ShortcutValidationError);
 
             const config2 = {
@@ -91,7 +91,7 @@ describe('Shortcut Validator', () => {
                     }
                 ]
             };
-            
+
             expect(() => validateShortcutsConfig(config2)).toThrow(ShortcutValidationError);
         });
 
@@ -100,11 +100,11 @@ describe('Shortcut Validator', () => {
                 shortcuts: [
                     {
                         shortcut: 123,
-                        commandId: 'file-open'
+                        commandId: 'core/file/open'
                     }
                 ]
             };
-            
+
             expect(() => validateShortcutsConfig(config1)).toThrow(ShortcutValidationError);
 
             const config2 = {
@@ -115,7 +115,7 @@ describe('Shortcut Validator', () => {
                     }
                 ]
             };
-            
+
             expect(() => validateShortcutsConfig(config2)).toThrow(ShortcutValidationError);
         });
 
@@ -124,12 +124,12 @@ describe('Shortcut Validator', () => {
                 shortcuts: [
                     {
                         shortcut: 'Ctrl+O',
-                        commandId: 'file-open',
+                        commandId: 'core/file/open',
                         description: 123
                     }
                 ]
             };
-            
+
             expect(() => validateShortcutsConfig(config)).toThrow(ShortcutValidationError);
             expect(() => validateShortcutsConfig(config)).toThrow('invalid \'description\' field');
         });
@@ -139,12 +139,12 @@ describe('Shortcut Validator', () => {
                 shortcuts: [
                     {
                         shortcut: 'Ctrl+O',
-                        commandId: 'file-open',
+                        commandId: 'core/file/open',
                         description: 'Open a file'
                     }
                 ]
             };
-            
+
             const result = validateShortcutsConfig(config);
             expect(result.shortcuts[0].description).toBe('Open a file');
         });
@@ -154,11 +154,11 @@ describe('Shortcut Validator', () => {
                 shortcuts: [
                     {
                         shortcut: 'Ctrl+O',
-                        commandId: 'file-open'
+                        commandId: 'core/file/open'
                     }
                 ]
             };
-            
+
             const result = validateShortcutsConfig(config);
             expect(result.shortcuts[0].description).toBeUndefined();
         });
@@ -168,15 +168,15 @@ describe('Shortcut Validator', () => {
                 shortcuts: [
                     {
                         shortcut: '  Ctrl+O  ',
-                        commandId: '  file-open  ',
+                        commandId: '  core/file/open  ',
                         description: '  Open a file  '
                     }
                 ]
             };
-            
+
             const result = validateShortcutsConfig(config);
             expect(result.shortcuts[0].shortcut).toBe('Ctrl+O');
-            expect(result.shortcuts[0].commandId).toBe('file-open');
+            expect(result.shortcuts[0].commandId).toBe('core/file/open');
             expect(result.shortcuts[0].description).toBe('Open a file');
         });
     });
@@ -187,7 +187,7 @@ describe('Shortcut Validator', () => {
                 shortcuts: [
                     {
                         shortcut: 'Ctrl+O',
-                        commandId: 'file-open',
+                        commandId: 'core/file/open',
                         description: 'Open file'
                     },
                     {
@@ -198,11 +198,11 @@ describe('Shortcut Validator', () => {
             };
 
             const bindings = convertToShortcutBindings(config);
-            
+
             expect(bindings).toHaveLength(2);
             expect(bindings[0]).toEqual({
                 shortcut: 'Ctrl+O',
-                commandId: 'file-open'
+                commandId: 'core/file/open'
             });
             expect(bindings[1]).toEqual({
                 shortcut: 'Ctrl+W',
@@ -228,7 +228,7 @@ describe('Shortcut Validator', () => {
                 shortcuts: [
                     {
                         shortcut: 'Ctrl+O',
-                        commandId: 'file-open'
+                        commandId: 'core/file/open'
                     },
                     {
                         shortcut: 'Ctrl+W',
@@ -239,11 +239,11 @@ describe('Shortcut Validator', () => {
             });
 
             const bindings = loadShortcutsFromJSON(json);
-            
+
             expect(bindings).toHaveLength(2);
             expect(bindings[0]).toEqual({
                 shortcut: 'Ctrl+O',
-                commandId: 'file-open'
+                commandId: 'core/file/open'
             });
             expect(bindings[1]).toEqual({
                 shortcut: 'Ctrl+W',
@@ -253,7 +253,7 @@ describe('Shortcut Validator', () => {
 
         it('should reject invalid JSON', () => {
             const invalidJson = '{ "shortcuts": [invalid json] }';
-            
+
             expect(() => loadShortcutsFromJSON(invalidJson)).toThrow(ShortcutValidationError);
             expect(() => loadShortcutsFromJSON(invalidJson)).toThrow('Invalid JSON');
         });

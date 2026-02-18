@@ -1,6 +1,6 @@
 /**
  * Example usage of the shortcut system
- * 
+ *
  * This file demonstrates how to use the shortcut system programmatically.
  */
 
@@ -13,7 +13,7 @@ function exampleUsage() {
 
     // 2. Register some commands
     const openFileCommand: Command = {
-        id: 'file-open',
+        id: 'core/file/open',
         label: 'Open File',
         handler: () => {
             console.log('Opening file dialog...');
@@ -37,7 +37,7 @@ function exampleUsage() {
     // 4. Register keyboard shortcuts
     const openShortcut: ShortcutBinding = {
         shortcut: { key: 'o', ctrl: true },
-        commandId: 'file-open'
+        commandId: 'core/file/open'
     };
 
     const saveShortcut: ShortcutBinding = {
@@ -51,15 +51,15 @@ function exampleUsage() {
     // 5. Activate shortcuts
     shortcuts.activate();
 
-    // Now pressing Ctrl+O will trigger the file-open command
+    // Now pressing Ctrl+O will trigger the core/file/open command
     // And pressing Ctrl+S will trigger the file-save command
 
     // 6. Execute commands programmatically
-    registry.execute('file-open');
+    registry.execute('core/file/open');
 
     // 7. Get all shortcuts for a command
-    const openShortcuts = shortcuts.getShortcutsForCommand('file-open');
-    console.log('Shortcuts for file-open:', openShortcuts);
+    const openShortcuts = shortcuts.getShortcutsForCommand('core/file/open');
+    console.log('Shortcuts for core/file/open:', openShortcuts);
 
     // 8. Format a shortcut for display
     const formattedShortcut = ShortcutManager.formatShortcut(openShortcut.shortcut);

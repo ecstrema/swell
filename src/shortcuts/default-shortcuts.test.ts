@@ -21,22 +21,19 @@ describe('Default Shortcuts', () => {
     it('should have expected default shortcuts', () => {
         // Check for some expected shortcuts
         const commandIds = defaultShortcuts.map(s => s.commandId);
-        
+
         expect(commandIds).toContain('core/file/open');
         expect(commandIds).toContain('core/file/quit');
-    });
-
-    it('should not contain duplicate command IDs', () => {
-        const commandIds = defaultShortcuts.map(s => s.commandId);
-        const uniqueCommandIds = new Set(commandIds);
-        
-        expect(commandIds.length).toBe(uniqueCommandIds.size);
+        expect(commandIds).toContain('core/edit/undo');
+        expect(commandIds).toContain('core/edit/redo');
+        expect(commandIds).toContain('core/command-palette/toggle');
+        expect(commandIds).toContain('core/settings/open');
     });
 
     it('should not contain duplicate shortcuts', () => {
         const shortcuts = defaultShortcuts.map(s => s.shortcut);
         const uniqueShortcuts = new Set(shortcuts);
-        
+
         expect(shortcuts.length).toBe(uniqueShortcuts.size);
     });
 });

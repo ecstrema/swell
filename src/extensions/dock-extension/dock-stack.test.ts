@@ -39,7 +39,7 @@ describe('DockStack - Empty State Button', () => {
         expect(openFileBtn.textContent).toBe('open a file');
     });
 
-    it('should dispatch file-open-request event when button is clicked', () => {
+    it('should dispatch core/file/open-request event when button is clicked', () => {
         // Set an empty stack
         dockStack.node = {
             type: 'stack',
@@ -51,7 +51,7 @@ describe('DockStack - Empty State Button', () => {
 
         // Listen for the event
         const eventListener = vi.fn();
-        dockStack.addEventListener('file-open-request', eventListener);
+        dockStack.addEventListener('core/file/open-request', eventListener);
 
         // Click the button
         const openFileBtn = dockStack.shadowRoot!.querySelector('#open-file-btn') as HTMLButtonElement;
@@ -232,7 +232,7 @@ describe('DockStack - Tab Dragging', () => {
 
         // Trigger dragstart event using MouseEvent as fallback for jsdom
         const tab = dockStack.shadowRoot!.querySelector('.tab') as HTMLElement;
-        const dragEvent = new MouseEvent('dragstart', { 
+        const dragEvent = new MouseEvent('dragstart', {
             bubbles: true,
             cancelable: true,
         });
@@ -278,7 +278,7 @@ describe('DockStack - Tab Dragging', () => {
         const tab = dockStack.shadowRoot!.querySelector('.tab') as HTMLElement;
 
         // Trigger dragstart event using MouseEvent as fallback for jsdom
-        const dragStartEvent = new MouseEvent('dragstart', { 
+        const dragStartEvent = new MouseEvent('dragstart', {
             bubbles: true,
             cancelable: true,
         });
@@ -296,7 +296,7 @@ describe('DockStack - Tab Dragging', () => {
         expect(tab.classList.contains('dragging')).toBe(true);
 
         // Trigger dragend event
-        const dragEndEvent = new MouseEvent('dragend', { 
+        const dragEndEvent = new MouseEvent('dragend', {
             bubbles: true,
             cancelable: true
         });
@@ -384,7 +384,7 @@ describe('DockStack - Header Dragging', () => {
 
         // Trigger dragstart event on header (not on a tab)
         const header = dockStack.shadowRoot!.querySelector('.tabs-header') as HTMLElement;
-        const dragEvent = new MouseEvent('dragstart', { 
+        const dragEvent = new MouseEvent('dragstart', {
             bubbles: true,
             cancelable: true,
         });
@@ -435,7 +435,7 @@ describe('DockStack - Header Dragging', () => {
         const header = dockStack.shadowRoot!.querySelector('.tabs-header') as HTMLElement;
 
         // Trigger dragstart event on header (not on a tab)
-        const dragStartEvent = new MouseEvent('dragstart', { 
+        const dragStartEvent = new MouseEvent('dragstart', {
             bubbles: true,
             cancelable: true,
         });
@@ -458,7 +458,7 @@ describe('DockStack - Header Dragging', () => {
         expect(header.classList.contains('dragging')).toBe(true);
 
         // Trigger dragend event
-        const dragEndEvent = new MouseEvent('dragend', { 
+        const dragEndEvent = new MouseEvent('dragend', {
             bubbles: true,
             cancelable: true
         });
@@ -528,7 +528,7 @@ describe('DockStack - Tab Reordering', () => {
         const tab2 = tabs[1] as HTMLElement;
 
         // Create drop event on tab2
-        const dropEvent = new MouseEvent('drop', { 
+        const dropEvent = new MouseEvent('drop', {
             bubbles: true,
             cancelable: true,
             clientX: tab2.getBoundingClientRect().left + 5, // left side
@@ -540,7 +540,7 @@ describe('DockStack - Tab Reordering', () => {
             },
             writable: true
         });
-        
+
         tab2.dispatchEvent(dropEvent);
 
         // Verify handleTabReorder was called
@@ -599,20 +599,20 @@ describe('DockStack - Tab Reordering', () => {
         let stopPropagationCalled = false;
 
         // Create drop event on tab with spy
-        const dropEvent = new MouseEvent('drop', { 
+        const dropEvent = new MouseEvent('drop', {
             bubbles: true,
             composed: true,
             cancelable: true,
             clientX: tab.getBoundingClientRect().left + 5,
         });
-        
+
         // Override stopPropagation to track if it's called
         const originalStopPropagation = dropEvent.stopPropagation;
         dropEvent.stopPropagation = function() {
             stopPropagationCalled = true;
             originalStopPropagation.call(this);
         };
-        
+
         Object.defineProperty(dropEvent, 'dataTransfer', {
             value: {
                 effectAllowed: '',
@@ -620,12 +620,12 @@ describe('DockStack - Tab Reordering', () => {
             },
             writable: true
         });
-        
+
         // Prevent event from reaching stack handler (to avoid error in test)
         dockStack.removeEventListener('drop', dockStack['_dropHandler']!);
-        
+
         tab.dispatchEvent(dropEvent);
-        
+
         // Restore handler
         dockStack.addEventListener('drop', dockStack['_dropHandler']!);
 

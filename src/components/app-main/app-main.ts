@@ -1,17 +1,15 @@
 import { getAllExtensions } from "../../extensions/all-extensions.js";
-import { CommandManager } from "../command/command-manager.js";
 import { css } from "../../utils/css-utils.js";
 import appMainCss from "./app-main.css?inline";
 import { DockManager } from "../../extensions/dock-extension/dock-manager.js";
 import { MenuBar } from "../../extensions/menu-extension/menu-bar.js";
 import { MenuExtension } from "../../extensions/menu-extension/menu-extension.js";
+import { ExtensionRegistry } from "../../extensions/extension-registry.js";
 
 export class AppMain extends HTMLElement {
-    private commandManager: CommandManager;
 
     constructor() {
         super();
-        this.commandManager = new CommandManager();
         this.attachShadow({ mode: 'open' });
         this.shadowRoot!.adoptedStyleSheets = [css(appMainCss)];
         this.shadowRoot!.innerHTML = `
@@ -21,7 +19,7 @@ export class AppMain extends HTMLElement {
     }
 
     async connectedCallback() {
-        const extensionRegistry = this.commandManager.getExtensionRegistry();
+        const extensionRegistry = new ExtensionRegistry();
 
         // Register every extension listed in extensions.json directly.
         // The registry handles transitive dependency resolution.
@@ -49,7 +47,6 @@ export class AppMain extends HTMLElement {
     }
 
     disconnectedCallback() {
-        this.commandManager.deactivate();
     }
 }
 

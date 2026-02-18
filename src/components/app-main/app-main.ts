@@ -1,4 +1,4 @@
-import { CoreUIExtension } from "../../extensions/core-ui-extension/index.js";
+import { getAllExtensions } from "../../extensions/all-extensions.js";
 import { CommandManager } from "../command/command-manager.js";
 import { css } from "../../utils/css-utils.js";
 import appMainCss from "./app-main.css?inline";
@@ -9,15 +9,11 @@ import { MenuExtension } from "../../extensions/menu-extension/menu-extension.js
 export class AppMain extends HTMLElement {
     private commandManager: CommandManager;
 
-     constructor() {
+    constructor() {
         super();
-
-        // Initialize command manager (extension registry)
         this.commandManager = new CommandManager();
-
         this.attachShadow({ mode: 'open' });
         this.shadowRoot!.adoptedStyleSheets = [css(appMainCss)];
-
         this.shadowRoot!.innerHTML = `
         <app-menu-bar></app-menu-bar>
         <dock-manager id="main-dock"></dock-manager>
@@ -25,9 +21,13 @@ export class AppMain extends HTMLElement {
     }
 
     async connectedCallback() {
-        // Register the Core UI extension (which will recursively register dependencies)
         const extensionRegistry = this.commandManager.getExtensionRegistry();
-        await extensionRegistry.register(CoreUIExtension);
+
+        // Register every extension listed in extensions.json directly.
+        // The registry handles transitive dependency resolution.
+        for (const Extension of getAllExtensions()) {
+            await extensionRegistry.register(Extension);
+        }
 
         // Initialize the dock system
         const dockManagerElement = this.shadowRoot!.getElementById('main-dock') as DockManager;
@@ -49,11 +49,9 @@ export class AppMain extends HTMLElement {
     }
 
     disconnectedCallback() {
-        // Clean up command manager (includes shortcuts and command palette)
         this.commandManager.deactivate();
     }
 }
-
 
 if (!customElements.get('app-main')) {
     customElements.define('app-main', AppMain);

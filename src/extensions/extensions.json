@@ -1,0 +1,14 @@
+{
+    "extensions": [
+        "menu-extension",
+        "dock-extension",
+        "shortcut-extension",
+        "command-palette-extension",
+        "settings-extension",
+        "shortcut-editor-extension",
+        "waveform-file-extension",
+        "about-extension",
+        "undo-extension",
+        "core-ui-extension"
+    ]
+}

@@ -34,8 +34,8 @@ export class MenuExtension implements Extension {
 
     constructor(dependencies: Map<string, Extension>) {}
 
-    async activate(): Promise<void> {
-        // Nothing to do until menu bar is set
+    async activate(): Promise<MenuExtension> {
+        return this;
     }
 
     /**

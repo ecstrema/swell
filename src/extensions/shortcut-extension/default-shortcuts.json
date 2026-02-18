@@ -1,64 +1,16 @@
 {
   "shortcuts": [
-    {
-      "shortcut": "Ctrl+O",
-      "commandId": "core/file/open",
-      "description": "Open file dialog"
-    },
-    {
-      "shortcut": "Ctrl+W",
-      "commandId": "core/file/close",
-      "description": "Close current file"
-    },
-    {
-      "shortcut": "Ctrl+Q",
-      "commandId": "core/file/quit",
-      "description": "Quit application"
-    },
-    {
-      "shortcut": "Ctrl+Z",
-      "commandId": "core/edit/undo",
-      "description": "Undo last action"
-    },
-    {
-      "shortcut": "Ctrl+Shift+Z",
-      "commandId": "core/edit/redo",
-      "description": "Redo last action"
-    },
-    {
-      "shortcut": "Ctrl+Y",
-      "commandId": "core/edit/redo",
-      "description": "Redo last action (alternate)"
-    },
-    {
-      "shortcut": "Ctrl+=",
-      "commandId": "core/view/zoom-in",
-      "description": "Zoom in"
-    },
-    {
-      "shortcut": "Ctrl+-",
-      "commandId": "core/view/zoom-out",
-      "description": "Zoom out"
-    },
-    {
-      "shortcut": "Ctrl+0",
-      "commandId": "core/view/zoom-fit",
-      "description": "Zoom to fit"
-    },
-    {
-      "shortcut": "Ctrl+Shift+H",
-      "commandId": "core/view/toggle-netlist",
-      "description": "Toggle netlist view"
-    },
-    {
-      "shortcut": "Ctrl+Shift+P",
-      "commandId": "core/command-palette/toggle",
-      "description": "Open the command palette"
-    },
-    {
-      "shortcut": "Ctrl+,",
-      "commandId": "core/settings/open",
-      "description": "Open settings"
-    }
+    { "shortcut": "Ctrl+O",       "commandId": "core/file/open" },
+    { "shortcut": "Ctrl+W",       "commandId": "core/file/close" },
+    { "shortcut": "Ctrl+Q",       "commandId": "core/file/quit" },
+    { "shortcut": "Ctrl+Z",       "commandId": "core/edit/undo" },
+    { "shortcut": "Ctrl+Shift+Z", "commandId": "core/edit/redo" },
+    { "shortcut": "Ctrl+Y",       "commandId": "core/edit/redo" },
+    { "shortcut": "Ctrl+=",       "commandId": "core/view/zoom-in" },
+    { "shortcut": "Ctrl+-",       "commandId": "core/view/zoom-out" },
+    { "shortcut": "Ctrl+0",       "commandId": "core/view/zoom-fit" },
+    { "shortcut": "Ctrl+Shift+H", "commandId": "core/view/toggle-netlist" },
+    { "shortcut": "Ctrl+Shift+P", "commandId": "core/command-palette/toggle" },
+    { "shortcut": "Ctrl+,",       "commandId": "core/settings/open" }
   ]
 }

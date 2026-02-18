@@ -5,12 +5,11 @@
 import { ShortcutBinding } from "./types.js";
 
 /**
- * Raw shortcut binding from JSON (may include optional description)
+ * Raw shortcut binding from JSON
  */
 export interface RawShortcutBinding {
     shortcut: string;
     commandId: string;
-    description?: string;
 }
 
 /**
@@ -69,16 +68,9 @@ function validateShortcutBinding(binding: unknown, index: number): RawShortcutBi
     }
     const commandId = validateAndTrimString(obj.commandId, 'commandId', index);
 
-    // Validate and trim optional description field
-    let description: string | undefined;
-    if ('description' in obj && obj.description !== undefined) {
-        description = validateAndTrimString(obj.description, 'description', index);
-    }
-
     return {
         shortcut,
         commandId,
-        description
     };
 }
 
@@ -128,7 +120,7 @@ export function convertToShortcutBindings(config: ShortcutsConfig): ShortcutBind
  */
 export function loadShortcutsFromJSON(jsonString: string): ShortcutBinding[] {
     let parsed: unknown;
-    
+
     try {
         parsed = JSON.parse(jsonString);
     } catch (error) {

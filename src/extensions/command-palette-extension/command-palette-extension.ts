@@ -5,7 +5,7 @@
  */
 
 import { Extension } from "../types.js";
-import { CommandPalette } from "../../components/command/command-palette.js";
+import { CommandPalette } from "./command-palette.js";
 import { CommandExtension } from "../command-extension/command-extension.js";
 import { ShortcutExtension } from "../shortcut-extension/shortcut-extension.js";
 

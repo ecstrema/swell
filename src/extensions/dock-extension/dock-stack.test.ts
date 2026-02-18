@@ -153,6 +153,41 @@ describe('DockStack - Empty State Button', () => {
         const openExampleBtn = dockStack.shadowRoot!.querySelector('#open-example-btn');
         expect(openExampleBtn).toBeNull();
     });
+
+    it('should normalize invalid activeId to first child and render that pane', () => {
+        // Register mock content
+        dockManager.registerContent('test-content', 'Test Content', () => {
+            const div = document.createElement('div');
+            div.textContent = 'Test Content';
+            return div;
+        });
+
+        // Provide an invalid activeId (not present in children)
+        const node = {
+            type: 'stack' as const,
+            id: 'test-stack',
+            weight: 1,
+            activeId: 'non-existent',
+            children: [
+                { id: 'pane-1', title: 'Pane 1', contentId: 'test-content', closable: true },
+                { id: 'pane-2', title: 'Pane 2', contentId: 'test-content', closable: true }
+            ]
+        };
+
+        dockStack.node = node;
+
+        // The component should normalize activeId on the provided node object to the first child
+        expect(node.activeId).toBe('pane-1');
+
+        // The first tab and its content should be active
+        const firstTab = dockStack.shadowRoot!.querySelector('.tab[data-id="pane-1"]');
+        expect(firstTab).toBeTruthy();
+        expect(firstTab!.classList.contains('active')).toBe(true);
+
+        const activeContent = dockStack.shadowRoot!.querySelector('.pane-content.active');
+        expect(activeContent).toBeTruthy();
+        expect(activeContent!.textContent).toContain('Test Content');
+    });
 });
 
 describe('DockStack - Tab Dragging', () => {

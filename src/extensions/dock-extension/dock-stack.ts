@@ -67,7 +67,14 @@ export class DockStackComponent extends HTMLElement {
     private render() {
         if (!this._node || !this._manager) return;
 
-        const activeId = this._node.activeId || (this._node.children.length > 0 ? this._node.children[0].id : null);
+        // Ensure activeId is valid — if it's missing or points to a non-existent pane,
+        // fall back to the first child and update the model so subsequent logic is correct.
+        let activeId = this._node.activeId;
+        if (!activeId || !this._node.children.some(p => p.id === activeId)) {
+            activeId = this._node.children.length > 0 ? this._node.children[0].id : null;
+            // normalize the model so callers / future renders see a valid activeId
+            this._node.activeId = activeId;
+        }
 
         // Show placeholder when no children exist
         if (this._node.children.length === 0) {

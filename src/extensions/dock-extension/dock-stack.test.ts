@@ -121,7 +121,7 @@ describe('DockStack - Empty State Button', () => {
         };
 
         // Register mock content
-        dockManager.registerContent('test-content', () => {
+        dockManager.registerContent('test-content', 'Test Content', () => {
             const div = document.createElement('div');
             div.textContent = 'Test Content';
             return div;
@@ -174,7 +174,7 @@ describe('DockStack - Tab Dragging', () => {
 
     it('should make tabs draggable', () => {
         // Register mock content
-        dockManager.registerContent('test-content', () => {
+        dockManager.registerContent('test-content', 'Test Content', () => {
             const div = document.createElement('div');
             div.textContent = 'Test Content';
             return div;
@@ -204,7 +204,7 @@ describe('DockStack - Tab Dragging', () => {
 
     it('should call manager handleDragStart when tab drag starts', () => {
         // Register mock content
-        dockManager.registerContent('test-content', () => {
+        dockManager.registerContent('test-content', 'Test Content', () => {
             const div = document.createElement('div');
             div.textContent = 'Test Content';
             return div;
@@ -252,7 +252,7 @@ describe('DockStack - Tab Dragging', () => {
 
     it('should add dragging class during drag', () => {
         // Register mock content
-        dockManager.registerContent('test-content', () => {
+        dockManager.registerContent('test-content', 'Test Content', () => {
             const div = document.createElement('div');
             div.textContent = 'Test Content';
             return div;
@@ -326,7 +326,7 @@ describe('DockStack - Header Dragging', () => {
 
     it('should make tabs header draggable', () => {
         // Register mock content
-        dockManager.registerContent('test-content', () => {
+        dockManager.registerContent('test-content', 'Test Content', () => {
             const div = document.createElement('div');
             div.textContent = 'Test Content';
             return div;
@@ -356,7 +356,7 @@ describe('DockStack - Header Dragging', () => {
 
     it('should call manager handleStackDragStart when header drag starts', () => {
         // Register mock content
-        dockManager.registerContent('test-content', () => {
+        dockManager.registerContent('test-content', 'Test Content', () => {
             const div = document.createElement('div');
             div.textContent = 'Test Content';
             return div;
@@ -409,7 +409,7 @@ describe('DockStack - Header Dragging', () => {
 
     it('should add dragging class to header during drag', () => {
         // Register mock content
-        dockManager.registerContent('test-content', () => {
+        dockManager.registerContent('test-content', 'Test Content', () => {
             const div = document.createElement('div');
             div.textContent = 'Test Content';
             return div;
@@ -488,7 +488,7 @@ describe('DockStack - Tab Reordering', () => {
 
     it('should call handleTabReorder when dropping tab on same stack', () => {
         // Register mock content
-        dockManager.registerContent('test-content', () => {
+        dockManager.registerContent('test-content', 'Test Content', () => {
             const div = document.createElement('div');
             div.textContent = 'Test Content';
             return div;
@@ -549,7 +549,7 @@ describe('DockStack - Tab Reordering', () => {
 
     it('should not stop propagation when dragging from different stack', () => {
         // Register mock content
-        dockManager.registerContent('test-content', () => {
+        dockManager.registerContent('test-content', 'Test Content', () => {
             const div = document.createElement('div');
             div.textContent = 'Test Content';
             return div;

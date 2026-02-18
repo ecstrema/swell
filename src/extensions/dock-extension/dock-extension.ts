@@ -44,7 +44,7 @@ export class DockExtension implements Extension {
 
     private dockManager: DockManager | null = null;
     private dockLayoutHelper: DockLayoutHelper | null = null;
-    private pendingContent: Array<[string, (id: string) => HTMLElement]> = [];
+    private pendingContent: Array<[string, string, (id: string) => HTMLElement, boolean]> = [];
 
     constructor(dependencies: Map<string, Extension>) {}
 
@@ -70,14 +70,19 @@ export class DockExtension implements Extension {
 
     /**
      * Register content with the dock manager.
+     * @param contentId Unique identifier for the content (also used as pane id)
+     * @param title Display title for the pane tab
+     * @param builder Factory function to create the content element
+     * @param closable Whether the pane can be closed (default: true)
+     *
      * If the dock is not yet initialized, the registration is queued
      * and applied once `initializeDockSystem` is called.
      */
-    registerContent(contentId: string, builder: (id: string) => HTMLElement): void {
+    registerContent(contentId: string, title: string, builder: (id: string) => HTMLElement, closable: boolean = true): void {
         if (this.dockManager) {
-            this.dockManager.registerContent(contentId, builder);
+            this.dockManager.registerContent(contentId, title, builder, closable);
         } else {
-            this.pendingContent.push([contentId, builder]);
+            this.pendingContent.push([contentId, title, builder, closable]);
         }
     }
 
@@ -97,8 +102,8 @@ export class DockExtension implements Extension {
         }
 
         // Flush any content that was registered before the dock was ready
-        for (const [contentId, builder] of this.pendingContent) {
-            this.dockManager.registerContent(contentId, builder);
+        for (const [contentId, title, builder, closable] of this.pendingContent) {
+            this.dockManager.registerContent(contentId, title, builder, closable);
         }
         this.pendingContent = [];
     }

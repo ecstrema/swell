@@ -38,10 +38,7 @@ export class SettingsExtension implements Extension {
 
     async activate(): Promise<void> {
         // Register the settings page as dock content
-        this.dockExtension.registerContent('settings', () => {
-            const page = new SettingsPage();
-            return page;
-        });
+        this.dockExtension.registerContent('settings', 'Settings', () => new SettingsPage());
 
         this.registerSettingsCommand();
         this.registerSettingsMenu();
@@ -90,7 +87,7 @@ export class SettingsExtension implements Extension {
     private openSettings(): void {
         const layoutHelper = this.dockExtension.getDockLayoutHelper();
         if (layoutHelper) {
-             layoutHelper.activatePane('settings-panel', 'Settings', 'settings', true);
+             layoutHelper.activatePane('settings');
         }
     }
 }

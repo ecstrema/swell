@@ -267,14 +267,12 @@ export class DockLayoutHelper {
     }
 
     /**
-     * Activate a pane in the biggest stack
+     * Activate a pane in the biggest stack by its registered content id.
      * If the pane already exists, activates it. Otherwise, adds it to the biggest stack.
-     * @param paneId The pane ID
-     * @param title The pane title
-     * @param contentId The content ID registered with the dock manager
-     * @param closable Whether the pane can be closed
+     * The pane title and closable flag come from the content registry (set during registerContent).
+     * @param id The content id (registered via DockExtension.registerContent)
      */
-    activatePane(paneId: string, title: string, contentId: string, closable: boolean = true): void {
+    activatePane(id: string): void {
         const layout = this.dockManager.layout;
         if (!layout) {
             console.warn('No layout available to activate pane');
@@ -282,11 +280,18 @@ export class DockLayoutHelper {
         }
 
         // First check if the pane already exists anywhere in the layout
-        const existingStack = this.findStackContainingPane(layout.root, paneId);
+        const existingStack = this.findStackContainingPane(layout.root, id);
         if (existingStack) {
             // Pane exists, just activate it
-            existingStack.activeId = paneId;
+            existingStack.activeId = id;
             this.dockManager.layout = layout; // Trigger re-render
+            return;
+        }
+
+        // Look up pane metadata from the content registry
+        const info = this.dockManager.getContentInfo(id);
+        if (!info) {
+            console.warn(`No content registered for id: ${id}`);
             return;
         }
 
@@ -299,14 +304,14 @@ export class DockLayoutHelper {
 
         // Add pane to the biggest stack
         biggestStack.children.push({
-            id: paneId,
-            title: title,
-            contentId: contentId,
-            closable: closable
+            id: id,
+            title: info.title,
+            contentId: id,
+            closable: info.closable
         });
 
         // Activate the pane
-        biggestStack.activeId = paneId;
+        biggestStack.activeId = id;
         this.dockManager.layout = layout; // Trigger re-render
     }
 

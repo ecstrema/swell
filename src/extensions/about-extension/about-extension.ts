@@ -38,7 +38,7 @@ export class AboutExtension implements Extension {
     }
 
     async activate(): Promise<void> {
-        this.dockExtension.registerContent('about', () => {
+        this.dockExtension.registerContent('about', 'About', () => {
             const aboutPane = new AboutPane();
             aboutPane.id = 'about-pane';
             return aboutPane;
@@ -60,7 +60,7 @@ export class AboutExtension implements Extension {
             handler: () => {
                 const layoutHelper = this.dockExtension.getDockLayoutHelper();
                 if (layoutHelper) {
-                    layoutHelper.activatePane('about-pane', 'About', 'about', true);
+                    layoutHelper.activatePane('about');
                 }
             },
         });

@@ -43,13 +43,13 @@ export class ShortcutEditorExtension implements Extension {
             handler: () => {
                 const layoutHelper = this.dockExtension.getDockLayoutHelper();
                 if (layoutHelper) {
-                    layoutHelper.activatePane('commands-view', 'Keyboard Shortcuts', 'commands-view', true);
+                    layoutHelper.activatePane('commands-view');
                 }
             },
         });
 
         // Register the keyboard shortcuts editor as content
-        this.dockExtension.registerContent('commands-view', () => {
+        this.dockExtension.registerContent('commands-view', 'Keyboard Shortcuts', () => {
             const view = new CommandsView();
             if ('setCommandRegistry' in view) {
                 (view as any).setCommandRegistry(this.commandExtension);

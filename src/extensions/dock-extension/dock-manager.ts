@@ -5,7 +5,7 @@ import dockManagerCss from "./dock-manager.css?inline";
 
 export class DockManager extends HTMLElement {
   private _layout: DockLayout | null = null;
-  private _contentRegistry: Map<string, (id: string) => HTMLElement> =
+  private _contentRegistry: Map<string, { title: string; closable: boolean; builder: (id: string) => HTMLElement }> =
     new Map();
   private _draggedPane: { pane: DockPane; sourceStack: DockStack } | null =
     null;
@@ -56,18 +56,24 @@ export class DockManager extends HTMLElement {
     return this._layout;
   }
 
-  registerContent(contentId: string, builder: (id: string) => HTMLElement) {
-    this._contentRegistry.set(contentId, builder);
+  registerContent(contentId: string, title: string, builder: (id: string) => HTMLElement, closable: boolean = true) {
+    this._contentRegistry.set(contentId, { title, closable, builder });
   }
 
   getContent(contentId: string, id: string): HTMLElement {
-    const builder = this._contentRegistry.get(contentId);
-    if (builder) {
-      return builder(id);
+    const info = this._contentRegistry.get(contentId);
+    if (info) {
+      return info.builder(id);
     }
     const fallback = document.createElement("div");
     fallback.textContent = `Content not found: ${contentId}`;
     return fallback;
+  }
+
+  getContentInfo(contentId: string): { title: string; closable: boolean } | null {
+    const info = this._contentRegistry.get(contentId);
+    if (!info) return null;
+    return { title: info.title, closable: info.closable };
   }
 
   connectedCallback() {
@@ -141,11 +147,11 @@ export class DockManager extends HTMLElement {
 
     // Remove from current position
     stack.children.splice(currentIndex, 1);
-    
+
     // Insert at new position
     const insertIndex = currentIndex < targetIndex ? targetIndex - 1 : targetIndex;
     stack.children.splice(insertIndex, 0, pane);
-    
+
     this.render();
     this.notifyLayoutChange();
   }
@@ -164,7 +170,7 @@ export class DockManager extends HTMLElement {
     targetElement: HTMLElement,
   ) {
     if (!this._draggedPane && !this._draggedStack) return;
-    
+
     // Only accept tab or dock drags, reject tree items (check types if available)
     const hasTypes = e.dataTransfer?.types !== undefined;
     if (hasTypes) {
@@ -174,7 +180,7 @@ export class DockManager extends HTMLElement {
         return;
       }
     }
-    
+
     e.preventDefault();
 
     const rect = targetElement.getBoundingClientRect();
@@ -192,7 +198,7 @@ export class DockManager extends HTMLElement {
 
   handleDrop(e: DragEvent, targetStack: DockStack, targetElement: HTMLElement) {
     if (!this._draggedPane && !this._draggedStack) return;
-    
+
     // Only accept tab or dock drags, reject tree items (check types if available)
     const hasTypes = e.dataTransfer?.types !== undefined;
     if (hasTypes) {
@@ -202,7 +208,7 @@ export class DockManager extends HTMLElement {
         return;
       }
     }
-    
+
     this.handleDragLeave();
 
     const rect = targetElement.getBoundingClientRect();
@@ -226,7 +232,7 @@ export class DockManager extends HTMLElement {
       );
       this._draggedPane = null;
     }
-    
+
     this.render();
     this.notifyLayoutChange();
   }
@@ -456,7 +462,7 @@ export class DockManager extends HTMLElement {
         }
       }
       const nonEmptyStackCount = totalStackCount - emptyStackCount;
-      
+
       // First, recursively clean children and filter out empty stacks/boxes
       node.children = node.children.filter((child) => {
         // Don't remove the last empty stack in a box (to preserve root stack for placeholder)
@@ -485,7 +491,7 @@ export class DockManager extends HTMLElement {
         const child = node.children[i];
         if (child.type === "box") {
           this.simplifyBoxes(child);
-          
+
           // After simplifying the child, check if it has only one child
           // If so, replace it with its grandchild
           if (child.children.length === 1) {

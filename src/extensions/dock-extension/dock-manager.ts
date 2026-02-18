@@ -33,6 +33,17 @@ export class DockManager extends HTMLElement {
    */
   private notifyLayoutChange(): void {
     if (this._onLayoutChange && this._layout && !this._suppressLayoutChangeNotification) {
+      // Print the current dock layout for debugging whenever it changes
+      // (format as JSON for readability).
+      try {
+        // Use console.debug to avoid being too noisy in production consoles; fall back to console.log
+        const printer = console.debug ? console.debug : console.log;
+        printer('Dock layout changed:\n' + JSON.stringify(this._layout, null, 2));
+      } catch (err) {
+        // If serialization fails for any reason, still notify listeners
+        console.log('Dock layout changed (serialization failed)', this._layout);
+      }
+
       this._onLayoutChange(this._layout);
     }
   }
@@ -586,26 +597,53 @@ export class DockManager extends HTMLElement {
    */
   public cleanupEmptyStacks(): boolean {
     if (!this._layout) return false;
-    if (this.shouldCleanupEmptyStacks()) {
+    const hadEmptyStacks = this.shouldCleanupEmptyStacks();
+
+    if (hadEmptyStacks) {
       this.cleanupEmptyNodes(this._layout.root);
-      // After cleanup, simplify boxes that have only one child
-      // This includes potentially simplifying the root itself
-      if (this._layout.root.type === "box") {
-        this.simplifyBoxes(this._layout.root);
-        // After simplifying, check if root box has only one child
-        // If so, replace root with that child
-        const rootBox = this._layout.root as DockBox;
-        if (rootBox.children.length === 1) {
-          const onlyChild = rootBox.children[0];
-          onlyChild.weight = 1; // Ensure full weight
-          this._layout.root = onlyChild;
-        }
+    }
+
+    // Always simplify boxes after potential cleanup, or when explicitly called
+    // This handles cases where nested boxes have single children
+    if (this._layout.root.type === "box") {
+      this.simplifyBoxes(this._layout.root);
+      // After simplifying, check if root box has only one child
+      // If so, replace root with that child
+      const rootBox = this._layout.root as DockBox;
+      if (rootBox.children.length === 1) {
+        const onlyChild = rootBox.children[0];
+        onlyChild.weight = 1; // Ensure full weight
+        this._layout.root = onlyChild;
       }
+    }
+
+    if (hadEmptyStacks) {
       this.render();
       this.notifyLayoutChange();
       return true;
     }
     return false;
+  }
+
+  /**
+   * Simplify the layout tree by collapsing boxes with only one child.
+   * This can be called to clean up nested box structures.
+   */
+  public simplifyLayout(): void {
+    if (!this._layout) return;
+
+    if (this._layout.root.type === "box") {
+      this.simplifyBoxes(this._layout.root);
+      // After simplifying, check if root box has only one child
+      const rootBox = this._layout.root as DockBox;
+      if (rootBox.children.length === 1) {
+        const onlyChild = rootBox.children[0];
+        onlyChild.weight = 1;
+        this._layout.root = onlyChild;
+      }
+      this.render();
+      this.notifyLayoutChange();
+    }
   }
 }
 customElements.define("dock-manager", DockManager);

@@ -28,8 +28,23 @@ export class AppMain extends HTMLElement {
     }
 
     async connectedCallback() {
+        // Register the Core UI extension (which will recursively register dependencies)
         const extensionRegistry = this.commandManager.getExtensionRegistry();
         await extensionRegistry.register(CoreUIExtension);
+
+        // Initialize the dock system
+        // The dock manager element is in the shadow DOM, created by the template
+        const dockManagerElement = this.shadowRoot!.getElementById('main-dock') as DockManager;
+
+        // Get the dock extension API
+        // It returns the extension instance which implements the API
+        const dockExtension = await extensionRegistry.getExtension<any>('core/dock');
+
+        if (dockExtension && typeof dockExtension.initializeDockSystem === 'function') {
+            dockExtension.initializeDockSystem(dockManagerElement);
+        } else {
+            console.error('Failed to initialize dock system: Dock extension not found or invalid API');
+        }
     }
 
     disconnectedCallback() {

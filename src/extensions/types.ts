@@ -61,8 +61,9 @@ export interface ThemeRegistration {
 export interface Extension {
     /**
      * Called when the extension is activated
+     * Can return an API object that other extensions can consume
      */
-    activate(): void | Promise<void>;
+    activate(): void | Promise<void> | Promise<any> | any;
 
     /**
      * Called when the extension is deactivated (optional)

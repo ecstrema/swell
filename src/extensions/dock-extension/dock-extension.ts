@@ -8,6 +8,7 @@
 import { Extension } from "../types.js";
 import { DockManager } from "./dock-manager.js";
 import { DockLayoutHelper } from "../../components/dock-layout-helper.js";
+import { DockLayout, DockBox, DockStack } from "./types.js";
 
 // Ensure custom elements are registered
 import "./dock-manager.js";
@@ -46,9 +47,10 @@ export class DockExtension implements Extension {
 
     constructor(dependencies: Map<string, Extension>) {}
 
-    async activate(): Promise<void> {
+    async activate(): Promise<DockAPI> {
         // The dock manager DOM element is created by app-main
         // This extension will manage the helpers once initialized
+        return this;
     }
 
     /**
@@ -74,5 +76,35 @@ export class DockExtension implements Extension {
 
         // Create the dock layout helper
         this.dockLayoutHelper = new DockLayoutHelper(dockManager);
+
+        // Load default layout if none exists
+        if (!this.dockManager.layout) {
+            this.loadDefaultLayout();
+        }
+    }
+
+    /**
+     * Load the default layout
+     */
+    public loadDefaultLayout(): void {
+        if (!this.dockManager) return;
+
+        this.dockManager.layout = {
+            root: {
+                type: 'box',
+                id: 'root',
+                direction: 'row',
+                weight: 100,
+                children: [
+                    {
+                        type: 'stack',
+                        id: 'main-stack',
+                        weight: 80,
+                        activeId: null,
+                        children: []
+                    }
+                ]
+            }
+        };
     }
 }

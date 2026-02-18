@@ -1,6 +1,6 @@
 /**
  * Extension Registry
- * 
+ *
  * Central registry for managing extensions and their registrations.
  * Provides a unified interface for extensions to register commands, menus, pages, settings, and themes.
  */
@@ -8,13 +8,13 @@
 import {
     Extension,
     ExtensionId,
-    ExtensionContext,
     PageRegistration,
     ThemeRegistration,
     CommandExecutedCallback,
     SettingChangedCallback,
     ThemeChangedCallback,
     PageDisplayedCallback,
+    ExtensionConstructor
 } from "./types.js";
 import { Command, ShortcutBinding } from "../shortcuts/types.js";
 import { CommandRegistry } from "../shortcuts/command-registry.js";
@@ -28,13 +28,9 @@ import { MenuItemConfig, SubmenuConfig } from "../menu-api/menu-api.js";
 export class ExtensionRegistry {
     private extensions: Map<ExtensionId, Extension> = new Map();
     private extensionAPIs: Map<ExtensionId, any> = new Map();
-    private extensionFactories: Map<ExtensionId, () => Extension> = new Map();
     private pages: Map<string, PageRegistration> = new Map();
     private themes: Map<string, ThemeRegistration> = new Map();
     private menuItems: (MenuItemConfig | SubmenuConfig)[] = [];
-    
-    private commandRegistry: CommandRegistry;
-    private shortcutManager: ShortcutManager;
 
     // Callbacks
     private commandExecutedCallbacks: CommandExecutedCallback[] = [];
@@ -42,83 +38,54 @@ export class ExtensionRegistry {
     private themeChangedCallbacks: ThemeChangedCallback[] = [];
     private pageDisplayedCallbacks: PageDisplayedCallback[] = [];
 
-    constructor(commandRegistry: CommandRegistry, shortcutManager: ShortcutManager) {
-        this.commandRegistry = commandRegistry;
-        this.shortcutManager = shortcutManager;
+    constructor() {
     }
 
     /**
-     * Register an extension and its dependencies
+     * Register an extension class and recursively its dependencies
      */
-    async register(extension: Extension): Promise<void> {
-        if (this.extensions.has(extension.metadata.id)) {
-            console.warn(`Extension ${extension.metadata.id} is already registered`);
+    async register(ExtensionClass: ExtensionConstructor): Promise<void> {
+        const id = ExtensionClass.metadata.id;
+
+        if (this.extensions.has(id)) {
             return;
         }
 
-        // Register dependencies first
-        if (extension.metadata.dependencies) {
-            for (const depId of extension.metadata.dependencies) {
-                // Check if dependency is already registered
-                if (!this.extensions.has(depId)) {
-                    // Try to register from factory if available
-                    const factory = this.extensionFactories.get(depId);
-                    if (factory) {
-                        await this.register(factory());
-                    } else {
-                        console.warn(`Dependency ${depId} for extension ${extension.metadata.id} not found`);
-                    }
+        const dependencyMap = new Map<string, Extension>();
+
+        // Handle dependencies
+        if (ExtensionClass.dependencies && Array.isArray(ExtensionClass.dependencies)) {
+            for (const DepClass of ExtensionClass.dependencies) {
+                // Ensure dependency is registered
+                await this.register(DepClass);
+
+                // Get the instance
+                const depId = DepClass.metadata.id;
+                const depInstance = this.extensions.get(depId);
+                if (depInstance) {
+                    dependencyMap.set(depId, depInstance);
+                } else {
+                    console.error(`Failed to resolve dependency ${depId} for ${id}`);
                 }
             }
         }
 
-        this.extensions.set(extension.metadata.id, extension);
+        // Instantiate
+        const extension = new ExtensionClass(dependencyMap);
+        this.extensions.set(id, extension);
 
-        // Create context for this extension
-        const context = this.createContext(extension);
-
-        // Activate the extension and store any returned API
-        const api = await extension.activate(context);
+        // Activate
+        const api = await extension.activate();
         if (api !== undefined) {
-            this.extensionAPIs.set(extension.metadata.id, api);
+            this.extensionAPIs.set(id, api);
         }
     }
 
     /**
-     * Register an extension factory for lazy loading
-     */
-    registerFactory(extensionId: ExtensionId, factory: () => Extension): void {
-        if (this.extensions.has(extensionId)) {
-            console.warn(`Extension ${extensionId} is already registered`);
-            return;
-        }
-        this.extensionFactories.set(extensionId, factory);
-    }
-
-    /**
-     * Get an extension by ID, registering it if not already registered
+     * Get an extension API by ID
      */
     async getExtension<T = any>(extensionId: ExtensionId): Promise<T | undefined> {
-        // If already registered, return its API
-        if (this.extensionAPIs.has(extensionId)) {
-            return this.extensionAPIs.get(extensionId) as T;
-        }
-
-        // If extension is registered but hasn't provided an API, return undefined
-        if (this.extensions.has(extensionId)) {
-            return undefined;
-        }
-
-        // If we have a factory, create and register the extension
-        const factory = this.extensionFactories.get(extensionId);
-        if (factory) {
-            const extension = factory();
-            await this.register(extension);
-            return this.extensionAPIs.get(extensionId) as T;
-        }
-
-        console.warn(`Extension ${extensionId} not found`);
-        return undefined;
+        return this.extensionAPIs.get(extensionId) as T;
     }
 
     /**
@@ -130,12 +97,12 @@ export class ExtensionRegistry {
             return;
         }
 
-        // Deactivate if the extension has a deactivate method
         if (extension.deactivate) {
             await extension.deactivate();
         }
 
         this.extensions.delete(extensionId);
+        this.extensionAPIs.delete(extensionId);
     }
 
     /**
@@ -234,71 +201,5 @@ export class ExtensionRegistry {
      */
     onPageDisplayed(callback: PageDisplayedCallback): void {
         this.pageDisplayedCallbacks.push(callback);
-    }
-
-    /**
-     * Create an extension context for a specific extension
-     */
-    private createContext(extension: Extension): ExtensionContext {
-        // Gather APIs from declared dependencies
-        const dependencies = new Map<ExtensionId, any>();
-        if (extension.metadata.dependencies) {
-            for (const depId of extension.metadata.dependencies) {
-                const depAPI = this.extensionAPIs.get(depId);
-                if (depAPI) {
-                    dependencies.set(depId, depAPI);
-                }
-            }
-        }
-
-        return {
-            registerCommand: (command: Command) => {
-                this.commandRegistry.register(command);
-            },
-
-            registerShortcut: (binding: ShortcutBinding) => {
-                this.shortcutManager.register(binding);
-            },
-
-            registerShortcuts: (bindings: ShortcutBinding[]) => {
-                this.shortcutManager.registerMany(bindings);
-            },
-
-            registerMenu: (item: MenuItemConfig | SubmenuConfig) => {
-                this.menuItems.push(item);
-            },
-
-            registerPage: (page: PageRegistration) => {
-                if (this.pages.has(page.id)) {
-                    console.warn(`Page ${page.id} is already registered`);
-                    return;
-                }
-                this.pages.set(page.id, page);
-            },
-
-            registerSetting: (setting: SettingMetadata) => {
-                settingsRegister.register(setting);
-            },
-
-            registerTheme: (theme: ThemeRegistration) => {
-                if (this.themes.has(theme.id)) {
-                    console.warn(`Theme ${theme.id} is already registered`);
-                    return;
-                }
-                this.themes.set(theme.id, theme);
-            },
-
-            getMetadata: () => extension.metadata,
-
-            getExtension: <T = any>(extensionId: ExtensionId): Promise<T | undefined> => {
-                return this.getExtension<T>(extensionId);
-            },
-
-            getCommandRegistry: () => this.commandRegistry,
-
-            getShortcutManager: () => this.shortcutManager,
-            
-            dependencies,
-        };
     }
 }

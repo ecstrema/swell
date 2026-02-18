@@ -1,13 +1,16 @@
 /**
  * Undo Extension
- * 
+ *
  * Provides undo/redo functionality and undo tree visualization.
  * Contains the undo manager and exports an API for other extensions to use.
  */
 
-import { Extension, ExtensionContext } from "../types.js";
+import { Extension } from "../types.js";
 import { UndoTreePanel } from "./undo-tree-panel.js";
 import { UndoManager } from "./undo-manager.js";
+import { DockExtension } from "../dock-extension/dock-extension.js";
+import { CommandExtension } from "../command-extension/command-extension.js";
+import { MenuExtension } from "../menu-extension/menu-extension.js";
 
 // Re-export types that external code needs
 export type { UndoableOperation } from "./undo-tree.js";
@@ -18,66 +21,47 @@ if (!customElements.get('undo-tree-panel')) {
     customElements.define('undo-tree-panel', UndoTreePanel);
 }
 
-/**
- * API provided by the undo extension
- */
-export interface UndoAPI {
-    /**
-     * Get the undo manager instance
-     */
-    getUndoManager(): UndoManager;
-}
-
 export class UndoExtension implements Extension {
-    readonly metadata = {
+    static readonly metadata = {
         id: 'core/undo',
         name: 'Undo Extension',
         description: 'Provides undo/redo functionality and history visualization',
-        dependencies: ['core/dock'],
     };
+    static readonly dependencies = [DockExtension, CommandExtension, MenuExtension];
 
     private undoManager: UndoManager;
+    private dockExtension: DockExtension;
+    private commandExtension: CommandExtension;
+    private menuExtension: MenuExtension;
 
-    constructor() {
+    constructor(dependencies: Map<string, Extension>) {
         this.undoManager = new UndoManager();
+        this.dockExtension = dependencies.get(DockExtension.metadata.id) as DockExtension;
+        this.commandExtension = dependencies.get(CommandExtension.metadata.id) as CommandExtension;
+        this.menuExtension = dependencies.get(MenuExtension.metadata.id) as MenuExtension;
     }
 
-    async activate(context: ExtensionContext): Promise<UndoAPI> {
-        const dockAPI = context.dependencies.get('core/dock');
-        const dockLayoutHelper = dockAPI?.getDockLayoutHelper?.();
-        const dockManager = dockAPI?.getDockManager?.();
+    getUndoManager(): UndoManager {
+        return this.undoManager;
+    }
 
-        if (!dockLayoutHelper || !dockManager) {
-            console.warn('Undo extension: Required managers not available');
-            // Still return API even if UI can't be registered
-            return {
-                getUndoManager: () => this.undoManager,
-            };
-        }
+    async activate(): Promise<void> {
+        const dockManager = this.dockExtension.getDockManager();
 
-        // Register the undo tree panel page
-        context.registerPage({
-            id: 'undo-tree',
-            title: 'Undo History',
-            icon: '↶',
-            factory: () => {
+        if (dockManager) {
+            // Register content with dock manager
+            dockManager.registerContent('undo-tree', () => {
                 const undoTreePanel = new UndoTreePanel();
                 undoTreePanel.id = 'undo-tree-panel';
                 undoTreePanel.setUndoTree(this.undoManager.getUndoTree());
                 return undoTreePanel;
-            },
-        });
-
-        // Register content with dock manager
-        dockManager.registerContent('undo-tree', () => {
-            const undoTreePanel = new UndoTreePanel();
-            undoTreePanel.id = 'undo-tree-panel';
-            undoTreePanel.setUndoTree(this.undoManager.getUndoTree());
-            return undoTreePanel;
-        });
+            });
+        } else {
+            console.warn('Undo extension: Dock manager not available');
+        }
 
         // Register undo command
-        context.registerCommand({
+        this.commandExtension.registerCommand({
             id: 'core/edit/undo',
             label: 'Undo',
             description: 'Undo the last action',
@@ -87,7 +71,7 @@ export class UndoExtension implements Extension {
         });
 
         // Register redo command
-        context.registerCommand({
+        this.commandExtension.registerCommand({
             id: 'core/edit/redo',
             label: 'Redo',
             description: 'Redo the last undone action',
@@ -96,28 +80,41 @@ export class UndoExtension implements Extension {
             },
         });
 
-        // Register show undo tree command
-        context.registerCommand({
+        this.registerShowUndoTreeCommand();
+        this.registerShortcuts();
+        this.registerMenus();
+    }
+
+    private registerShowUndoTreeCommand(): void {
+        this.commandExtension.registerCommand({
             id: 'core/view/show-undo-tree',
             label: 'Show Undo Tree',
             description: 'Show the undo tree visualization',
             handler: () => {
-                dockLayoutHelper.activatePane('undo-tree-pane', 'Undo History', 'undo-tree', true);
+                const layoutHelper = this.dockExtension.getDockLayoutHelper();
+                if (layoutHelper) {
+                    layoutHelper.activatePane('undo-tree-pane', 'Undo History', 'undo-tree', true);
+                }
             },
         });
 
         // Register toggle undo history command
-        context.registerCommand({
+        this.commandExtension.registerCommand({
             id: 'core/view/toggle-undo-history',
             label: 'Toggle Undo History View',
             description: 'Show or hide the undo history panel',
             handler: () => {
-                dockLayoutHelper.activatePane('undo-tree-pane', 'Undo History', 'undo-tree', true);
+                const layoutHelper = this.dockExtension.getDockLayoutHelper();
+                if (layoutHelper) {
+                    layoutHelper.activatePane('undo-tree-pane', 'Undo History', 'undo-tree', true);
+                }
             },
         });
+    }
 
+    private registerShortcuts(): void {
         // Register shortcuts
-        context.registerShortcuts([
+        this.commandExtension.registerShortcuts([
             {
                 shortcut: 'Ctrl+Z',
                 commandId: 'core/edit/undo',
@@ -131,45 +128,27 @@ export class UndoExtension implements Extension {
                 commandId: 'core/edit/redo',
             },
         ]);
+    }
 
-        // Register menu items
-        context.registerMenu({
-            type: 'submenu',
-            label: 'Edit',
-            items: [
-                {
-                    type: 'item',
-                    label: 'Undo',
-                    action: 'core/edit/undo',
-                },
-                {
-                    type: 'item',
-                    label: 'Redo',
-                    action: 'core/edit/redo',
-                },
-            ],
-        });
+    private registerMenus(): void {
+        this.menuExtension.registerMenuItem('Edit/Undo', () => {
+             this.undoManager.undo();
+        }, { id: 'undo', commandId: 'core/edit/undo' });
 
-        context.registerMenu({
-            type: 'submenu',
-            label: 'View',
-            items: [
-                {
-                    type: 'item',
-                    label: 'Undo History',
-                    action: 'core/view/toggle-undo-history',
-                },
-            ],
-        });
+        this.menuExtension.registerMenuItem('Edit/Redo', () => {
+             this.undoManager.redo();
+        }, { id: 'redo', commandId: 'core/edit/redo' });
 
-        // Populate demo undo tree with sample data (for demonstration purposes)
-        // This can be removed once real undo operations are being used
-        this.populateDemoUndoTree();
+        // View/Undo History is handled by CoreUIExtension which toggles it properly
+        // But we can register a fallback or duplicate here if CoreUI is not active?
+        // CoreUIExtension already registers 'View/Undo History' (toggle-undo-history)
+        // So we might skip it here to avoid duplication or conflict.
 
-        // Return the API for other extensions to use
-        return {
-            getUndoManager: () => this.undoManager,
-        };
+        // However, this file has 'core/view/toggle-undo-history' command registered in `registerShowUndoTreeCommand`
+        // which just activates the pane. `CoreUIExtension` has `toggle-undo-history-enhanced` which toggles it.
+
+        // Let's remove the menu registration from here as it seems redundant/conflicting with CoreUI
+        // or just register it if valid.
     }
 
     /**

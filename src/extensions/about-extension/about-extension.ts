@@ -1,13 +1,16 @@
 /**
  * About Extension
- * 
+ *
  * Provides the about page with application information.
  * Demonstrates dependency on the settings extension.
  */
 
-import { Extension, ExtensionContext } from "../types.js";
+import { Extension } from "../types.js";
 import { AboutPane } from "./about-pane.js";
-import type { SettingsAPI } from "../settings-extension/settings-extension.js";
+import { SettingsExtension } from "../settings-extension/settings-extension.js";
+import { DockExtension } from "../dock-extension/dock-extension.js";
+import { CommandExtension } from "../command-extension/command-extension.js";
+import { MenuExtension } from "../menu-extension/menu-extension.js";
 
 // Ensure the custom element is registered
 if (!customElements.get('about-pane')) {
@@ -15,75 +18,62 @@ if (!customElements.get('about-pane')) {
 }
 
 export class AboutExtension implements Extension {
-    readonly metadata = {
+    static readonly metadata = {
         id: 'core/about',
         name: 'About Extension',
         description: 'Provides application information and about page',
-        dependencies: ['core/settings', 'core/dock'],
     };
+    static readonly dependencies = [SettingsExtension, DockExtension, CommandExtension, MenuExtension];
 
-    async activate(context: ExtensionContext): Promise<void> {
-        const dockAPI = context.dependencies.get('core/dock');
-        const dockLayoutHelper = dockAPI?.getDockLayoutHelper?.();
-        const dockManager = dockAPI?.getDockManager?.();
+    private settingsExtension: SettingsExtension;
+    private dockExtension: DockExtension;
+    private commandExtension: CommandExtension;
+    private menuExtension: MenuExtension;
 
-        if (!dockLayoutHelper || !dockManager) {
-            console.warn('About extension: DockLayoutHelper or DockManager not available');
-            return;
-        }
+    constructor(dependencies: Map<string, Extension>) {
+        this.settingsExtension = dependencies.get(SettingsExtension.metadata.id) as SettingsExtension;
+        this.dockExtension = dependencies.get(DockExtension.metadata.id) as DockExtension;
+        this.commandExtension = dependencies.get(CommandExtension.metadata.id) as CommandExtension;
+        this.menuExtension = dependencies.get(MenuExtension.metadata.id) as MenuExtension;
+    }
 
-        // Get the settings extension to register our settings
-        const settingsAPI = await context.getExtension<SettingsAPI>('core/settings');
-        if (settingsAPI) {
-            // Register a setting for the about page
-            settingsAPI.registerSetting({
-                path: 'About/Show Version Info',
-                description: 'Show detailed version information in the about page',
-                type: 'boolean',
-                defaultValue: true,
-            });
-        }
+    async activate(): Promise<void> {
+        const dockManager = this.dockExtension.getDockManager();
+        const layoutHelper = this.dockExtension.getDockLayoutHelper();
 
-        // Register the about page
-        context.registerPage({
-            id: 'about',
-            title: 'About',
-            icon: 'ℹ️',
-            factory: () => {
+        if (dockManager) {
+            dockManager.registerContent('about', () => {
                 const aboutPane = new AboutPane();
                 aboutPane.id = 'about-pane';
                 return aboutPane;
-            },
-        });
+            });
+        }
 
-        // Register content with dock manager
-        dockManager.registerContent('about', () => {
-            const aboutPane = new AboutPane();
-            aboutPane.id = 'about-pane';
-            return aboutPane;
+        // Register a setting for the about page
+        this.settingsExtension.registerSetting({
+            path: 'About/Show Version Info',
+            description: 'Show detailed version information in the about page',
+            type: 'boolean',
+            defaultValue: true,
         });
 
         // Register command to show about
-        context.registerCommand({
+        this.commandExtension.registerCommand({
             id: 'core/view/show-about',
             label: 'Show About',
             description: 'Show application information',
             handler: () => {
-                dockLayoutHelper.activatePane('about-pane', 'About', 'about', true);
+                if (layoutHelper) {
+                    layoutHelper.activatePane('about-pane', 'About', 'about', true);
+                }
             },
         });
 
         // Register menu item
-        context.registerMenu({
-            type: 'submenu',
-            label: 'Help',
-            items: [
-                {
-                    type: 'item',
-                    label: 'About',
-                    action: 'core/view/show-about',
-                },
-            ],
+        this.menuExtension.registerMenuItem('Help/About', () => {
+             this.commandExtension.executeCommand('core/view/show-about');
+        }, {
+             id: 'about',
         });
     }
 }

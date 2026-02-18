@@ -1,79 +1,82 @@
 /**
  * Core UI Extension
- * 
+ *
  * Manages UI coordination and view commands.
  * Handles netlist visibility and theme updates.
  */
 
-import { Extension, ExtensionContext } from "../types.js";
+import { Extension } from "../types.js";
+import { DockExtension } from "../dock-extension/dock-extension.js";
+import { CommandExtension } from "../command-extension/command-extension.js";
+import { MenuExtension } from "../menu-extension/menu-extension.js";
 
 // Setting paths
 const SETTING_NETLIST_VISIBLE = 'Interface/Netlist Visible';
 const SETTING_UNDO_HISTORY_VISIBLE = 'Interface/Undo History Visible';
 
 export class CoreUIExtension implements Extension {
-    readonly metadata = {
+    static readonly metadata = {
         id: 'core/ui',
         name: 'Core UI Extension',
         description: 'Manages UI coordination and view commands',
-        dependencies: ['core/dock'],
     };
+    static readonly dependencies = [DockExtension, CommandExtension, MenuExtension];
 
-    private context: ExtensionContext | null = null;
+    private dockExtension: DockExtension;
+    private commandExtension: CommandExtension;
+    private menuExtension: MenuExtension;
 
-    async activate(context: ExtensionContext): Promise<void> {
-        this.context = context;
+    constructor(dependencies: Map<string, Extension>) {
+        this.dockExtension = dependencies.get(DockExtension.metadata.id) as DockExtension;
+        this.commandExtension = dependencies.get(CommandExtension.metadata.id) as CommandExtension;
+        this.menuExtension = dependencies.get(MenuExtension.metadata.id) as MenuExtension;
+    }
 
+    async activate(): Promise<void> {
         // Register netlist toggle command
-        this.registerNetlistToggleCommand(context);
+        this.registerNetlistToggleCommand();
 
         // Register undo history toggle (enhanced version that also handles sidebar)
-        this.registerUndoHistoryToggleCommand(context);
+        this.registerUndoHistoryToggleCommand();
 
         // Register quit command (Tauri only)
-        this.registerQuitCommand(context);
+        this.registerQuitCommand();
     }
 
     /**
      * Register netlist toggle command
      */
-    private registerNetlistToggleCommand(context: ExtensionContext): void {
-        context.registerCommand({
+    private registerNetlistToggleCommand(): void {
+        this.commandExtension.registerCommand({
             id: 'core/view/toggle-netlist',
             label: 'Toggle Netlist View',
             description: 'Show or hide the netlist/hierarchy view',
             handler: () => this.toggleNetlist(),
         });
 
-        context.registerShortcut({
+        this.commandExtension.registerShortcut({
             shortcut: 'Ctrl+Shift+H',
             commandId: 'core/view/toggle-netlist',
         });
 
-        context.registerMenu({
-            type: 'submenu',
-            label: 'View',
-            items: [
-                {
-                    type: 'separator',
-                },
-                {
-                    type: 'item',
-                    label: 'Toggle Netlist',
-                    action: 'core/view/toggle-netlist',
-                    checked: true, // Default to checked
-                },
-            ],
+        this.menuExtension.registerMenuItem('View/-', undefined, { type: 'separator' });
+        this.menuExtension.registerMenuItem('View/Toggle Netlist', () => {
+             this.toggleNetlist();
+        }, {
+             type: 'checkbox',
+             checked: true,
+             id: 'toggle-netlist',
+             commandId: 'core/view/toggle-netlist'
         });
     }
 
     /**
      * Register enhanced undo history toggle command
      */
-    private registerUndoHistoryToggleCommand(context: ExtensionContext): void {
+    private registerUndoHistoryToggleCommand(): void {
         // Note: Basic undo history is already registered in UndoExtension
         // This adds the enhanced version that also handles sidebar visibility
-        context.registerCommand({
+        this.commandExtension.registerCommand({
             id: 'core/view/toggle-undo-history-enhanced',
             label: 'Toggle Undo History (Enhanced)',
             description: 'Toggle undo history visibility with sidebar management',
@@ -84,8 +87,8 @@ export class CoreUIExtension implements Extension {
     /**
      * Register quit command (Tauri only)
      */
-    private registerQuitCommand(context: ExtensionContext): void {
-        context.registerCommand({
+    private registerQuitCommand(): void {
+        this.commandExtension.registerCommand({
             id: 'core/file/quit',
             label: 'Quit',
             description: 'Quit the application',
@@ -99,26 +102,16 @@ export class CoreUIExtension implements Extension {
             },
         });
 
-        // Register shortcut (Ctrl+Q on Linux/Windows, Cmd+Q on Mac is handled by OS)
-        context.registerShortcut({
+        // Register shortcut
+        this.commandExtension.registerShortcut({
             shortcut: 'Ctrl+Q',
             commandId: 'core/file/quit',
         });
 
         // Register menu item
-        context.registerMenu({
-            type: 'submenu',
-            label: 'File',
-            items: [
-                {
-                    type: 'separator',
-                },
-                {
-                    type: 'item',
-                    label: 'Quit',
-                    action: 'core/file/quit',
-                },
-            ],
+        this.menuExtension.registerMenuItem('File/-', undefined, { type: 'separator' });
+        this.menuExtension.registerMenuItem('File/Quit', () => {
+             this.commandExtension.executeCommand('core/file/quit');
         });
     }
 
@@ -126,26 +119,13 @@ export class CoreUIExtension implements Extension {
      * Toggle the netlist view visibility
      */
     private async toggleNetlist(): Promise<void> {
-        if (!this.context) return;
+        const layoutHelper = this.dockExtension.getDockLayoutHelper();
+        if (!layoutHelper) return;
 
-        const dockAPI = this.context.dependencies.get('core/dock');
-        const dockManager = dockAPI?.getDockManager?.();
-        if (!dockManager) return;
+        const newVisibility = layoutHelper.toggleSidebarVisibility();
 
-        // Import DockLayoutHelper to access the sidebar toggle logic
-        const { DockLayoutHelper } = await import('../../components/dock-layout-helper.js');
-        const dockLayoutHelper = new DockLayoutHelper(dockManager);
-        
-        const newVisibility = dockLayoutHelper.toggleSidebarVisibility();
-
-        // Update the menu checkbox state - get menu bar from app-main shadow root
-        const appMain = document.querySelector('app-main');
-        if (appMain && appMain.shadowRoot) {
-            const menuBar = appMain.shadowRoot.querySelector('app-menu-bar');
-            if (menuBar && typeof (menuBar as any).updateMenuItemChecked === 'function') {
-                (menuBar as any).updateMenuItemChecked('toggle-netlist', newVisibility);
-            }
-        }
+        // Update the menu checkbox state
+        this.menuExtension.updateMenuItem('toggle-netlist', { checked: newVisibility });
 
         // Persist the setting
         try {
@@ -160,26 +140,13 @@ export class CoreUIExtension implements Extension {
      * Toggle the undo history pane visibility
      */
     private async toggleUndoHistory(): Promise<void> {
-        if (!this.context) return;
+        const layoutHelper = this.dockExtension.getDockLayoutHelper();
+        if (!layoutHelper) return;
 
-        const dockAPI = this.context.dependencies.get('core/dock');
-        const dockManager = dockAPI?.getDockManager?.();
-        if (!dockManager) return;
+        const newVisibility = layoutHelper.toggleUndoPaneVisibility();
 
-        // Import DockLayoutHelper to access the undo pane toggle logic
-        const { DockLayoutHelper } = await import('../../components/dock-layout-helper.js');
-        const dockLayoutHelper = new DockLayoutHelper(dockManager);
-        
-        const newVisibility = dockLayoutHelper.toggleUndoPaneVisibility();
-
-        // Update the menu checkbox state - get menu bar from app-main shadow root
-        const appMain = document.querySelector('app-main');
-        if (appMain && appMain.shadowRoot) {
-            const menuBar = appMain.shadowRoot.querySelector('app-menu-bar');
-            if (menuBar && typeof (menuBar as any).updateMenuItemChecked === 'function') {
-                (menuBar as any).updateMenuItemChecked('toggle-undo-history', newVisibility);
-            }
-        }
+        // Update the menu checkbox state
+        this.menuExtension.updateMenuItem('toggle-undo-history', { checked: newVisibility });
 
         // Persist the setting
         try {

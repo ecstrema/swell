@@ -1,6 +1,6 @@
 /**
  * Extension System Types
- * 
+ *
  * Core types for the extension-based architecture.
  * Extensions can register commands, menus, pages, settings, and themes.
  */
@@ -55,94 +55,41 @@ export interface ThemeRegistration {
 }
 
 /**
- * Extension context - provides APIs for extensions to interact with the app
+ * Extension interface - all extensions must implement this
  */
-export interface ExtensionContext {
+
+export interface Extension {
     /**
-     * Register a command that can be triggered by shortcuts or menus
+     * Called when the extension is activated
      */
-    registerCommand(command: Command): void;
+    activate(): void | Promise<void>;
 
     /**
-     * Register a keyboard shortcut binding
+     * Called when the extension is deactivated (optional)
      */
-    registerShortcut(binding: ShortcutBinding): void;
-
-    /**
-     * Register multiple keyboard shortcuts at once
-     */
-    registerShortcuts(bindings: ShortcutBinding[]): void;
-
-    /**
-     * Register a menu item or submenu
-     */
-    registerMenu(item: MenuItemConfig | SubmenuConfig): void;
-
-    /**
-     * Register a page/view that can be displayed in the app
-     */
-    registerPage(page: PageRegistration): void;
-
-    /**
-     * Register a setting
-     */
-    registerSetting(setting: SettingMetadata): void;
-
-    /**
-     * Register a color theme
-     */
-    registerTheme(theme: ThemeRegistration): void;
-
-    /**
-     * Get the extension's own metadata
-     */
-    getMetadata(): ExtensionMetadata;
-
-    /**
-     * Get an extension by ID, registering it if not already registered
-     * Returns the API provided by the extension's activate method
-     */
-    getExtension<T = any>(extensionId: ExtensionId): Promise<T | undefined>;
-
-    /**
-     * Get the command registry (for advanced use cases like command palette)
-     */
-    getCommandRegistry(): any;
-
-    /**
-     * Get the shortcut manager (for advanced use cases like command palette)
-     */
-    getShortcutManager(): any;
-
-    /**
-     * APIs from dependencies declared in extension metadata
-     * Maps dependency extension ID to its API
-     */
-    dependencies: Map<ExtensionId, any>;
+    deactivate?(): void | Promise<void>;
 }
 
 /**
- * Extension interface - all extensions must implement this
+ * Extension constructor interface
  */
-export interface Extension {
+export interface ExtensionConstructor {
     /**
-     * Extension metadata
+     * Extension metadata (id, name, description)
      */
     readonly metadata: ExtensionMetadata;
 
     /**
-     * Called when the extension is activated
-     * Extensions should register their commands, menus, pages, settings, and themes here
-     * Can return an API object that other extensions can access via context.getExtension()
+     * Dependencies as Constructors, so they can be recursively registered
      */
-    activate(context: ExtensionContext): void | Promise<void> | any | Promise<any>;
+    readonly dependencies?: ExtensionConstructor[];
 
     /**
-     * Called when the extension is deactivated (optional)
-     * Extensions should clean up any resources here
+     * Constructor receives dependencies map (ID -> Instance)
      */
-    deactivate?(): void | Promise<void>;
+    new(dependencies: Map<string, Extension>): Extension;
 }
+
 
 /**
  * Callback types for extension lifecycle events

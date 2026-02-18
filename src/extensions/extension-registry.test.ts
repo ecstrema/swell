@@ -1,276 +1,146 @@
 /**
  * Extension Registry Tests
- * 
+ *
  * Tests for extension dependencies and API mechanism
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { ExtensionRegistry } from './extension-registry.js';
-import { Extension, ExtensionContext } from './types.js';
-import { CommandRegistry } from '../shortcuts/command-registry.js';
-import { ShortcutManager } from '../shortcuts/shortcut-manager.js';
+import { Extension } from './types.js';
 
-describe('Extension Registry', () => {
-    let registry: ExtensionRegistry;
-    let commandRegistry: CommandRegistry;
-    let shortcutManager: ShortcutManager;
+describe('Extension Registry (New Architecture)', () => {
 
-    beforeEach(() => {
-        commandRegistry = new CommandRegistry();
-        shortcutManager = new ShortcutManager(commandRegistry);
-        registry = new ExtensionRegistry(commandRegistry, shortcutManager);
+    // Mock Extensions
+    class BaseExtension implements Extension {
+        static readonly metadata = {
+            id: 'test/base',
+            name: 'Base Extension',
+            description: 'Base dependency',
+        };
+
+        isActivated = false;
+
+        constructor(dependencies: Map<string, Extension>) {}
+
+        async activate(): Promise<void> {
+            this.isActivated = true;
+        }
+
+        getValue(): string {
+            return 'base-value';
+        }
+    }
+
+    class DependentExtension implements Extension {
+        static readonly metadata = {
+            id: 'test/dependent',
+            name: 'Dependent Extension',
+            description: 'Depends on base',
+        };
+
+        static readonly dependencies = [BaseExtension];
+
+        baseExtension: BaseExtension;
+        isActivated = false;
+
+        constructor(dependencies: Map<string, Extension>) {
+            this.baseExtension = dependencies.get(BaseExtension.metadata.id) as BaseExtension;
+        }
+
+        async activate(): Promise<void> {
+            this.isActivated = true;
+        }
+
+        getBaseValue(): string {
+            return this.baseExtension.getValue();
+        }
+    }
+
+    class DeepDependentExtension implements Extension {
+        static readonly metadata = {
+            id: 'test/deep',
+            name: 'Deep Dependent Extension',
+            description: 'Depends on dependent',
+        };
+
+        static readonly dependencies = [DependentExtension];
+
+        dependentExtension: DependentExtension;
+        isActivated = false;
+
+        constructor(dependencies: Map<string, Extension>) {
+            this.dependentExtension = dependencies.get(DependentExtension.metadata.id) as DependentExtension;
+        }
+
+        async activate(): Promise<void> {
+            this.isActivated = true;
+        }
+    }
+
+    it('should register and activate a single extension', async () => {
+        const registry = new ExtensionRegistry();
+        await registry.register(BaseExtension);
+
+        const extensions = registry.getExtensions();
+        expect(extensions.length).toBe(1);
+
+        const instance = extensions[0] as BaseExtension;
+        expect(instance).toBeInstanceOf(BaseExtension);
+        expect(instance.isActivated).toBe(true);
     });
 
-    describe('Extension Dependencies', () => {
-        it('should allow extension to request another extension via getExtension', async () => {
-            // Create a provider extension that exports an API
-            const providerExtension: Extension = {
-                metadata: {
-                    id: 'test/provider',
-                    name: 'Provider Extension',
-                },
-                activate: async (context: ExtensionContext) => {
-                    return {
-                        getValue: () => 'test-value',
-                    };
-                },
-            };
+    it('should resolve dependencies recursively', async () => {
+        const registry = new ExtensionRegistry();
+        // Registering dependent should trigger registration of Base
+        await registry.register(DependentExtension);
 
-            // Create a consumer extension that depends on the provider
-            let receivedAPI: any = null;
-            const consumerExtension: Extension = {
-                metadata: {
-                    id: 'test/consumer',
-                    name: 'Consumer Extension',
-                    dependencies: ['test/provider'],
-                },
-                activate: async (context: ExtensionContext) => {
-                    receivedAPI = await context.getExtension('test/provider');
-                },
-            };
+        const extensions = registry.getExtensions();
+        // Should have Base and Dependent
+        expect(extensions.length).toBe(2);
 
-            // Register provider first
-            await registry.register(providerExtension);
-            
-            // Register consumer
-            await registry.register(consumerExtension);
+        const baseInstance = extensions.find(e => (e.constructor as any).metadata.id === BaseExtension.metadata.id) as BaseExtension;
+        const dependentInstance = extensions.find(e => (e.constructor as any).metadata.id === DependentExtension.metadata.id) as DependentExtension;
 
-            // Check that consumer received the API
-            expect(receivedAPI).toBeDefined();
-            expect(receivedAPI.getValue).toBeDefined();
-            expect(receivedAPI.getValue()).toBe('test-value');
-        });
+        expect(baseInstance).toBeDefined();
+        expect(dependentInstance).toBeDefined();
 
-        it('should return undefined for extension that does not export an API', async () => {
-            const extension: Extension = {
-                metadata: {
-                    id: 'test/no-api',
-                    name: 'No API Extension',
-                },
-                activate: async (context: ExtensionContext) => {
-                    // No return value = no API
-                },
-            };
+        expect(baseInstance.isActivated).toBe(true);
+        expect(dependentInstance.isActivated).toBe(true);
 
-            await registry.register(extension);
-            const api = await registry.getExtension('test/no-api');
-            
-            expect(api).toBeUndefined();
-        });
-
-        it('should return undefined for non-existent extension', async () => {
-            const api = await registry.getExtension('test/does-not-exist');
-            expect(api).toBeUndefined();
-        });
-
-        it('should allow extensions to export complex APIs', async () => {
-            interface TestAPI {
-                doSomething(): string;
-                count: number;
-                nested: {
-                    getValue(): number;
-                };
-            }
-
-            const extension: Extension = {
-                metadata: {
-                    id: 'test/complex-api',
-                    name: 'Complex API Extension',
-                },
-                activate: async (context: ExtensionContext): Promise<TestAPI> => {
-                    return {
-                        doSomething: () => 'done',
-                        count: 42,
-                        nested: {
-                            getValue: () => 100,
-                        },
-                    };
-                },
-            };
-
-            await registry.register(extension);
-            const api = await registry.getExtension<TestAPI>('test/complex-api');
-
-            expect(api).toBeDefined();
-            expect(api!.doSomething()).toBe('done');
-            expect(api!.count).toBe(42);
-            expect(api!.nested.getValue()).toBe(100);
-        });
-
-        it('should handle multiple extensions requesting the same dependency', async () => {
-            const providerExtension: Extension = {
-                metadata: {
-                    id: 'test/shared-provider',
-                    name: 'Shared Provider',
-                },
-                activate: async () => {
-                    return { shared: 'value' };
-                },
-            };
-
-            let api1: any = null;
-            let api2: any = null;
-
-            const consumer1: Extension = {
-                metadata: {
-                    id: 'test/consumer1',
-                    name: 'Consumer 1',
-                },
-                activate: async (context: ExtensionContext) => {
-                    api1 = await context.getExtension('test/shared-provider');
-                },
-            };
-
-            const consumer2: Extension = {
-                metadata: {
-                    id: 'test/consumer2',
-                    name: 'Consumer 2',
-                },
-                activate: async (context: ExtensionContext) => {
-                    api2 = await context.getExtension('test/shared-provider');
-                },
-            };
-
-            await registry.register(providerExtension);
-            await registry.register(consumer1);
-            await registry.register(consumer2);
-
-            expect(api1).toBeDefined();
-            expect(api2).toBeDefined();
-            expect(api1.shared).toBe('value');
-            expect(api2.shared).toBe('value');
-            // Both should receive the same API instance
-            expect(api1).toBe(api2);
-        });
-
-        it('should automatically register dependencies when registering an extension', async () => {
-            // Create a provider extension
-            const providerExtension: Extension = {
-                metadata: {
-                    id: 'test/auto-provider',
-                    name: 'Auto Provider',
-                },
-                activate: async () => {
-                    return { provided: 'data' };
-                },
-            };
-
-            // Create a consumer that depends on provider
-            let consumerActivated = false;
-            let receivedAPI: any = null;
-            const consumerExtension: Extension = {
-                metadata: {
-                    id: 'test/auto-consumer',
-                    name: 'Auto Consumer',
-                    dependencies: ['test/auto-provider'],
-                },
-                activate: async (context: ExtensionContext) => {
-                    consumerActivated = true;
-                    receivedAPI = await context.getExtension('test/auto-provider');
-                },
-            };
-
-            // Register factory for the provider
-            registry.registerFactory('test/auto-provider', () => providerExtension);
-
-            // Register only the consumer - provider should be auto-registered
-            await registry.register(consumerExtension);
-
-            // Both should be registered
-            const extensions = registry.getExtensions();
-            expect(extensions).toHaveLength(2);
-            expect(extensions.map(e => e.metadata.id)).toContain('test/auto-provider');
-            expect(extensions.map(e => e.metadata.id)).toContain('test/auto-consumer');
-
-            // Consumer should have been activated and received the API
-            expect(consumerActivated).toBe(true);
-            expect(receivedAPI).toBeDefined();
-            expect(receivedAPI.provided).toBe('data');
-        });
+        // Check injection
+        expect(dependentInstance.baseExtension).toBe(baseInstance);
+        expect(dependentInstance.getBaseValue()).toBe('base-value');
     });
 
-    describe('Extension Registration', () => {
-        it('should register an extension', async () => {
-            const extension: Extension = {
-                metadata: {
-                    id: 'test/simple',
-                    name: 'Simple Extension',
-                },
-                activate: async () => {},
-            };
+    it('should handle deep dependency chains', async () => {
+        const registry = new ExtensionRegistry();
+        await registry.register(DeepDependentExtension);
 
-            await registry.register(extension);
-            const extensions = registry.getExtensions();
-            
-            expect(extensions).toHaveLength(1);
-            expect(extensions[0].metadata.id).toBe('test/simple');
-        });
+        const extensions = registry.getExtensions();
+        expect(extensions.length).toBe(3); // Base, Dependent, Deep
 
-        it('should warn when registering duplicate extension', async () => {
-            const extension1: Extension = {
-                metadata: {
-                    id: 'test/duplicate',
-                    name: 'Duplicate Extension',
-                },
-                activate: async () => {},
-            };
+        const deepInstance = extensions.find(e => (e.constructor as any).metadata.id === DeepDependentExtension.metadata.id) as DeepDependentExtension;
+        const dependentInstance = extensions.find(e => (e.constructor as any).metadata.id === DependentExtension.metadata.id) as DependentExtension;
+        const baseInstance = extensions.find(e => (e.constructor as any).metadata.id === BaseExtension.metadata.id) as BaseExtension;
 
-            const extension2: Extension = {
-                metadata: {
-                    id: 'test/duplicate',
-                    name: 'Duplicate Extension 2',
-                },
-                activate: async () => {},
-            };
-
-            await registry.register(extension1);
-            await registry.register(extension2);
-
-            const extensions = registry.getExtensions();
-            expect(extensions).toHaveLength(1);
-            expect(extensions[0].metadata.name).toBe('Duplicate Extension');
-        });
+        expect(deepInstance.dependentExtension).toBe(dependentInstance);
+        expect(dependentInstance.baseExtension).toBe(baseInstance);
     });
 
-    describe('Extension Context', () => {
-        it('should provide getMetadata to extension', async () => {
-            let receivedMetadata: any = null;
+    it('should not re-instantiate existing extensions', async () => {
+        const registry = new ExtensionRegistry();
 
-            const extension: Extension = {
-                metadata: {
-                    id: 'test/metadata',
-                    name: 'Metadata Test',
-                },
-                activate: async (context: ExtensionContext) => {
-                    receivedMetadata = context.getMetadata();
-                },
-            };
+        // First register base
+        await registry.register(BaseExtension);
+        const firstBaseInstance = registry.getExtensions()[0];
 
-            await registry.register(extension);
+        // Then register dependent (which depends on Base)
+        await registry.register(DependentExtension);
 
-            expect(receivedMetadata).toBeDefined();
-            expect(receivedMetadata.id).toBe('test/metadata');
-            expect(receivedMetadata.name).toBe('Metadata Test');
-        });
+        const extensions = registry.getExtensions();
+        const baseInstance = extensions.find(e => (e.constructor as any).metadata.id === BaseExtension.metadata.id);
+
+        // Should be the exact same instance
+        expect(baseInstance).toBe(firstBaseInstance);
     });
 });

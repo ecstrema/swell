@@ -1,5 +1,4 @@
 import { isTauri } from "../../backend/index.js";
-import { themeManager } from "../../theme/index.js";
 import { createMenu, MenuConfig, MenuItemConfig, SubmenuConfig } from "../../menu-api/index.js";
 import { css } from "../../utils/css-utils.js";
 import menuBarCss from "./menu-bar.css?inline";
@@ -9,19 +8,9 @@ import { ShortcutManager } from "../../shortcuts/index.js";
 export class MenuBar extends HTMLElement {
   private menuConfig: MenuConfig | null = null;
   private shortcutManager: ShortcutManager | null = null;
-  
+
   // Map menu item IDs to command IDs for shortcut lookup
-  private readonly menuItemToCommandIdMap: Record<string, string> = {
-      'open': 'file-open',
-      'quit': 'file-quit',
-      'undo': 'edit-undo',
-      'redo': 'edit-redo',
-      'zoom-in': 'view-zoom-in',
-      'zoom-out': 'view-zoom-out',
-      'zoom-fit': 'view-zoom-fit',
-      'toggle-netlist': 'view-toggle-netlist',
-      'toggle-undo-history': 'view-toggle-undo-history',
-  };
+  private menuItemToCommandIdMap: Record<string, string> = {};
 
   constructor() {
     super();
@@ -30,237 +19,42 @@ export class MenuBar extends HTMLElement {
   }
 
   async connectedCallback() {
-      await this.initMenu();
-
-      if (isTauri) {
-          this.style.display = 'none';
-      } else {
-          this.render();
+      // Wait for configuration via setMenuConfig
+      if (this.menuConfig) {
+        if (isTauri) {
+            this.style.display = 'none';
+        } else {
+            this.render();
+        }
       }
   }
 
-  async initMenu() {
-    try {
-        // Build file menu items conditionally
-        const fileMenuItems = [
-            {
-                id: 'open',
-                text: 'Open File...',
-                action: () => {
-                    this.dispatchEvent(new CustomEvent('file-open-request', {
-                        bubbles: true,
-                        composed: true
-                    }));
-                }
-            },
-            {
-                id: 'open-example',
-                text: 'Open Example...',
-                action: () => {
-                    this.dispatchEvent(new CustomEvent('open-example-request', {
-                        bubbles: true,
-                        composed: true
-                    }));
-                }
-            },
-            {
-                type: 'separator' as const
-            },
-            {
-                id: 'settings',
-                text: 'Settings...',
-                action: () => {
-                    this.dispatchEvent(new CustomEvent('settings-open-request', {
-                        bubbles: true,
-                        composed: true
-                    }));
-                }
-            }
-        ];
+  /**
+   * Set the full menu configuration and re-render
+   */
+  async setMenuConfig(config: MenuConfig) {
+      this.menuConfig = config;
+      try {
+          await createMenu(this.menuConfig);
+      } catch (e) {
+          console.error("Failed to sync menu:", e);
+      }
 
-        // Only add quit option for Tauri (not for web)
-        if (isTauri) {
-            fileMenuItems.push(
-                {
-                    type: 'separator' as const
-                },
-                {
-                    id: 'quit',
-                    text: 'Quit',
-                    action: async () => {
-                        const { getCurrentWindow } = await import('@tauri-apps/api/window');
-                        await getCurrentWindow().close();
-                    }
-                }
-            );
-        }
-
-        // Define menu structure using unified API
-        this.menuConfig = {
-            items: [
-                {
-                    text: 'File',
-                    items: fileMenuItems
-                },
-                {
-                    text: 'Edit',
-                    items: [
-                        {
-                            id: 'undo',
-                            text: 'Undo',
-                            action: () => {
-                                this.dispatchEvent(new CustomEvent('menu-action', {
-                                    bubbles: true,
-                                    composed: true,
-                                    detail: 'edit-undo'
-                                }));
-                            }
-                        },
-                        {
-                            id: 'redo',
-                            text: 'Redo',
-                            action: () => {
-                                this.dispatchEvent(new CustomEvent('menu-action', {
-                                    bubbles: true,
-                                    composed: true,
-                                    detail: 'edit-redo'
-                                }));
-                            }
-                        }
-                    ]
-                },
-                {
-                    text: 'View',
-                    items: [
-                        {
-                            text: 'Zoom',
-                            items: [
-                                {
-                                    id: 'zoom-in',
-                                    text: 'Zoom In',
-                                    action: () => {
-                                        this.dispatchEvent(new CustomEvent('menu-action', {
-                                            bubbles: true,
-                                            composed: true,
-                                            detail: 'view-zoom-in'
-                                        }));
-                                    }
-                                },
-                                {
-                                    id: 'zoom-out',
-                                    text: 'Zoom Out',
-                                    action: () => {
-                                        this.dispatchEvent(new CustomEvent('menu-action', {
-                                            bubbles: true,
-                                            composed: true,
-                                            detail: 'view-zoom-out'
-                                        }));
-                                    }
-                                },
-                                {
-                                    id: 'zoom-fit',
-                                    text: 'Zoom to Fit',
-                                    action: () => {
-                                        this.dispatchEvent(new CustomEvent('menu-action', {
-                                            bubbles: true,
-                                            composed: true,
-                                            detail: 'view-zoom-fit'
-                                        }));
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            type: 'separator' as const
-                        },
-                        {
-                            text: 'Theme',
-                            items: [
-                                {
-                                    id: 'theme-light',
-                                    text: 'Light',
-                                    action: () => {
-                                        themeManager.setTheme('light');
-                                    }
-                                },
-                                {
-                                    id: 'theme-dark',
-                                    text: 'Dark',
-                                    action: () => {
-                                        themeManager.setTheme('dark');
-                                    }
-                                },
-                                {
-                                    id: 'theme-auto',
-                                    text: 'Auto',
-                                    action: () => {
-                                        themeManager.setTheme('auto');
-                                    }
-                                }
-                            ]
-                        },
-                        {
-                            type: 'separator' as const
-                        },
-                        {
-                            text: 'Panes',
-                            items: [
-                                {
-                                    id: 'toggle-netlist',
-                                    text: 'Netlist',
-                                    type: 'checkbox' as const,
-                                    // Initial state - will be updated dynamically when files are loaded
-                                    checked: true,
-                                    action: () => {
-                                        this.dispatchEvent(new CustomEvent('menu-action', {
-                                            bubbles: true,
-                                            composed: true,
-                                            detail: 'view-toggle-netlist'
-                                        }));
-                                    }
-                                },
-                                {
-                                    id: 'toggle-undo-history',
-                                    text: 'Undo History',
-                                    type: 'checkbox' as const,
-                                    // Initial state - will be updated dynamically
-                                    checked: false,
-                                    action: () => {
-                                        this.dispatchEvent(new CustomEvent('menu-action', {
-                                            bubbles: true,
-                                            composed: true,
-                                            detail: 'view-toggle-undo-history'
-                                        }));
-                                    }
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    text: 'Help',
-                    items: [
-                        {
-                            id: 'about',
-                            text: 'About',
-                            action: () => {
-                                this.dispatchEvent(new CustomEvent('about-open-request', {
-                                    bubbles: true,
-                                    composed: true
-                                }));
-                            }
-                        }
-                    ]
-                }
-            ]
-        };
-
-        // Create menu using unified API (handles both Tauri and web)
-        await createMenu(this.menuConfig);
-    } catch (e) {
-        console.error("Failed to init menu", e);
-    }
+      if (!isTauri) {
+          this.render();
+          this.style.display = 'block';
+      } else {
+          this.style.display = 'none';
+      }
   }
+
+  /**
+   * Set all command mappings at once
+   */
+  setCommandMappings(mappings: Record<string, string>) {
+      this.menuItemToCommandIdMap = { ...mappings };
+  }
+
 
   /**
    * Set the shortcut manager to display shortcuts in menu items

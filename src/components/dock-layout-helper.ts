@@ -1,5 +1,5 @@
-import { DockManager } from "./docking/dock-manager.js";
-import { DockLayout, DockStack, DockNode } from "./docking/types.js";
+import { DockManager } from "../extensions/dock-extension/dock-manager.js";
+import { DockLayout, DockStack, DockNode } from "../extensions/dock-extension/types.js";
 
 // Layout constants
 const SIDEBAR_DEFAULT_WEIGHT = 20;
@@ -93,7 +93,7 @@ export class DockLayoutHelper {
         }
 
         // Just render - don't cleanup, as that might remove the main stack
-        // before the sidebar is hidden. The sidebar visibility update will 
+        // before the sidebar is hidden. The sidebar visibility update will
         // handle rendering after the final layout state is determined.
         this.dockManager.render();
     }
@@ -320,14 +320,14 @@ export class DockLayoutHelper {
             }
             return null;
         }
-        
+
         if (node.type === 'box') {
             for (const child of node.children) {
                 const result = this.findStackContainingPane(child, paneId);
                 if (result) return result;
             }
         }
-        
+
         return null;
     }
 
@@ -341,10 +341,10 @@ export class DockLayoutHelper {
 
         // Find and remove pane from all stacks
         this.removePaneFromNode(layout.root, paneId);
-        
+
         // Clean up empty stacks and redistribute their space
         const didCleanup = this.dockManager.cleanupEmptyStacks();
-        
+
         // If cleanup didn't happen, trigger re-render to show placeholder
         if (!didCleanup) {
             this.dockManager.layout = layout;

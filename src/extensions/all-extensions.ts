@@ -1,11 +1,11 @@
 /**
  * All Extensions Registry
- * 
+ *
  * Central place to import and list all default extensions.
  * App-main will only need to import this and register each extension.
  */
 
-import { Extension } from "./types.js";
+import { ExtensionConstructor } from "./types.js";
 import { MenuExtension } from "./menu-extension/index.js";
 import { DockExtension } from "./dock-extension/index.js";
 import { SettingsExtension } from "./settings-extension/index.js";
@@ -19,16 +19,16 @@ import { CommandPaletteExtension } from "./command-palette-extension/command-pal
 /**
  * Get all default extensions that should be registered on startup
  */
-export function getAllExtensions(): Extension[] {
+export function getAllExtensions(): ExtensionConstructor[] {
     return [
-        new MenuExtension(),
-        new DockExtension(),
-        new CommandPaletteExtension(),
-        new SettingsExtension(),
-        new ShortcutEditorExtension(),
-        new WaveformFileExtension(),
-        new AboutExtension(),
-        new UndoExtension(),
-        new CoreUIExtension(),
-    ];
+        MenuExtension,
+        DockExtension,
+        CommandPaletteExtension,
+        SettingsExtension,
+        ShortcutEditorExtension,
+        WaveformFileExtension,
+        AboutExtension,
+        UndoExtension,
+        CoreUIExtension,
+    ] as unknown as ExtensionConstructor[];
 }

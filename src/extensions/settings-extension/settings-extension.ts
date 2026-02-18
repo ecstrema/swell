@@ -1,13 +1,16 @@
 /**
  * Settings Extension
- * 
+ *
  * Provides the settings page and commands to show/hide it.
  * Contains the settings register and exports an API for other extensions to use.
  */
 
-import { Extension, ExtensionContext } from "../types.js";
+import { Extension } from "../types.js";
 import { SettingsPage } from "./settings-page.js";
 import { settingsRegister, SettingMetadata } from "./settings-register.js";
+import { DockExtension } from "../dock-extension/dock-extension.js";
+import { CommandExtension } from "../command-extension/command-extension.js";
+import { MenuExtension } from "../menu-extension/menu-extension.js";
 
 // Re-export types and functions that external code needs
 export type { SettingMetadata, SettingValue } from "./settings-register.js";
@@ -19,88 +22,65 @@ if (!customElements.get('settings-page')) {
     customElements.define('settings-page', SettingsPage);
 }
 
-/**
- * API provided by the settings extension
- */
-export interface SettingsAPI {
-    /**
-     * Register a new setting
-     */
-    registerSetting(setting: SettingMetadata): void;
-}
-
 export class SettingsExtension implements Extension {
-    readonly metadata = {
+    static readonly metadata = {
         id: 'core/settings',
         name: 'Settings Extension',
         description: 'Provides settings page and configuration interface',
-        dependencies: ['core/dock'],
     };
+    static readonly dependencies = [DockExtension, CommandExtension, MenuExtension];
 
-    async activate(context: ExtensionContext): Promise<SettingsAPI> {
-        const dockAPI = context.dependencies.get('core/dock');
-        const dockLayoutHelper = dockAPI?.getDockLayoutHelper?.();
-        const dockManager = dockAPI?.getDockManager?.();
+    private dockExtension: DockExtension;
+    private commandExtension: CommandExtension;
+    private menuExtension: MenuExtension;
+    private settingsPage: SettingsPage | null = null;
 
-        if (!dockLayoutHelper || !dockManager) {
-            console.warn('Settings extension: DockLayoutHelper or DockManager not available');
-            // Still return API even if UI can't be registered
-            return {
-                registerSetting: (setting: SettingMetadata) => settingsRegister.register(setting),
-            };
-        }
+    constructor(dependencies: Map<string, Extension>) {
+        this.dockExtension = dependencies.get(DockExtension.metadata.id) as DockExtension;
+        this.commandExtension = dependencies.get(CommandExtension.metadata.id) as CommandExtension;
+        this.menuExtension = dependencies.get(MenuExtension.metadata.id) as MenuExtension;
+    }
 
-        // Register the settings page
-        context.registerPage({
-            id: 'settings',
-            title: 'Settings',
-            icon: '⚙️',
-            factory: () => {
-                const settingsPage = new SettingsPage();
-                settingsPage.id = 'settings-panel';
-                return settingsPage;
-            },
+    async activate(): Promise<void> {
+        this.registerSettingsCommand();
+        this.registerSettingsMenu();
+    }
+
+    /**
+     * Register a new setting
+     */
+    registerSetting(setting: SettingMetadata): void {
+        settingsRegister.register(setting);
+    }
+
+    private registerSettingsCommand(): void {
+        this.commandExtension.registerCommand({
+            id: 'core/settings/open',
+            label: 'Open Settings',
+            description: 'Open the application settings',
+            handler: () => this.openSettings(),
         });
 
-        // Register content with dock manager
-        dockManager.registerContent('settings', () => {
-            const settingsPage = new SettingsPage();
-            settingsPage.id = 'settings-panel';
-            return settingsPage;
-        });
-
-        // Register command to show settings
-        context.registerCommand({
-            id: 'core/view/show-settings',
-            label: 'Show Settings',
-            description: 'Open the settings page',
-            handler: () => {
-                dockLayoutHelper.activatePane('settings-pane', 'Settings', 'settings', true);
-            },
-        });
-
-        // Register shortcut to show settings
-        context.registerShortcut({
+        this.commandExtension.registerShortcut({
             shortcut: 'Ctrl+,',
-            commandId: 'core/view/show-settings',
+            commandId: 'core/settings/open',
         });
+    }
 
-        // Register menu item
-        context.registerMenu({
-            type: 'submenu',
-            label: 'View',
-            items: [
-                {
-                    type: 'item',
-                    label: 'Settings',
-                    action: 'core/view/show-settings',
-                },
-            ],
+    private registerSettingsMenu(): void {
+        this.menuExtension.registerMenuItem('File/-', undefined, { type: 'separator' });
+        this.menuExtension.registerMenuItem('File/Settings...', () => {
+             this.commandExtension.executeCommand('core/settings/open');
+        }, {
+             id: 'settings',
         });
+    }
 
-        // Return the API for other extensions to use
-        return {
-            registerSetting: (setting: SettingMetadata) => settingsRegister.register(setting),
-        };
+    private openSettings(): void {
+        const layoutHelper = this.dockExtension.getDockLayoutHelper();
+        if (layoutHelper) {
+             layoutHelper.activatePane('settings-panel', 'Settings', 'settings', true);
+        }
     }
 }
+

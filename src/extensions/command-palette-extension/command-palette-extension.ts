@@ -1,11 +1,12 @@
 /**
  * Command Palette Extension
- * 
+ *
  * Provides the command palette for searching and executing commands.
  */
 
-import { Extension, ExtensionContext } from "../types.js";
+import { Extension } from "../types.js";
 import { CommandPalette } from "../../components/command/command-palette.js";
+import { CommandExtension } from "../command-extension/command-extension.js";
 
 /**
  * API provided by the command palette extension
@@ -18,26 +19,32 @@ export interface CommandPaletteAPI {
 }
 
 export class CommandPaletteExtension implements Extension {
-    readonly metadata = {
+    static readonly metadata = {
         id: 'core/command-palette',
         name: 'Command Palette Extension',
         description: 'Provides command palette for searching and executing commands',
     };
+    static readonly dependencies = [CommandExtension];
 
+    private commandExtension: CommandExtension;
     private commandPalette: CommandPalette | null = null;
 
-    async activate(context: ExtensionContext): Promise<CommandPaletteAPI> {
+    constructor(dependencies: Map<string, Extension>) {
+        this.commandExtension = dependencies.get(CommandExtension.metadata.id) as CommandExtension;
+    }
+
+    async activate(): Promise<void> {
         // Create command palette with access to command registry and shortcut manager
         this.commandPalette = new CommandPalette(
-            context.getCommandRegistry(),
-            context.getShortcutManager()
+            this.commandExtension.getCommandRegistry(),
+            this.commandExtension.getShortcutManager()
         );
-        
+
         // Append to body
         document.body.appendChild(this.commandPalette);
 
         // Register command to toggle the palette
-        context.registerCommand({
+        this.commandExtension.registerCommand({
             id: 'core/command-palette/toggle',
             label: 'Command Palette',
             description: 'Open the command palette to search and execute commands',
@@ -45,14 +52,14 @@ export class CommandPaletteExtension implements Extension {
         });
 
         // Register keyboard shortcut
-        context.registerShortcut({
+        this.commandExtension.registerShortcut({
             shortcut: 'Ctrl+Shift+P',
             commandId: 'core/command-palette/toggle',
         });
+    }
 
-        return {
-            getCommandPalette: () => this.commandPalette,
-        };
+    getCommandPalette(): CommandPalette | null {
+        return this.commandPalette;
     }
 
     private togglePalette(): void {

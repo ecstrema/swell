@@ -78,6 +78,13 @@ export class DockManager extends HTMLElement {
 
   connectedCallback() {
     this.render();
+
+    // Listen for pane-close events from dock-stack components
+    this.addEventListener("pane-close", ((e: CustomEvent) => {
+      const { id } = e.detail;
+      this.handlePaneClose(id);
+    }) as EventListener);
+
     this.addEventListener("dragover", (e) => {
       // Only prevent default for tab or dock drags (check types if available)
       const hasTypes = e.dataTransfer?.types !== undefined;
@@ -520,6 +527,42 @@ export class DockManager extends HTMLElement {
   private shouldCleanupEmptyStacks(): boolean {
     if (!this._layout) return false;
     return this.countStacks(this._layout.root) > 1;
+  }
+
+  /**
+   * Handle pane-close event from dock-stack components
+   */
+  private handlePaneClose(paneId: string): void {
+    if (!this._layout) return;
+
+    // Find and remove the pane from its stack
+    this.removePaneFromNode(this._layout.root, paneId);
+
+    // Clean up empty stacks and redistribute their space
+    const didCleanup = this.cleanupEmptyStacks();
+
+    // If cleanup didn't happen, trigger re-render to update UI
+    if (!didCleanup) {
+      this.render();
+    }
+
+    this.notifyLayoutChange();
+  }
+
+  /**
+   * Recursively remove a pane from a dock node and its children
+   */
+  private removePaneFromNode(node: DockNode, paneId: string): void {
+    if (node.type === 'stack') {
+      node.children = node.children.filter(p => p.id !== paneId);
+      if (node.activeId === paneId) {
+        node.activeId = node.children.length > 0 ? node.children[0].id : null;
+      }
+    } else if (node.type === 'box') {
+      for (const child of node.children) {
+        this.removePaneFromNode(child, paneId);
+      }
+    }
   }
 
   /**

@@ -5,6 +5,7 @@ import { DockManager } from "../../extensions/dock-extension/dock-manager.js";
 import { MenuBar } from "../../extensions/menu-extension/menu-bar.js";
 import { MenuExtension } from "../../extensions/menu-extension/menu-extension.js";
 import { ExtensionRegistry } from "../../extensions/extension-registry.js";
+import { DockExtension } from "../../extensions/dock-extension/dock-extension.js";
 
 export class AppMain extends HTMLElement {
 
@@ -29,7 +30,7 @@ export class AppMain extends HTMLElement {
 
         // Initialize the dock system
         const dockManagerElement = this.shadowRoot!.getElementById('main-dock') as DockManager;
-        const dockExtension = await extensionRegistry.getExtension<any>('core/dock');
+        const dockExtension = await extensionRegistry.getExtension<DockExtension>('core/dock');
         if (dockExtension && typeof dockExtension.initializeDockSystem === 'function') {
             dockExtension.initializeDockSystem(dockManagerElement);
         } else {

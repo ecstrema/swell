@@ -4,6 +4,8 @@ export type SettingValue = string | number | boolean;
 
 export type SettingType = 'enum' | 'boolean' | 'string' | 'number';
 
+export type SettingChangeCallback = (value: SettingValue) => void;
+
 export interface EnumOption {
     value: string;
     label: string;
@@ -30,6 +32,7 @@ export interface SettingMetadata {
  */
 export class SettingsRegister {
     private settings: Map<string, SettingMetadata> = new Map();
+    private callbacks: Map<string, Set<SettingChangeCallback>> = new Map();
 
     /**
      * Register a setting with its metadata
@@ -64,7 +67,7 @@ export class SettingsRegister {
      */
     getGrouped(): Map<string, SettingMetadata[]> {
         const grouped = new Map<string, SettingMetadata[]>();
-        
+
         for (const setting of this.settings.values()) {
             const category = setting.path.split('/')[0];
             if (!grouped.has(category)) {
@@ -72,8 +75,39 @@ export class SettingsRegister {
             }
             grouped.get(category)!.push(setting);
         }
-        
+
         return grouped;
+    }
+
+    /**
+     * Register a callback to be invoked when a setting changes
+     * @param path The setting path to watch
+     * @param callback The callback to invoke when the setting changes
+     * @returns A function to unregister the callback
+     */
+    onChange(path: string, callback: SettingChangeCallback): () => void {
+        if (!this.callbacks.has(path)) {
+            this.callbacks.set(path, new Set());
+        }
+        this.callbacks.get(path)!.add(callback);
+
+        // Return unsubscribe function
+        return () => {
+            this.callbacks.get(path)?.delete(callback);
+        };
+    }
+
+    /**
+     * Trigger all callbacks registered for a setting path
+     * Called when a setting value changes
+     */
+    triggerCallbacks(path: string, value: SettingValue): void {
+        const callbacks = this.callbacks.get(path);
+        if (callbacks) {
+            for (const callback of callbacks) {
+                callback(value);
+            }
+        }
     }
 }
 

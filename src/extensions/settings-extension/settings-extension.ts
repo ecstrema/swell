@@ -13,7 +13,7 @@ import { CommandExtension } from "../command-extension/command-extension.js";
 import { MenuExtension } from "../menu-extension/menu-extension.js";
 
 // Re-export types and functions that external code needs
-export type { SettingMetadata, SettingValue } from "./settings-register.js";
+export type { SettingMetadata, SettingValue, SettingChangeCallback } from "./settings-register.js";
 export { settingsRegister } from "./settings-register.js";
 import { getSetting as getSettingStorage, setSetting as setSettingStorage } from "./settings-storage.js";
 export { getSetting, setSetting } from "./settings-storage.js";
@@ -63,6 +63,16 @@ export class SettingsExtension implements Extension {
      */
     async setSetting(path: string, value: any): Promise<void> {
         return setSettingStorage(path, value);
+    }
+
+    /**
+     * Register a callback to be invoked when a setting changes
+     * @param path The setting path to watch
+     * @param callback The callback to invoke when the setting changes
+     * @returns A function to unregister the callback
+     */
+    onChange(path: string, callback: (value: any) => void): () => void {
+        return settingsRegister.onChange(path, callback);
     }
 
     private registerSettingsCommand(): void {

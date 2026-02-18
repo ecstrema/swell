@@ -43,6 +43,8 @@ export async function setSetting(path: string, value: SettingValue): Promise<voi
     if (isTauri) {
         try {
             await invoke('set_setting', { path, value: JSON.stringify(value) });
+            // Trigger callbacks after successful save
+            settingsRegister.triggerCallbacks(path, value);
         } catch (e) {
             console.error(`Failed to set setting ${path}:`, e);
             throw e;
@@ -54,6 +56,8 @@ export async function setSetting(path: string, value: SettingValue): Promise<voi
             const settings = settingsJson ? JSON.parse(settingsJson) : {};
             setNestedValue(settings, path, value);
             localStorage.setItem(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+            // Trigger callbacks after successful save
+            settingsRegister.triggerCallbacks(path, value);
         } catch (e) {
             console.error(`Failed to set setting ${path}:`, e);
             throw e;

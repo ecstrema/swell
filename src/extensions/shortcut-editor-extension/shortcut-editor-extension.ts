@@ -49,18 +49,15 @@ export class ShortcutEditorExtension implements Extension {
         });
 
         // Register the keyboard shortcuts editor as content
-        const dockManager = this.dockExtension.getDockManager();
-        if (dockManager) {
-            dockManager.registerContent('commands-view', () => {
-                const view = new CommandsView();
-                if ('setCommandRegistry' in view) {
-                    (view as any).setCommandRegistry(this.commandExtension);
-                }
-                if ('setShortcutManager' in view) {
-                    (view as any).setShortcutManager(this.shortcutExtension);
-                }
-                return view;
-            });
-        }
+        this.dockExtension.registerContent('commands-view', () => {
+            const view = new CommandsView();
+            if ('setCommandRegistry' in view) {
+                (view as any).setCommandRegistry(this.commandExtension);
+            }
+            if ('setShortcutManager' in view) {
+                (view as any).setShortcutManager(this.shortcutExtension);
+            }
+            return view;
+        });
     }
 }

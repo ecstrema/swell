@@ -37,6 +37,12 @@ export class SettingsExtension implements Extension {
     }
 
     async activate(): Promise<void> {
+        // Register the settings page as dock content
+        this.dockExtension.registerContent('settings', () => {
+            const page = new SettingsPage();
+            return page;
+        });
+
         this.registerSettingsCommand();
         this.registerSettingsMenu();
     }

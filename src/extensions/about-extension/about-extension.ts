@@ -38,16 +38,11 @@ export class AboutExtension implements Extension {
     }
 
     async activate(): Promise<void> {
-        const dockManager = this.dockExtension.getDockManager();
-        const layoutHelper = this.dockExtension.getDockLayoutHelper();
-
-        if (dockManager) {
-            dockManager.registerContent('about', () => {
-                const aboutPane = new AboutPane();
-                aboutPane.id = 'about-pane';
-                return aboutPane;
-            });
-        }
+        this.dockExtension.registerContent('about', () => {
+            const aboutPane = new AboutPane();
+            aboutPane.id = 'about-pane';
+            return aboutPane;
+        });
 
         // Register a setting for the about page
         this.settingsExtension.registerSetting({
@@ -63,6 +58,7 @@ export class AboutExtension implements Extension {
             label: 'Show About',
             description: 'Show application information',
             handler: () => {
+                const layoutHelper = this.dockExtension.getDockLayoutHelper();
                 if (layoutHelper) {
                     layoutHelper.activatePane('about-pane', 'About', 'about', true);
                 }

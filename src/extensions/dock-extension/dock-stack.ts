@@ -136,20 +136,21 @@ export class DockStackComponent extends HTMLElement {
         header.addEventListener('dragstart', (e) => {
             // Only initiate dock drag if not dragging from a tab
             const target = e.target as HTMLElement;
-            if (!target.closest('.tab')) {
-                if (this._manager && this._node) {
-                    this._manager.handleStackDragStart(this._node);
-                    if (e.dataTransfer) {
-                        e.dataTransfer.effectAllowed = 'move';
-                        // Add custom type identifier for dock headers
-                        e.dataTransfer.setData('application/x-swell-dock', this._node.id);
-                        e.dataTransfer.setData('text/plain', this._node.id);
-                    }
-                    header.classList.add('dragging');
+            if (target.closest('.tab')) {
+                // Tab will handle its own drag - just don't initiate stack drag
+                // Do not call preventDefault() as it would cancel the tab's drag
+                return;
+            }
+
+            if (this._manager && this._node) {
+                this._manager.handleStackDragStart(this._node);
+                if (e.dataTransfer) {
+                    e.dataTransfer.effectAllowed = 'move';
+                    // Add custom type identifier for dock headers
+                    e.dataTransfer.setData('application/x-swell-dock', this._node.id);
+                    e.dataTransfer.setData('text/plain', this._node.id);
                 }
-            } else {
-                // Prevent header drag when dragging from a tab (tab will handle its own drag)
-                e.preventDefault();
+                header.classList.add('dragging');
             }
         });
 

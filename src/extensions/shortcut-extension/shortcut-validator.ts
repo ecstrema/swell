@@ -1,132 +1,74 @@
 /**
- * Validation module for shortcut configuration files
+ * Validation module for shortcut configuration files.
+ * Follows the VSCode keybindings.json format: a root array of objects
+ * with "key" and "command" fields.
+ *
+ * Validation is performed with arktype.
  */
 
+import { type } from "arktype";
 import { ShortcutBinding } from "./types.js";
 
-/**
- * Raw shortcut binding from JSON
- */
-export interface RawShortcutBinding {
-    shortcut: string;
-    commandId: string;
-}
-
-/**
- * Structure of the shortcuts JSON file
- */
-export interface ShortcutsConfig {
-    shortcuts: RawShortcutBinding[];
-}
-
-/**
- * Validation error class
- */
 export class ShortcutValidationError extends Error {
     constructor(message: string) {
         super(message);
-        this.name = 'ShortcutValidationError';
+        this.name = "ShortcutValidationError";
     }
 }
 
-/**
- * Validates that a value is a non-empty string
- */
-function isNonEmptyString(value: unknown): value is string {
-    return typeof value === 'string' && value.trim().length > 0;
-}
+// ---------------------------------------------------------------------------
+// Schema
+// ---------------------------------------------------------------------------
+
+const rawShortcutBindingType = type({
+    key: "string > 0",
+    command: "string > 0",
+});
+
+export type RawShortcutBinding = typeof rawShortcutBindingType.infer;
+
+const shortcutsConfigType = rawShortcutBindingType.array();
+
+export type ShortcutsConfig = typeof shortcutsConfigType.infer;
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
 
 /**
- * Validates and trims a string value
- */
-function validateAndTrimString(value: unknown, fieldName: string, index: number): string {
-    if (!isNonEmptyString(value)) {
-        throw new ShortcutValidationError(`Shortcut at index ${index} has invalid '${fieldName}' field (must be a non-empty string)`);
-    }
-    return value.trim();
-}
-
-/**
- * Validates a single shortcut binding
- */
-function validateShortcutBinding(binding: unknown, index: number): RawShortcutBinding {
-    if (!binding || typeof binding !== 'object') {
-        throw new ShortcutValidationError(`Shortcut at index ${index} is not an object`);
-    }
-
-    const obj = binding as Record<string, unknown>;
-
-    // Validate and trim shortcut field
-    if (!('shortcut' in obj)) {
-        throw new ShortcutValidationError(`Shortcut at index ${index} is missing 'shortcut' field`);
-    }
-    const shortcut = validateAndTrimString(obj.shortcut, 'shortcut', index);
-
-    // Validate and trim commandId field
-    if (!('commandId' in obj)) {
-        throw new ShortcutValidationError(`Shortcut at index ${index} is missing 'commandId' field`);
-    }
-    const commandId = validateAndTrimString(obj.commandId, 'commandId', index);
-
-    return {
-        shortcut,
-        commandId,
-    };
-}
-
-/**
- * Validates the shortcuts configuration structure
+ * Validates the shortcuts configuration (root array).
+ * Throws {@link ShortcutValidationError} if the data does not conform.
  */
 export function validateShortcutsConfig(data: unknown): ShortcutsConfig {
-    // Check if data is an object
-    if (!data || typeof data !== 'object') {
-        throw new ShortcutValidationError('Configuration must be an object');
+    const result = shortcutsConfigType(data);
+    if (result instanceof type.errors) {
+        throw new ShortcutValidationError(result.summary);
     }
-
-    const config = data as Record<string, unknown>;
-
-    // Check for shortcuts array
-    if (!('shortcuts' in config)) {
-        throw new ShortcutValidationError('Configuration is missing "shortcuts" field');
-    }
-
-    if (!Array.isArray(config.shortcuts)) {
-        throw new ShortcutValidationError('"shortcuts" field must be an array');
-    }
-
-    // Validate each shortcut
-    const validatedShortcuts: RawShortcutBinding[] = [];
-    for (let i = 0; i < config.shortcuts.length; i++) {
-        validatedShortcuts.push(validateShortcutBinding(config.shortcuts[i], i));
-    }
-
-    return {
-        shortcuts: validatedShortcuts
-    };
+    return result;
 }
 
 /**
- * Converts raw shortcut bindings to the internal format
+ * Converts raw shortcut bindings to the internal {@link ShortcutBinding} format
+ * (JSON `key` → `shortcut`, JSON `command` → `commandId`).
  */
 export function convertToShortcutBindings(config: ShortcutsConfig): ShortcutBinding[] {
-    return config.shortcuts.map(raw => ({
-        shortcut: raw.shortcut,
-        commandId: raw.commandId
+    return config.map(raw => ({
+        shortcut: raw.key,
+        commandId: raw.command,
     }));
 }
 
 /**
- * Loads and validates shortcuts from a JSON string
+ * Loads and validates shortcuts from a JSON string.
  */
 export function loadShortcutsFromJSON(jsonString: string): ShortcutBinding[] {
     let parsed: unknown;
-
     try {
         parsed = JSON.parse(jsonString);
     } catch (error) {
-        throw new ShortcutValidationError(`Invalid JSON: ${error instanceof Error ? error.message : String(error)}`);
+        throw new ShortcutValidationError(
+            `Invalid JSON: ${error instanceof Error ? error.message : String(error)}`
+        );
     }
-
-    const config = validateShortcutsConfig(parsed);
-    return convertToShortcutBindings(config);
+    return convertToShortcutBindings(validateShortcutsConfig(parsed));
 }

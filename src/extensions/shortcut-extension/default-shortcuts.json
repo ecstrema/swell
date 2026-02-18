@@ -1,16 +1,14 @@
-{
-  "shortcuts": [
-    { "shortcut": "Ctrl+O",       "commandId": "core/file/open" },
-    { "shortcut": "Ctrl+W",       "commandId": "core/file/close" },
-    { "shortcut": "Ctrl+Q",       "commandId": "core/file/quit" },
-    { "shortcut": "Ctrl+Z",       "commandId": "core/edit/undo" },
-    { "shortcut": "Ctrl+Shift+Z", "commandId": "core/edit/redo" },
-    { "shortcut": "Ctrl+Y",       "commandId": "core/edit/redo" },
-    { "shortcut": "Ctrl+=",       "commandId": "core/view/zoom-in" },
-    { "shortcut": "Ctrl+-",       "commandId": "core/view/zoom-out" },
-    { "shortcut": "Ctrl+0",       "commandId": "core/view/zoom-fit" },
-    { "shortcut": "Ctrl+Shift+H", "commandId": "core/view/toggle-netlist" },
-    { "shortcut": "Ctrl+Shift+P", "commandId": "core/command-palette/toggle" },
-    { "shortcut": "Ctrl+,",       "commandId": "core/settings/open" }
-  ]
-}
+[
+    { "key": "Ctrl+O",       "command": "core/file/open" },
+    { "key": "Ctrl+W",       "command": "core/file/close" },
+    { "key": "Ctrl+Q",       "command": "core/file/quit" },
+    { "key": "Ctrl+Z",       "command": "core/edit/undo" },
+    { "key": "Ctrl+Shift+Z", "command": "core/edit/redo" },
+    { "key": "Ctrl+Y",       "command": "core/edit/redo" },
+    { "key": "Ctrl+=",       "command": "core/view/zoom-in" },
+    { "key": "Ctrl+-",       "command": "core/view/zoom-out" },
+    { "key": "Ctrl+0",       "command": "core/view/zoom-fit" },
+    { "key": "Ctrl+Shift+H", "command": "core/view/toggle-netlist" },
+    { "key": "Ctrl+Shift+P", "command": "core/command-palette/toggle" },
+    { "key": "Ctrl+,",       "command": "core/settings/open" }
+]

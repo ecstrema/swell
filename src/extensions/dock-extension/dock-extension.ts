@@ -44,6 +44,7 @@ export class DockExtension implements Extension {
 
     private dockManager: DockManager | null = null;
     private dockLayoutHelper: DockLayoutHelper | null = null;
+    private pendingContent: Array<[string, (id: string) => HTMLElement]> = [];
 
     constructor(dependencies: Map<string, Extension>) {}
 
@@ -68,6 +69,19 @@ export class DockExtension implements Extension {
     }
 
     /**
+     * Register content with the dock manager.
+     * If the dock is not yet initialized, the registration is queued
+     * and applied once `initializeDockSystem` is called.
+     */
+    registerContent(contentId: string, builder: (id: string) => HTMLElement): void {
+        if (this.dockManager) {
+            this.dockManager.registerContent(contentId, builder);
+        } else {
+            this.pendingContent.push([contentId, builder]);
+        }
+    }
+
+    /**
      * Initialize the dock system with managers
      * Called by app-main after creating the dock-manager DOM element
      */
@@ -81,6 +95,12 @@ export class DockExtension implements Extension {
         if (!this.dockManager.layout) {
             this.loadDefaultLayout();
         }
+
+        // Flush any content that was registered before the dock was ready
+        for (const [contentId, builder] of this.pendingContent) {
+            this.dockManager.registerContent(contentId, builder);
+        }
+        this.pendingContent = [];
     }
 
     /**

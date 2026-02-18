@@ -1,7 +1,7 @@
 // Settings page component
 
-import { settingsRegister, SettingMetadata, SettingValue } from './settings-extension.js';
-import { getSetting, setSetting } from './settings-extension.js';
+import { settingsRegister, SettingMetadata, SettingValue } from './settings-register.js';
+import { getSetting, setSetting } from './settings-storage.js';
 import { css } from '../../utils/css-utils.js';
 import { scrollbarSheet } from '../../styles/shared-sheets.js';
 import settingsCss from './settings-page.css?inline';
@@ -162,7 +162,7 @@ export class SettingsPage extends HTMLElement {
     scrollToSetting(settingPath: string) {
         const settingId = settingPath.replace(/\//g, '-');
         const settingElement = this.shadowRoot!.getElementById(settingId);
-        
+
         if (settingElement) {
             // Find the setting row that contains this element
             const settingRow = settingElement.closest('.setting-row');

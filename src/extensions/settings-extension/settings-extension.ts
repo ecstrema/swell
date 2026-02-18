@@ -18,11 +18,6 @@ export { settingsRegister } from "./settings-register.js";
 import { getSetting as getSettingStorage, setSetting as setSettingStorage } from "./settings-storage.js";
 export { getSetting, setSetting } from "./settings-storage.js";
 
-// Ensure the custom element is registered
-if (!customElements.get('settings-page')) {
-    customElements.define('settings-page', SettingsPage);
-}
-
 export class SettingsExtension implements Extension {
     static readonly metadata = {
         id: 'core/settings',
@@ -34,7 +29,6 @@ export class SettingsExtension implements Extension {
     private dockExtension: DockExtension;
     private commandExtension: CommandExtension;
     private menuExtension: MenuExtension;
-    private settingsPage: SettingsPage | null = null;
 
     constructor(dependencies: Map<string, Extension>) {
         this.dockExtension = dependencies.get(DockExtension.metadata.id) as DockExtension;

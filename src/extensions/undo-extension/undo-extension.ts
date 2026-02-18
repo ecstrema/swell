@@ -51,19 +51,12 @@ export class UndoExtension implements Extension {
     }
 
     async activate(): Promise<void> {
-        const dockManager = this.dockExtension.getDockManager();
-
-        if (dockManager) {
-            // Register content with dock manager
-            dockManager.registerContent('undo-tree', () => {
-                const undoTreePanel = new UndoTreePanel();
-                undoTreePanel.id = 'undo-tree-panel';
-                undoTreePanel.setUndoTree(this.undoManager.getUndoTree());
-                return undoTreePanel;
-            });
-        } else {
-            console.warn('Undo extension: Dock manager not available');
-        }
+        this.dockExtension.registerContent('undo-tree', () => {
+            const undoTreePanel = new UndoTreePanel();
+            undoTreePanel.id = 'undo-tree-panel';
+            undoTreePanel.setUndoTree(this.undoManager.getUndoTree());
+            return undoTreePanel;
+        });
 
         // Register undo command
         this.commandExtension.registerCommand({

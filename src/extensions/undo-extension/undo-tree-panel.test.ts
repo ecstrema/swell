@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { UndoTreePanel } from './undo-tree-panel.js';
-import { UndoTree, UndoableOperation } from '../../undo/undo-tree.js';
+import { UndoTree, UndoableOperation } from './undo-tree.js';
 
 // Helper to create test operations
 function createTestOperation(
@@ -9,7 +9,7 @@ function createTestOperation(
     description: string
 ): UndoableOperation {
     const oldValue = state.value;
-    
+
     return {
         do: () => {
             state.value = newValue;

@@ -3,11 +3,11 @@ import { createMenu, MenuConfig, MenuItemConfig, SubmenuConfig } from "../../men
 import { css } from "../../utils/css-utils.js";
 import menuBarCss from "./menu-bar.css?inline";
 import { renderMenuItems, findAndExecuteAction } from "./menu-item-renderer.js";
-import { ShortcutManager } from "../../shortcuts/index.js";
+import { ShortcutExtension } from "../shortcut-extension/shortcut-extension.js";
 
 export class MenuBar extends HTMLElement {
   private menuConfig: MenuConfig | null = null;
-  private shortcutManager: ShortcutManager | null = null;
+  private shortcutManager: ShortcutExtension | null = null;
 
   // Map menu item IDs to command IDs for shortcut lookup
   private menuItemToCommandIdMap: Record<string, string> = {};
@@ -59,7 +59,7 @@ export class MenuBar extends HTMLElement {
   /**
    * Set the shortcut manager to display shortcuts in menu items
    */
-  setShortcutManager(shortcutManager: ShortcutManager) {
+  setShortcutManager(shortcutManager: ShortcutExtension) {
       this.shortcutManager = shortcutManager;
       // Re-render if already rendered
       if (this.shadowRoot && this.shadowRoot.childNodes.length > 0) {

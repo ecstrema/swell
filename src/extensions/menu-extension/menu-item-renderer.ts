@@ -4,7 +4,7 @@
  */
 
 import { MenuItemConfig, SubmenuConfig } from "../../menu-api/index.js";
-import { ShortcutManager } from "../../shortcuts/index.js";
+import { ShortcutExtension } from "../shortcut-extension/shortcut-extension.js";
 import ChevronRightIcon from '~icons/mdi/chevron-right?raw';
 
 export interface MenuItemElement {
@@ -37,7 +37,7 @@ export function renderMenuItems(
     options: {
         isSubmenu?: boolean;
         onItemClick?: (id: string) => void;
-        shortcutManager?: ShortcutManager;
+        shortcutManager?: ShortcutExtension;
         commandIdMapper?: (menuItemId: string) => string | undefined;
     } = {}
 ): MenuItemElement[] {
@@ -49,28 +49,28 @@ export function renderMenuItems(
             const submenu = item as SubmenuConfig;
             const submenuElement = document.createElement('div');
             submenuElement.className = 'menu-submenu';
-            
+
             const titleElement = document.createElement('div');
             titleElement.className = 'submenu-title';
             titleElement.textContent = submenu.text;
-            
+
             const arrow = document.createElement('span');
             arrow.className = 'submenu-arrow';
             arrow.innerHTML = ChevronRightIcon;
             titleElement.appendChild(arrow);
-            
+
             const dropdownElement = document.createElement('div');
             dropdownElement.className = 'submenu-dropdown';
-            
+
             // Recursively render submenu items
             const submenuItems = renderMenuItems(submenu.items, { ...options, isSubmenu: true });
             submenuItems.forEach(({ element }) => {
                 dropdownElement.appendChild(element);
             });
-            
+
             submenuElement.appendChild(titleElement);
             submenuElement.appendChild(dropdownElement);
-            
+
             elements.push({ element: submenuElement });
         } else if (item.type === 'separator') {
             // Separator
@@ -82,7 +82,7 @@ export function renderMenuItems(
             const menuItem = item as MenuItemConfig;
             const menuItemElement = document.createElement('div');
             menuItemElement.className = 'menu-item';
-            
+
             // Add checkbox indicator if this is a checkbox type
             if (menuItem.type === 'checkbox') {
                 const checkbox = document.createElement('input');
@@ -91,13 +91,13 @@ export function renderMenuItems(
                 checkbox.checked = menuItem.checked ?? false;
                 menuItemElement.appendChild(checkbox);
             }
-            
+
             // Create label span
             const labelSpan = document.createElement('span');
             labelSpan.className = 'menu-item-label';
             labelSpan.textContent = menuItem.text ?? '';
             menuItemElement.appendChild(labelSpan);
-            
+
             // Add shortcut if available
             if (menuItem.id && options.shortcutManager && options.commandIdMapper) {
                 const commandId = options.commandIdMapper(menuItem.id);
@@ -107,17 +107,17 @@ export function renderMenuItems(
                         const shortcutSpan = document.createElement('span');
                         shortcutSpan.className = 'menu-item-shortcut';
                         // Replace "Control" with "Ctrl" for shorter display
-                        const formattedShortcut = ShortcutManager.formatShortcut(shortcuts[0]).replaceAll('Control', 'Ctrl');
+                        const formattedShortcut = ShortcutExtension.formatShortcut(shortcuts[0]).replaceAll('Control', 'Ctrl');
                         shortcutSpan.textContent = formattedShortcut;
                         menuItemElement.appendChild(shortcutSpan);
                     }
                 }
             }
-            
+
             if (menuItem.id) {
                 menuItemElement.dataset.id = menuItem.id;
             }
-            
+
             elements.push({
                 element: menuItemElement,
                 id: menuItem.id,

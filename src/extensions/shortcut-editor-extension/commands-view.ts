@@ -6,9 +6,9 @@
  * Includes a search bar to filter commands.
  */
 
-import { Command, KeyboardShortcut } from "../../shortcuts/types.js";
+import { Command, KeyboardShortcut } from "../shortcut-extension/types.js";
 import { CommandExtension } from "../command-extension/command-extension.js";
-import { ShortcutManager } from "../../shortcuts/shortcut-manager.js";
+import { ShortcutExtension } from "../shortcut-extension/shortcut-extension.js";
 import { css } from "../../utils/css-utils.js";
 import commandsViewCss from "./commands-view.css?inline";
 import "../../components/shortcut-display/shortcut-display.js";
@@ -17,7 +17,7 @@ import ShoSho from 'shosho';
 
 export class CommandsView extends HTMLElement {
     private commandRegistry: CommandExtension | null = null;
-    private shortcutManager: ShortcutManager | null = null;
+    private shortcutManager: ShortcutExtension | null = null;
     private searchInput: HTMLInputElement | null = null;
     private tableBody: HTMLTableSectionElement | null = null;
     private allCommands: Command[] = [];
@@ -56,7 +56,7 @@ export class CommandsView extends HTMLElement {
     /**
      * Set the shortcut manager
      */
-    setShortcutManager(manager: ShortcutManager): void {
+    setShortcutManager(manager: ShortcutExtension): void {
         this.shortcutManager = manager;
         this.renderCommands();
     }

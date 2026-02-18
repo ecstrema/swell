@@ -37,10 +37,9 @@ export class CommandPaletteExtension implements Extension {
     }
 
     async activate(): Promise<void> {
-        // Create command palette with access to command registry and shortcut manager
         this.commandPalette = new CommandPalette(
-            this.commandExtension.getCommandRegistry(),
-            this.shortcutExtension.getShortcutManager()
+            this.commandExtension,
+            this.shortcutExtension
         );
 
         // Append to body

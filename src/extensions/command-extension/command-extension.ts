@@ -1,5 +1,5 @@
 import { Extension } from "../types.js";
-import { Command, CommandExecutor } from "../../shortcuts/types.js";
+import { Command, CommandExecutor } from "../shortcut-extension/types.js";
 
 /**
  * Provides the command registry.

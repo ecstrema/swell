@@ -54,10 +54,10 @@ export class ShortcutEditorExtension implements Extension {
             dockManager.registerContent('commands-view', () => {
                 const view = new CommandsView();
                 if ('setCommandRegistry' in view) {
-                    (view as any).setCommandRegistry(this.commandExtension.getCommandRegistry());
+                    (view as any).setCommandRegistry(this.commandExtension);
                 }
                 if ('setShortcutManager' in view) {
-                    (view as any).setShortcutManager(this.shortcutExtension.getShortcutManager());
+                    (view as any).setShortcutManager(this.shortcutExtension);
                 }
                 return view;
             });

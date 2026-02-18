@@ -71,7 +71,7 @@ export class AboutExtension implements Extension {
 
         // Register menu item
         this.menuExtension.registerMenuItem('Help/About', () => {
-             this.commandExtension.executeCommand('core/view/show-about');
+             this.commandExtension.execute('core/view/show-about');
         }, {
              id: 'about',
         });

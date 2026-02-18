@@ -88,7 +88,7 @@ export class WaveformFileExtension implements Extension {
      */
     private registerFileMenus(): void {
         this.menuExtension.registerMenuItem('File/Open File...', () => {
-             this.commandExtension.executeCommand('core/file/open');
+             this.commandExtension.execute('core/file/open');
         }, { id: 'core/file/open' });
 
         this.menuExtension.registerMenuItem('File/Open Example...', () => {

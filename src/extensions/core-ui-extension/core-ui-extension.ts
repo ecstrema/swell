@@ -82,7 +82,7 @@ export class CoreUIExtension implements Extension {
         // Register menu item
         this.menuExtension.registerMenuItem('File/-', undefined, { type: 'separator' });
         this.menuExtension.registerMenuItem('File/Quit', () => {
-             this.commandExtension.executeCommand('core/file/quit');
+             this.commandExtension.execute('core/file/quit');
         });
     }
 

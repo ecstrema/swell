@@ -1,5 +1,6 @@
 {
     "extensions": [
+        "theme-extension",
         "menu-extension",
         "dock-extension",
         "shortcut-extension",

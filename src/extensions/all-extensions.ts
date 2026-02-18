@@ -18,6 +18,7 @@ import { UndoExtension } from "./undo-extension/index.js";
 import { CoreUIExtension } from "./core-ui-extension/index.js";
 import { ShortcutExtension } from "./shortcut-extension/index.js";
 import { CommandPaletteExtension } from "./command-palette-extension/command-palette-extension.js";
+import { ThemeExtension } from "./theme-extension/index.js";
 
 const available: Record<string, ExtensionConstructor> = {
     "menu-extension": MenuExtension,
@@ -30,6 +31,7 @@ const available: Record<string, ExtensionConstructor> = {
     "about-extension": AboutExtension,
     "undo-extension": UndoExtension,
     "core-ui-extension": CoreUIExtension,
+    "theme-extension": ThemeExtension,
 };
 
 /**

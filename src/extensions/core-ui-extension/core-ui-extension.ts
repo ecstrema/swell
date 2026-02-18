@@ -2,16 +2,12 @@
  * Core UI Extension
  *
  * Manages UI coordination and view commands.
- * Handles netlist visibility and theme updates.
  */
 
 import { Extension } from "../types.js";
 import { DockExtension } from "../dock-extension/dock-extension.js";
 import { CommandExtension } from "../command-extension/command-extension.js";
 import { MenuExtension } from "../menu-extension/menu-extension.js";
-
-// Setting paths
-const SETTING_NETLIST_VISIBLE = 'Interface/Netlist Visible';
 
 export class CoreUIExtension implements Extension {
     static readonly metadata = {
@@ -89,7 +85,7 @@ export class CoreUIExtension implements Extension {
     /**
      * Toggle the netlist view visibility
      */
-    private async toggleNetlist(): Promise<void> {
+    private toggleNetlist(): void {
         const layoutHelper = this.dockExtension.getDockLayoutHelper();
         if (!layoutHelper) return;
 
@@ -97,13 +93,5 @@ export class CoreUIExtension implements Extension {
 
         // Update the menu checkbox state
         this.menuExtension.updateMenuItem('toggle-netlist', { checked: newVisibility });
-
-        // Persist the setting
-        try {
-            const { setSetting } = await import('../settings-extension/settings-extension.js');
-            await setSetting(SETTING_NETLIST_VISIBLE, newVisibility);
-        } catch (error) {
-            console.warn('Failed to persist netlist visibility setting:', error);
-        }
     }
 }

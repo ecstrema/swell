@@ -1,0 +1,29 @@
+{
+    "name": "Light (Default)",
+    "type": "light",
+    "colors": {
+        "bg": "#f6f6f6",
+        "bg-surface": "#ffffff",
+        "bg-hover": "#e0e0e0",
+        "bg-active": "#d0d0d0",
+        "text": "#0f0f0f",
+        "text-muted": "#666666",
+        "border": "#cccccc",
+        "primary": "#646cff",
+        "primary-hover": "#535bf2",
+        "waveform": "#4CAF50",
+        "waveform-alt-bg": "#f0f0f0",
+        "button-bg": "#ffffff",
+        "button-border": "transparent",
+        "button-text": "#0f0f0f",
+        "button-border-hover": "#396cd8",
+        "menu-bg": "#f0f0f0",
+        "menu-item-hover": "#e0e0e0",
+        "menu-dropdown-bg": "#ffffff",
+        "menu-border": "#cccccc",
+        "menu-shadow": "rgba(0,0,0,0.1)",
+        "scrollbar-track": "#f1f1f1",
+        "scrollbar-thumb": "#cccccc",
+        "scrollbar-thumb-hover": "#999999"
+    }
+}

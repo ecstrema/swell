@@ -116,19 +116,6 @@ export const settingsRegister = new SettingsRegister();
 
 // Register default settings
 settingsRegister.register({
-    path: 'Application/Color Theme',
-    description: 'Choose the color theme for the application',
-    type: 'enum',
-    defaultValue: 'system',
-    enumOptions: ['light', 'dark', 'system'],
-    options: [
-        { value: 'light', label: 'Light' },
-        { value: 'dark', label: 'Dark' },
-        { value: 'system', label: 'System' }
-    ]
-});
-
-settingsRegister.register({
     path: 'Interface/Tree Indent',
     description: 'Indentation in pixels for tree hierarchy levels',
     type: 'number',
@@ -136,13 +123,6 @@ settingsRegister.register({
     min: 0,
     max: 60,
     step: 1
-});
-
-settingsRegister.register({
-    path: 'Interface/Netlist Visible',
-    description: 'Show or hide the netlist panel',
-    type: 'boolean',
-    defaultValue: true
 });
 
 settingsRegister.register({

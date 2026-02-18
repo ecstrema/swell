@@ -34,14 +34,16 @@ export class SettingsExtension implements Extension {
         id: 'core/settings',
         name: 'Settings Extension',
         description: 'Provides settings page and configuration interface',
+        dependencies: ['core/dock'],
     };
 
     async activate(context: ExtensionContext): Promise<SettingsAPI> {
-        const paneManager = context.app.getPaneManager?.();
-        const dockManager = context.app.getDockManager?.();
+        const dockAPI = context.dependencies.get('core/dock');
+        const dockLayoutHelper = dockAPI?.getDockLayoutHelper?.();
+        const dockManager = dockAPI?.getDockManager?.();
 
-        if (!paneManager || !dockManager) {
-            console.warn('Settings extension: PaneManager or DockManager not available');
+        if (!dockLayoutHelper || !dockManager) {
+            console.warn('Settings extension: DockLayoutHelper or DockManager not available');
             // Still return API even if UI can't be registered
             return {
                 registerSetting: (setting: SettingMetadata) => settingsRegister.register(setting),
@@ -73,7 +75,7 @@ export class SettingsExtension implements Extension {
             label: 'Show Settings',
             description: 'Open the settings page',
             handler: () => {
-                paneManager.activatePane('settings-pane', 'Settings', 'settings', true);
+                dockLayoutHelper.activatePane('settings-pane', 'Settings', 'settings', true);
             },
         });
 

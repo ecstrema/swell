@@ -35,32 +35,33 @@ export class WaveformFileExtension implements Extension {
         description: 'Provides waveform file loading, display, and management',
     };
 
-    private fileManager: FileManager | null = null;
+    private fileManager: FileManager;
     private context: ExtensionContext | null = null;
+
+    constructor() {
+        // Create the file manager
+        this.fileManager = new FileManager();
+    }
 
     async activate(context: ExtensionContext): Promise<WaveformFileAPI> {
         this.context = context;
         
-        // The file manager is created by app-main
-        // This extension ensures the custom elements are registered
-        
         // Register file-related commands
         this.registerFileCommands(context);
         
+        // Register zoom commands
+        this.registerZoomCommands(context);
+        
         // Register menu items
         this.registerFileMenus(context);
+        
+        // Listen for window-level zoom events and dispatch to active file
+        this.setupZoomEventHandling(context);
         
         return {
             getFileManager: () => this.fileManager,
             handleStartupFiles: () => this.handleStartupFiles(),
         };
-    }
-
-    /**
-     * Set the file manager instance (called by app-main after creating it)
-     */
-    setFileManager(fileManager: FileManager): void {
-        this.fileManager = fileManager;
     }
 
     /**
@@ -138,6 +139,71 @@ export class WaveformFileExtension implements Extension {
     }
 
     /**
+     * Register zoom commands for waveform viewing
+     */
+    private registerZoomCommands(context: ExtensionContext): void {
+        context.registerCommand({
+            id: 'core/view/zoom-in',
+            label: 'Zoom In',
+            description: 'Zoom in on the active waveform',
+            handler: () => this.dispatchZoomCommand('zoom-in'),
+        });
+
+        context.registerCommand({
+            id: 'core/view/zoom-out',
+            label: 'Zoom Out',
+            description: 'Zoom out on the active waveform',
+            handler: () => this.dispatchZoomCommand('zoom-out'),
+        });
+
+        context.registerCommand({
+            id: 'core/view/zoom-fit',
+            label: 'Zoom to Fit',
+            description: 'Fit the entire waveform in view',
+            handler: () => this.dispatchZoomCommand('zoom-fit'),
+        });
+
+        // Register shortcuts for zoom
+        context.registerShortcuts([
+            {
+                shortcut: 'Ctrl+=',
+                commandId: 'core/view/zoom-in',
+            },
+            {
+                shortcut: 'Ctrl+-',
+                commandId: 'core/view/zoom-out',
+            },
+            {
+                shortcut: 'Ctrl+0',
+                commandId: 'core/view/zoom-fit',
+            },
+        ]);
+
+        // Register menu items
+        context.registerMenu({
+            type: 'submenu',
+            label: 'View',
+            items: [
+                {
+                    type: 'item',
+                    label: 'Zoom In',
+                    action: 'core/view/zoom-in',
+                },
+                {
+                    type: 'item',
+                    label: 'Zoom Out',
+                    action: 'core/view/zoom-out',
+                },
+                {
+                    type: 'item',
+                    label: 'Zoom to Fit',
+                    action: 'core/view/zoom-fit',
+                },
+            ],
+        });
+    }
+
+    /**
      * Register open example command
      */
     private registerOpenExampleCommand(context: ExtensionContext): void {
@@ -185,17 +251,7 @@ export class WaveformFileExtension implements Extension {
      * Get the file manager from app APIs
      */
     private getFileManager(): FileManager | null {
-        // First try the stored reference
-        if (this.fileManager) {
-            return this.fileManager;
-        }
-        
-        // Fall back to app APIs
-        if (this.context?.app.getFileManager) {
-            return this.context.app.getFileManager();
-        }
-        
-        return null;
+        return this.fileManager;
     }
 
     /**
@@ -316,5 +372,39 @@ export class WaveformFileExtension implements Extension {
         } catch (err) {
             console.error("Error handling startup files:", err);
         }
+    }
+
+    /**
+     * Set up zoom event handling - dispatch zoom commands to the active file display
+     */
+    private setupZoomEventHandling(context: ExtensionContext): void {
+        window.addEventListener('zoom-command', (e: Event) => {
+            const customEvent = e as CustomEvent<{ action: 'zoom-in' | 'zoom-out' | 'zoom-fit' }>;
+            this.dispatchZoomCommand(customEvent.detail.action);
+        });
+    }
+
+    /**
+     * Dispatch zoom command to the active file display
+     */
+    private dispatchZoomCommand(action: 'zoom-in' | 'zoom-out' | 'zoom-fit'): void {
+        if (!this.context) return;
+
+        const fileManager = this.getFileManager();
+        if (!fileManager) return;
+
+        const activeFileId = fileManager.getActiveFileId();
+        if (!activeFileId) return;
+
+        const activeRes = fileManager.getFileResources(activeFileId);
+        if (!activeRes) return;
+
+        const event = new CustomEvent('zoom-command', {
+            detail: { action },
+            bubbles: false,
+            composed: false
+        });
+
+        activeRes.element.dispatchEvent(event);
     }
 }

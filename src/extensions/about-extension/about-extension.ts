@@ -19,15 +19,16 @@ export class AboutExtension implements Extension {
         id: 'core/about',
         name: 'About Extension',
         description: 'Provides application information and about page',
-        dependencies: ['core/settings'],
+        dependencies: ['core/settings', 'core/dock'],
     };
 
     async activate(context: ExtensionContext): Promise<void> {
-        const paneManager = context.app.getPaneManager?.();
-        const dockManager = context.app.getDockManager?.();
+        const dockAPI = context.dependencies.get('core/dock');
+        const dockLayoutHelper = dockAPI?.getDockLayoutHelper?.();
+        const dockManager = dockAPI?.getDockManager?.();
 
-        if (!paneManager || !dockManager) {
-            console.warn('About extension: PaneManager or DockManager not available');
+        if (!dockLayoutHelper || !dockManager) {
+            console.warn('About extension: DockLayoutHelper or DockManager not available');
             return;
         }
 
@@ -68,7 +69,7 @@ export class AboutExtension implements Extension {
             label: 'Show About',
             description: 'Show application information',
             handler: () => {
-                paneManager.activatePane('about-pane', 'About', 'about', true);
+                dockLayoutHelper.activatePane('about-pane', 'About', 'about', true);
             },
         });
 

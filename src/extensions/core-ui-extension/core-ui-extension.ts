@@ -2,7 +2,7 @@
  * Core UI Extension
  * 
  * Manages UI coordination and view commands.
- * Handles netlist visibility, zoom commands, and theme updates.
+ * Handles netlist visibility and theme updates.
  */
 
 import { Extension, ExtensionContext } from "../types.js";
@@ -16,15 +16,13 @@ export class CoreUIExtension implements Extension {
         id: 'core/ui',
         name: 'Core UI Extension',
         description: 'Manages UI coordination and view commands',
+        dependencies: ['core/dock'],
     };
 
     private context: ExtensionContext | null = null;
 
     async activate(context: ExtensionContext): Promise<void> {
         this.context = context;
-
-        // Register zoom commands
-        this.registerZoomCommands(context);
 
         // Register netlist toggle command
         this.registerNetlistToggleCommand(context);
@@ -37,89 +35,6 @@ export class CoreUIExtension implements Extension {
     }
 
     /**
-     * Register zoom commands
-     */
-    private registerZoomCommands(context: ExtensionContext): void {
-        context.registerCommand({
-            id: 'core/view/zoom-in',
-            label: 'Zoom In',
-            description: 'Zoom in on the active waveform',
-            handler: () => {
-                const event = new CustomEvent('zoom-command', {
-                    detail: { action: 'zoom-in' },
-                    bubbles: true
-                });
-                window.dispatchEvent(event);
-            },
-        });
-
-        context.registerCommand({
-            id: 'core/view/zoom-out',
-            label: 'Zoom Out',
-            description: 'Zoom out on the active waveform',
-            handler: () => {
-                const event = new CustomEvent('zoom-command', {
-                    detail: { action: 'zoom-out' },
-                    bubbles: true
-                });
-                window.dispatchEvent(event);
-            },
-        });
-
-        context.registerCommand({
-            id: 'core/view/zoom-fit',
-            label: 'Zoom to Fit',
-            description: 'Fit the entire waveform in view',
-            handler: () => {
-                const event = new CustomEvent('zoom-command', {
-                    detail: { action: 'zoom-fit' },
-                    bubbles: true
-                });
-                window.dispatchEvent(event);
-            },
-        });
-
-        // Register shortcuts for zoom
-        context.registerShortcuts([
-            {
-                shortcut: 'Ctrl+=',
-                commandId: 'core/view/zoom-in',
-            },
-            {
-                shortcut: 'Ctrl+-',
-                commandId: 'core/view/zoom-out',
-            },
-            {
-                shortcut: 'Ctrl+0',
-                commandId: 'core/view/zoom-fit',
-            },
-        ]);
-
-        // Register menu items
-        context.registerMenu({
-            type: 'submenu',
-            label: 'View',
-            items: [
-                {
-                    type: 'item',
-                    label: 'Zoom In',
-                    action: 'core/view/zoom-in',
-                },
-                {
-                    type: 'item',
-                    label: 'Zoom Out',
-                    action: 'core/view/zoom-out',
-                },
-                {
-                    type: 'item',
-                    label: 'Zoom to Fit',
-                    action: 'core/view/zoom-fit',
-                },
-            ],
-        });
-    }
-
-    /**
      * Register netlist toggle command
      */
     private registerNetlistToggleCommand(context: ExtensionContext): void {
@@ -127,11 +42,7 @@ export class CoreUIExtension implements Extension {
             id: 'core/view/toggle-netlist',
             label: 'Toggle Netlist View',
             description: 'Show or hide the netlist/hierarchy view',
-            handler: () => {
-                // Dispatch event for app-main to handle
-                const event = new CustomEvent('toggle-netlist', { bubbles: true });
-                window.dispatchEvent(event);
-            },
+            handler: () => this.toggleNetlist(),
         });
 
         context.registerShortcut({
@@ -166,11 +77,7 @@ export class CoreUIExtension implements Extension {
             id: 'core/view/toggle-undo-history-enhanced',
             label: 'Toggle Undo History (Enhanced)',
             description: 'Toggle undo history visibility with sidebar management',
-            handler: () => {
-                // Dispatch event for app-main to handle
-                const event = new CustomEvent('toggle-undo-history', { bubbles: true });
-                window.dispatchEvent(event);
-            },
+            handler: () => this.toggleUndoHistory(),
         });
     }
 
@@ -213,5 +120,73 @@ export class CoreUIExtension implements Extension {
                 },
             ],
         });
+    }
+
+    /**
+     * Toggle the netlist view visibility
+     */
+    private async toggleNetlist(): Promise<void> {
+        if (!this.context) return;
+
+        const dockAPI = this.context.dependencies.get('core/dock');
+        const dockManager = dockAPI?.getDockManager?.();
+        if (!dockManager) return;
+
+        // Import DockLayoutHelper to access the sidebar toggle logic
+        const { DockLayoutHelper } = await import('../../components/dock-layout-helper.js');
+        const dockLayoutHelper = new DockLayoutHelper(dockManager);
+        
+        const newVisibility = dockLayoutHelper.toggleSidebarVisibility();
+
+        // Update the menu checkbox state - get menu bar from app-main shadow root
+        const appMain = document.querySelector('app-main');
+        if (appMain && appMain.shadowRoot) {
+            const menuBar = appMain.shadowRoot.querySelector('app-menu-bar');
+            if (menuBar && typeof (menuBar as any).updateMenuItemChecked === 'function') {
+                (menuBar as any).updateMenuItemChecked('toggle-netlist', newVisibility);
+            }
+        }
+
+        // Persist the setting
+        try {
+            const { setSetting } = await import('../settings-extension/settings-extension.js');
+            await setSetting(SETTING_NETLIST_VISIBLE, newVisibility);
+        } catch (error) {
+            console.warn('Failed to persist netlist visibility setting:', error);
+        }
+    }
+
+    /**
+     * Toggle the undo history pane visibility
+     */
+    private async toggleUndoHistory(): Promise<void> {
+        if (!this.context) return;
+
+        const dockAPI = this.context.dependencies.get('core/dock');
+        const dockManager = dockAPI?.getDockManager?.();
+        if (!dockManager) return;
+
+        // Import DockLayoutHelper to access the undo pane toggle logic
+        const { DockLayoutHelper } = await import('../../components/dock-layout-helper.js');
+        const dockLayoutHelper = new DockLayoutHelper(dockManager);
+        
+        const newVisibility = dockLayoutHelper.toggleUndoPaneVisibility();
+
+        // Update the menu checkbox state - get menu bar from app-main shadow root
+        const appMain = document.querySelector('app-main');
+        if (appMain && appMain.shadowRoot) {
+            const menuBar = appMain.shadowRoot.querySelector('app-menu-bar');
+            if (menuBar && typeof (menuBar as any).updateMenuItemChecked === 'function') {
+                (menuBar as any).updateMenuItemChecked('toggle-undo-history', newVisibility);
+            }
+        }
+
+        // Persist the setting
+        try {
+            const { setSetting } = await import('../settings-extension/settings-extension.js');
+            await setSetting(SETTING_UNDO_HISTORY_VISIBLE, newVisibility);
+        } catch (error) {
+            console.warn('Failed to persist undo history visibility setting:', error);
+        }
     }
 }

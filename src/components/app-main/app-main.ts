@@ -13,7 +13,6 @@ import "../../extensions/dock-extension/index.js";
 import { FileManager } from "../../extensions/waveform-file-extension/file-manager/file-manager.js";
 import { CommandManager } from "../command/command-manager.js";
 import { DockLayoutHelper } from "../dock-layout-helper.js";
-import { PaneManager } from "../panels/pane-manager.js";
 import { UndoManager } from "../../extensions/undo-extension/undo-extension.js";
 import { dockStatePersistence } from "../../extensions/dock-extension/dock-state-persistence.js";
 
@@ -21,14 +20,9 @@ import { dockStatePersistence } from "../../extensions/dock-extension/dock-state
 const SETTING_NETLIST_VISIBLE = 'Interface/Netlist Visible';
 const SETTING_UNDO_HISTORY_VISIBLE = 'Interface/Undo History Visible';
 
-
 export class AppMain extends HTMLElement {
-    // Managers
-    private fileManager: FileManager;
+    // Command manager (extension registry coordinator) - stays in app-main
     private commandManager: CommandManager;
-    private dockLayoutHelper: DockLayoutHelper;
-    private paneManager: PaneManager;
-    private undoManager: UndoManager | null = null;
 
     // Docking system
     private dockManager: DockManager;
@@ -39,10 +33,8 @@ export class AppMain extends HTMLElement {
     constructor() {
         super();
 
-        // Initialize managers
-        this.fileManager = new FileManager();
+        // Initialize command manager (extension registry)
         this.commandManager = new CommandManager();
-        // Note: undoManager will be obtained from the undo extension during initialization
 
         this.attachShadow({ mode: 'open' });
         this.shadowRoot!.adoptedStyleSheets = [css(appMainCss)];
@@ -59,9 +51,7 @@ export class AppMain extends HTMLElement {
 
         this.dockManager = this.shadowRoot!.getElementById('main-dock') as DockManager;
 
-        // Initialize dock helpers after dock manager is created
-        this.dockLayoutHelper = new DockLayoutHelper(this.dockManager);
-        this.paneManager = new PaneManager(this.dockManager, this.dockLayoutHelper);
+        // Note: Dock helpers will be obtained from dock extension after initialization
 
         // Initialize docked elements
         this.hierarchyTree = new FilesTree();
@@ -124,9 +114,6 @@ export class AppMain extends HTMLElement {
         // Handle startup files from command-line arguments (Tauri only)
         await this.handleStartupFiles();
 
-        // Initialize shortcut system (now minimal - most moved to extensions)
-        this.initializeShortcuts();
-
         // Pass shortcut manager to menu bar and store reference
         const menuBar = this.shadowRoot!.querySelector('app-menu-bar');
         if (menuBar instanceof MenuBar) {
@@ -134,10 +121,7 @@ export class AppMain extends HTMLElement {
             menuBar.setShortcutManager(this.commandManager.getShortcutManager());
         }
 
-        // Initialize command palette
-        this.commandManager.initializeCommandPalette();
-
-        // Set up event listeners for extension events and cross-cutting concerns
+        // Set up event listeners for cross-cutting concerns that require coordination
         this.setupEventListeners();
 
         // Listen for file picker button click in empty state
@@ -174,14 +158,6 @@ export class AppMain extends HTMLElement {
     private async initializeExtensions() {
         const extensionRegistry = this.commandManager.getExtensionRegistry();
         
-        // Provide app APIs to extensions BEFORE registering them
-        this.commandManager.setAppAPIs({
-            getUndoManager: () => this.undoManager,
-            getFileManager: () => this.fileManager,
-            getPaneManager: () => this.paneManager,
-            getDockManager: () => this.dockManager,
-        });
-        
         // Import and register all default extensions
         const { getAllExtensions } = await import('../../extensions/all-extensions.js');
         const extensions = getAllExtensions();
@@ -190,21 +166,11 @@ export class AppMain extends HTMLElement {
             await extensionRegistry.register(extension);
         }
         
-        // Get the undo manager from the undo extension
-        const undoAPI = await extensionRegistry.getExtension<any>('core/undo');
-        if (undoAPI && undoAPI.getUndoManager) {
-            this.undoManager = undoAPI.getUndoManager();
-        } else {
-            console.warn('Undo manager not available from undo extension');
+        // Initialize dock system with our dock manager
+        const dockAPI = await extensionRegistry.getExtension<any>('core/dock');
+        if (dockAPI && dockAPI.initializeDockSystem) {
+            dockAPI.initializeDockSystem(this.dockManager);
         }
-
-        // Update app APIs now that undoManager is available
-        this.commandManager.setAppAPIs({
-            getUndoManager: () => this.undoManager,
-            getFileManager: () => this.fileManager,
-            getPaneManager: () => this.paneManager,
-            getDockManager: () => this.dockManager,
-        });
 
         // Register pages from extensions with the dock manager
         const pages = extensionRegistry.getPages();
@@ -227,7 +193,38 @@ export class AppMain extends HTMLElement {
     }
 
     /**
-     * Set up event listeners for extension events and cross-cutting concerns
+     * Get file manager from waveform extension
+     */
+    private getFileManager(): FileManager | null {
+        const extensionRegistry = this.commandManager.getExtensionRegistry();
+        const apis = (extensionRegistry as any).extensionAPIs;
+        const waveformAPI = apis?.get('core/waveform-file');
+        return waveformAPI?.getFileManager() ?? null;
+    }
+
+    /**
+     * Get dock layout helper from dock extension
+     */
+    private getDockLayoutHelper(): DockLayoutHelper | null {
+        const extensionRegistry = this.commandManager.getExtensionRegistry();
+        const apis = (extensionRegistry as any).extensionAPIs;
+        const dockAPI = apis?.get('core/dock');
+        return dockAPI?.getDockLayoutHelper() ?? null;
+    }
+
+    /**
+     * Get undo manager from undo extension
+     */
+    private getUndoManager(): UndoManager | null {
+        const extensionRegistry = this.commandManager.getExtensionRegistry();
+        const apis = (extensionRegistry as any).extensionAPIs;
+        const undoAPI = apis?.get('core/undo');
+        return undoAPI?.getUndoManager() ?? null;
+    }
+
+    /**
+     * Set up event listeners for cross-cutting concerns that require coordination
+     * Most event handling is now delegated to extensions
      */
     private setupEventListeners() {
         // Listen for file open request from extensions
@@ -237,22 +234,6 @@ export class AppMain extends HTMLElement {
         this.addEventListener('open-example-request', (e: Event) => {
             const customEvent = e as CustomEvent<{ examples?: any[] }>;
             this.handleOpenExampleRequest(customEvent.detail.examples);
-        });
-
-        // Listen for zoom commands from extensions
-        window.addEventListener('zoom-command', (e: Event) => {
-            const customEvent = e as CustomEvent<{ action: 'zoom-in' | 'zoom-out' | 'zoom-fit' }>;
-            this.dispatchZoomCommand(customEvent.detail.action);
-        });
-
-        // Listen for toggle netlist from extension
-        window.addEventListener('toggle-netlist', () => {
-            this.toggleNetlist();
-        });
-
-        // Listen for toggle undo history from extension
-        window.addEventListener('toggle-undo-history', () => {
-            this.toggleUndoHistory();
         });
 
         // Listen for file activate request from extensions
@@ -279,8 +260,9 @@ export class AppMain extends HTMLElement {
         // Listen for undo tree node selection
         this.addEventListener('node-select', (e: Event) => {
             const customEvent = e as CustomEvent<{ nodeId: string }>;
-            if (this.undoManager) {
-                this.undoManager.navigateTo(customEvent.detail.nodeId);
+            const undoManager = this.getUndoManager();
+            if (undoManager) {
+                undoManager.navigateTo(customEvent.detail.nodeId);
             }
         });
 
@@ -308,21 +290,24 @@ export class AppMain extends HTMLElement {
         this.addEventListener('pane-close', (e: any) => {
             const paneId = e.detail.id;
 
+            const dockLayoutHelper = this.getDockLayoutHelper();
+            if (!dockLayoutHelper) return;
+
             // Handle settings pane close
             if (paneId === 'settings-pane') {
-                this.paneManager.closePane('settings-pane');
+                dockLayoutHelper.closePane('settings-pane');
                 return;
             }
 
             // Handle about pane close
             if (paneId === 'about-pane') {
-                this.paneManager.closePane('about-pane');
+                dockLayoutHelper.closePane('about-pane');
                 return;
             }
 
             // Handle undo tree pane close
             if (paneId === 'undo-tree-pane') {
-                this.paneManager.closePane('undo-tree-pane');
+                dockLayoutHelper.closePane('undo-tree-pane');
                 return;
             }
 
@@ -347,30 +332,11 @@ export class AppMain extends HTMLElement {
         this.addEventListener('selected-signals-changed', (e: Event) => {
             const customEvent = e as CustomEvent<{ filename: string; signalRefs: number[] }>;
             const { filename, signalRefs } = customEvent.detail;
+            const fileManager = this.getFileManager();
             // Only update if this is for the active file
-            if (filename === this.fileManager.getActiveFileId()) {
+            if (fileManager && filename === fileManager.getActiveFileId()) {
                 this.hierarchyTree.selectedSignalRefs = signalRefs;
             }
-        });
-    }
-
-    /**
-     * Initialize the shortcut system with commands and bindings
-     * (Most shortcuts are now registered by extensions)
-     */
-    private initializeShortcuts() {
-        // Most shortcuts are now registered in extensions
-        // This just sets up any app-specific shortcuts that don't belong in extensions
-        
-        // Update the show commands command to actually open the commands view
-        this.commandManager.getCommandRegistry().register({
-            id: 'core/commands/show',
-            label: 'Show All Commands',
-            description: 'Display all registered commands with their shortcuts',
-            handler: () => {
-                // Activate the commands view pane
-                this.activateCommandsViewPane();
-            },
         });
     }
 
@@ -402,8 +368,15 @@ export class AppMain extends HTMLElement {
             }
         ];
 
-        const commandPalette = this.commandManager.getCommandPalette();
-        if (!commandPalette) return;
+        // Get command palette from extension
+        const extensionRegistry = this.commandManager.getExtensionRegistry();
+        const commandPaletteAPI = await extensionRegistry.getExtension<any>('core/command-palette');
+        const commandPalette = commandPaletteAPI?.getCommandPalette?.();
+        
+        if (!commandPalette) {
+            console.warn('Command palette not available');
+            return;
+        }
 
         try {
             const options = exampleFiles.map((ex: any) => ({
@@ -426,10 +399,22 @@ export class AppMain extends HTMLElement {
     }
 
     async refreshFiles() {
-        const { fileIds, activeFileId } = await this.fileManager.refreshFiles(
+        const fileManager = this.getFileManager();
+        const dockLayoutHelper = this.getDockLayoutHelper();
+        
+        if (!fileManager || !dockLayoutHelper) {
+            console.warn('Managers not initialized yet');
+            return;
+        }
+
+        const { fileIds, activeFileId } = await fileManager.refreshFiles(
             // onFileAdded callback
             async (id: string) => {
-                const fileDisplay = this.fileManager.getFileResources(id)?.element;
+                const fm = this.getFileManager();
+                const dlh = this.getDockLayoutHelper();
+                if (!fm || !dlh) return;
+                
+                const fileDisplay = fm.getFileResources(id)?.element;
                 if (fileDisplay) {
                     // Set up undo operation executor for the file display
                     fileDisplay.setUndoableOperationExecutor((operation) => {
@@ -440,12 +425,14 @@ export class AppMain extends HTMLElement {
                     this.dockManager.registerContent(`file-${id}`, () => fileDisplay);
 
                     // Add the file as a new pane in the main stack
-                    this.dockLayoutHelper.addDockPane(id);
+                    dlh.addDockPane(id);
                 }
             },
             // onFileRemoved callback
             (id: string) => {
-                this.dockLayoutHelper.removeDockPane(id);
+                const dlh = this.getDockLayoutHelper();
+                if (!dlh) return;
+                dlh.removeDockPane(id);
             }
         );
 
@@ -467,34 +454,43 @@ export class AppMain extends HTMLElement {
                 console.warn('Failed to load visibility settings:', error);
             }
 
+            const dlh = this.getDockLayoutHelper();
             // Only show sidebar if user wants it visible
-            if (netlistVisible) {
-                this.dockLayoutHelper.updateSidebarVisibility(true);
+            if (netlistVisible && dlh) {
+                dlh.updateSidebarVisibility(true);
             }
 
             // Restore undo history visibility if user had it open
-            if (undoHistoryVisible && this.dockLayoutHelper.isSidebarVisible()) {
+            if (undoHistoryVisible && dlh && dlh.isSidebarVisible()) {
                 // Only restore undo pane if sidebar is visible and undo pane is not already there
                 // The sidebar visibility check ensures undo history respects netlist visibility
-                if (!this.dockLayoutHelper.isUndoPaneVisible()) {
+                if (!dlh.isUndoPaneVisible()) {
                     // toggleUndoPaneVisibility() will add the pane since it's currently not visible
-                    this.dockLayoutHelper.toggleUndoPaneVisibility();
+                    dlh.toggleUndoPaneVisibility();
                 }
             }
 
             // Update menu checkbox to reflect current state
-            if (this.menuBar) {
-                this.menuBar.updateMenuItemChecked('toggle-netlist', this.dockLayoutHelper.isSidebarVisible());
-                this.menuBar.updateMenuItemChecked('toggle-undo-history', this.dockLayoutHelper.isUndoPaneVisible());
+            if (this.menuBar && dlh) {
+                this.menuBar.updateMenuItemChecked('toggle-netlist', dlh.isSidebarVisible());
+                this.menuBar.updateMenuItemChecked('toggle-undo-history', dlh.isUndoPaneVisible());
             }
         } else {
             // Hide sidebar when no files are open
-            this.dockLayoutHelper.updateSidebarVisibility(false);
+            const dlh = this.getDockLayoutHelper();
+            if (dlh) {
+                dlh.updateSidebarVisibility(false);
+            }
         }
     }
 
     async handleFileOpen() {
-        const fileId = await this.fileManager.handleFileOpen();
+        const fileManager = this.getFileManager();
+        if (!fileManager) {
+            console.warn('File manager not initialized yet');
+            return;
+        }
+        const fileId = await fileManager.handleFileOpen();
         if (fileId) {
             await this.refreshFiles();
             this.setActiveFile(fileId);
@@ -502,7 +498,12 @@ export class AppMain extends HTMLElement {
     }
 
     async handleOpenExample(filename: string) {
-        const fileId = await this.fileManager.handleOpenExample(filename);
+        const fileManager = this.getFileManager();
+        if (!fileManager) {
+            console.warn('File manager not initialized yet');
+            return;
+        }
+        const fileId = await fileManager.handleOpenExample(filename);
         if (fileId) {
             await this.refreshFiles();
             this.setActiveFile(fileId);
@@ -518,11 +519,19 @@ export class AppMain extends HTMLElement {
     }
 
     setActiveFile(id: string) {
-        if (!this.fileManager.hasFile(id)) return;
+        const fileManager = this.getFileManager();
+        const dockLayoutHelper = this.getDockLayoutHelper();
+        
+        if (!fileManager || !dockLayoutHelper) {
+            console.warn('Managers not initialized yet');
+            return;
+        }
+        
+        if (!fileManager.hasFile(id)) return;
 
-        this.fileManager.setActiveFileId(id);
+        fileManager.setActiveFileId(id);
 
-        const activeRes = this.fileManager.getFileResources(id);
+        const activeRes = fileManager.getFileResources(id);
 
         // Update Tree View
         if (this.hierarchyTree) {
@@ -540,17 +549,28 @@ export class AppMain extends HTMLElement {
         updateDocumentTitle(id);
 
         // Set the active pane in the dock stack
-        this.dockLayoutHelper.setActivePane(`file-pane-${id}`);
+        dockLayoutHelper.setActivePane(`file-pane-${id}`);
     }
 
     async closeFile(id: string) {
-        await this.fileManager.closeFile(id);
+        const fileManager = this.getFileManager();
+        if (!fileManager) {
+            console.warn('File manager not initialized yet');
+            return;
+        }
+        await fileManager.closeFile(id);
         await this.refreshFiles();
     }
 
     activateCommandsViewPane() {
+        const dockLayoutHelper = this.getDockLayoutHelper();
+        if (!dockLayoutHelper) {
+            console.warn('Dock layout helper not initialized yet');
+            return;
+        }
+        
         // Activate the pane first
-        this.paneManager.activatePane('commands-view-pane', 'Keyboard Shortcuts', 'commands-view', true);
+        dockLayoutHelper.activatePane('commands-view-pane', 'Keyboard Shortcuts', 'commands-view', true);
 
         // Then wire up the commands view with dependencies
         // Need to wait a tick for the element to be in the DOM
@@ -582,67 +602,9 @@ export class AppMain extends HTMLElement {
      * This is the public API for other parts of the app to record operations
      */
     executeOperation(operation: UndoableOperation) {
-        if (this.undoManager) {
-            this.undoManager.execute(operation);
-        }
-    }
-
-    /**
-     * Dispatch zoom command to the active file display
-     */
-    private dispatchZoomCommand(action: 'zoom-in' | 'zoom-out' | 'zoom-fit') {
-        const activeFileId = this.fileManager.getActiveFileId();
-        if (!activeFileId) return;
-
-        const activeRes = this.fileManager.getFileResources(activeFileId);
-        if (!activeRes) return;
-
-        const event = new CustomEvent('zoom-command', {
-            detail: { action },
-            bubbles: false,
-            composed: false
-        });
-
-        activeRes.element.dispatchEvent(event);
-    }
-
-    /**
-     * Toggle the netlist view visibility
-     */
-    private async toggleNetlist() {
-        const newVisibility = this.dockLayoutHelper.toggleSidebarVisibility();
-
-        // Update the menu checkbox state
-        if (this.menuBar) {
-            this.menuBar.updateMenuItemChecked('toggle-netlist', newVisibility);
-        }
-
-        // Persist the setting
-        try {
-            const { setSetting } = await import('../../extensions/settings-extension/settings-extension.js');
-            await setSetting(SETTING_NETLIST_VISIBLE, newVisibility);
-        } catch (error) {
-            console.warn('Failed to persist netlist visibility setting:', error);
-        }
-    }
-
-    /**
-     * Toggle the undo history pane visibility
-     */
-    private async toggleUndoHistory() {
-        const newVisibility = this.dockLayoutHelper.toggleUndoPaneVisibility();
-
-        // Update the menu checkbox state
-        if (this.menuBar) {
-            this.menuBar.updateMenuItemChecked('toggle-undo-history', newVisibility);
-        }
-
-        // Persist the setting
-        try {
-            const { setSetting } = await import('../../extensions/settings-extension/settings-extension.js');
-            await setSetting(SETTING_UNDO_HISTORY_VISIBLE, newVisibility);
-        } catch (error) {
-            console.warn('Failed to persist undo history visibility setting:', error);
+        const undoManager = this.getUndoManager();
+        if (undoManager) {
+            undoManager.execute(operation);
         }
     }
 }

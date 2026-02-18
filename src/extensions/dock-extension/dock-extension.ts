@@ -7,6 +7,7 @@
 
 import { Extension, ExtensionContext } from "../types.js";
 import { DockManager } from "./dock-manager.js";
+import { DockLayoutHelper } from "../../components/dock-layout-helper.js";
 
 // Ensure custom elements are registered
 import "./dock-manager.js";
@@ -21,6 +22,16 @@ export interface DockAPI {
      * Get the dock manager instance
      */
     getDockManager(): DockManager | null;
+    
+    /**
+     * Get the dock layout helper instance
+     */
+    getDockLayoutHelper(): DockLayoutHelper | null;
+    
+    /**
+     * Initialize the dock system with the DOM element
+     */
+    initializeDockSystem(dockManager: DockManager): void;
 }
 
 export class DockExtension implements Extension {
@@ -31,20 +42,27 @@ export class DockExtension implements Extension {
     };
 
     private dockManager: DockManager | null = null;
+    private dockLayoutHelper: DockLayoutHelper | null = null;
 
     async activate(context: ExtensionContext): Promise<DockAPI> {
-        // The dock manager is created by app-main
-        // This extension ensures the custom elements are registered
+        // The dock manager DOM element is created by app-main
+        // This extension will manage the helpers once initialized
         
         return {
             getDockManager: () => this.dockManager,
+            getDockLayoutHelper: () => this.dockLayoutHelper,
+            initializeDockSystem: (dockManager: DockManager) => this.initializeDockSystem(dockManager),
         };
     }
 
     /**
-     * Set the dock manager instance (called by app-main after creating it)
+     * Initialize the dock system with managers
+     * Called by app-main after creating the dock-manager DOM element
      */
-    setDockManager(dockManager: DockManager): void {
+    private initializeDockSystem(dockManager: DockManager): void {
         this.dockManager = dockManager;
+        
+        // Create the dock layout helper
+        this.dockLayoutHelper = new DockLayoutHelper(dockManager);
     }
 }

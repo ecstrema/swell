@@ -14,6 +14,7 @@ import { WaveformFileExtension } from "./waveform-file-extension/index.js";
 import { AboutExtension } from "./about-extension/index.js";
 import { UndoExtension } from "./undo-extension/index.js";
 import { CoreUIExtension } from "./core-ui-extension/index.js";
+import { CommandPaletteExtension } from "./command-palette-extension/command-palette-extension.js";
 
 /**
  * Get all default extensions that should be registered on startup
@@ -22,6 +23,7 @@ export function getAllExtensions(): Extension[] {
     return [
         new MenuExtension(),
         new DockExtension(),
+        new CommandPaletteExtension(),
         new SettingsExtension(),
         new ShortcutEditorExtension(),
         new WaveformFileExtension(),

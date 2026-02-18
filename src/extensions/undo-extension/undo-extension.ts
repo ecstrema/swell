@@ -33,6 +33,7 @@ export class UndoExtension implements Extension {
         id: 'core/undo',
         name: 'Undo Extension',
         description: 'Provides undo/redo functionality and history visualization',
+        dependencies: ['core/dock'],
     };
 
     private undoManager: UndoManager;
@@ -42,10 +43,11 @@ export class UndoExtension implements Extension {
     }
 
     async activate(context: ExtensionContext): Promise<UndoAPI> {
-        const paneManager = context.app.getPaneManager?.();
-        const dockManager = context.app.getDockManager?.();
+        const dockAPI = context.dependencies.get('core/dock');
+        const dockLayoutHelper = dockAPI?.getDockLayoutHelper?.();
+        const dockManager = dockAPI?.getDockManager?.();
 
-        if (!paneManager || !dockManager) {
+        if (!dockLayoutHelper || !dockManager) {
             console.warn('Undo extension: Required managers not available');
             // Still return API even if UI can't be registered
             return {
@@ -100,7 +102,7 @@ export class UndoExtension implements Extension {
             label: 'Show Undo Tree',
             description: 'Show the undo tree visualization',
             handler: () => {
-                paneManager.activatePane('undo-tree-pane', 'Undo History', 'undo-tree', true);
+                dockLayoutHelper.activatePane('undo-tree-pane', 'Undo History', 'undo-tree', true);
             },
         });
 
@@ -110,7 +112,7 @@ export class UndoExtension implements Extension {
             label: 'Toggle Undo History View',
             description: 'Show or hide the undo history panel',
             handler: () => {
-                paneManager.activatePane('undo-tree-pane', 'Undo History', 'undo-tree', true);
+                dockLayoutHelper.activatePane('undo-tree-pane', 'Undo History', 'undo-tree', true);
             },
         });
 

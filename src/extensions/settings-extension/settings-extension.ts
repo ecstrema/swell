@@ -15,6 +15,7 @@ import { MenuExtension } from "../menu-extension/menu-extension.js";
 // Re-export types and functions that external code needs
 export type { SettingMetadata, SettingValue } from "./settings-register.js";
 export { settingsRegister } from "./settings-register.js";
+import { getSetting as getSettingStorage, setSetting as setSettingStorage } from "./settings-storage.js";
 export { getSetting, setSetting } from "./settings-storage.js";
 
 // Ensure the custom element is registered
@@ -53,6 +54,20 @@ export class SettingsExtension implements Extension {
         settingsRegister.register(setting);
     }
 
+    /**
+     * Get a setting value
+     */
+    async getSetting(path: string): Promise<any> {
+        return getSettingStorage(path);
+    }
+
+    /**
+     * Set a setting value
+     */
+    async setSetting(path: string, value: any): Promise<void> {
+        return setSettingStorage(path, value);
+    }
+
     private registerSettingsCommand(): void {
         this.commandExtension.registerCommand({
             id: 'core/settings/open',
@@ -83,4 +98,3 @@ export class SettingsExtension implements Extension {
         }
     }
 }
-

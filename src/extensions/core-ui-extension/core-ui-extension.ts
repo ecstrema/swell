@@ -12,7 +12,6 @@ import { MenuExtension } from "../menu-extension/menu-extension.js";
 
 // Setting paths
 const SETTING_NETLIST_VISIBLE = 'Interface/Netlist Visible';
-const SETTING_UNDO_HISTORY_VISIBLE = 'Interface/Undo History Visible';
 
 export class CoreUIExtension implements Extension {
     static readonly metadata = {
@@ -35,9 +34,6 @@ export class CoreUIExtension implements Extension {
     async activate(): Promise<void> {
         // Register netlist toggle command
         this.registerNetlistToggleCommand();
-
-        // Register undo history toggle (enhanced version that also handles sidebar)
-        this.registerUndoHistoryToggleCommand();
 
         // Register quit command (Tauri only)
         this.registerQuitCommand();
@@ -67,20 +63,6 @@ export class CoreUIExtension implements Extension {
              checked: true,
              id: 'toggle-netlist',
              commandId: 'core/view/toggle-netlist'
-        });
-    }
-
-    /**
-     * Register enhanced undo history toggle command
-     */
-    private registerUndoHistoryToggleCommand(): void {
-        // Note: Basic undo history is already registered in UndoExtension
-        // This adds the enhanced version that also handles sidebar visibility
-        this.commandExtension.registerCommand({
-            id: 'core/view/toggle-undo-history-enhanced',
-            label: 'Toggle Undo History (Enhanced)',
-            description: 'Toggle undo history visibility with sidebar management',
-            handler: () => this.toggleUndoHistory(),
         });
     }
 
@@ -133,27 +115,6 @@ export class CoreUIExtension implements Extension {
             await setSetting(SETTING_NETLIST_VISIBLE, newVisibility);
         } catch (error) {
             console.warn('Failed to persist netlist visibility setting:', error);
-        }
-    }
-
-    /**
-     * Toggle the undo history pane visibility
-     */
-    private async toggleUndoHistory(): Promise<void> {
-        const layoutHelper = this.dockExtension.getDockLayoutHelper();
-        if (!layoutHelper) return;
-
-        const newVisibility = layoutHelper.toggleUndoPaneVisibility();
-
-        // Update the menu checkbox state
-        this.menuExtension.updateMenuItem('toggle-undo-history', { checked: newVisibility });
-
-        // Persist the setting
-        try {
-            const { setSetting } = await import('../settings-extension/settings-extension.js');
-            await setSetting(SETTING_UNDO_HISTORY_VISIBLE, newVisibility);
-        } catch (error) {
-            console.warn('Failed to persist undo history visibility setting:', error);
         }
     }
 }

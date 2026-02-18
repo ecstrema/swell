@@ -1,43 +1,62 @@
-
 import { Extension } from "../types.js";
-import { CommandRegistry } from "../../shortcuts/command-registry.js";
-import { ShortcutManager } from "../../shortcuts/shortcut-manager.js";
-import { Command } from "../../shortcuts/types.js";
-import { defaultShortcuts } from "../../shortcuts/default-shortcuts.js";
+import { Command, CommandExecutor } from "../../shortcuts/types.js";
 
-export class CommandExtension implements Extension {
+/**
+ * Provides the command registry.
+ * Other extensions register their commands here; the shortcut and menu systems
+ * execute commands through this class.
+ *
+ * Implements CommandExecutor so it can be passed directly to ShortcutManager.
+ */
+export class CommandExtension implements Extension, CommandExecutor {
     static readonly metadata = {
         id: 'core/commands',
         name: 'Command Extension',
-        description: 'Provides command registry and shortcut management',
+        description: 'Provides the command registry',
     };
 
-    private commandRegistry: CommandRegistry;
-    private shortcutManager: ShortcutManager;
+    private commands: Map<string, Command> = new Map();
 
-    constructor(dependencies: Map<string, Extension>) {
-        this.commandRegistry = new CommandRegistry();
-        this.shortcutManager = new ShortcutManager(this.commandRegistry);
+    constructor(_dependencies: Map<string, Extension>) {}
+
+    async activate(): Promise<void> {}
+
+    // ── Registry API ────────────────────────────────────────────────────────
+
+    register(command: Command): void {
+        this.commands.set(command.id, command);
     }
 
-    async activate(): Promise<void> {
-        // Load default keyboard shortcuts from the JSON configuration file
-        this.shortcutManager.registerMany(defaultShortcuts);
+    /** Alias kept for callers that use the longer name. */
+    registerCommand(command: Command): void {
+        this.register(command);
     }
 
-    getCommandRegistry(): CommandRegistry {
-        return this.commandRegistry;
+    unregister(commandId: string): void {
+        this.commands.delete(commandId);
     }
 
-    getShortcutManager(): ShortcutManager {
-        return this.shortcutManager;
+    async execute(commandId: string): Promise<boolean> {
+        const command = this.commands.get(commandId);
+        if (!command) return false;
+        try {
+            await command.handler();
+            return true;
+        } catch (error) {
+            console.error(`Error executing command ${commandId}:`, error);
+            return false;
+        }
     }
 
-    registerCommand(command: Command) {
-        this.commandRegistry.register(command);
+    get(commandId: string): Command | undefined {
+        return this.commands.get(commandId);
     }
 
-    executeCommand(commandId: string) {
-        this.commandRegistry.execute(commandId);
+    getAll(): Command[] {
+        return Array.from(this.commands.values());
+    }
+
+    has(commandId: string): boolean {
+        return this.commands.has(commandId);
     }
 }

@@ -1,17 +1,16 @@
 import ShoSho from 'shosho';
-import { KeyboardShortcut, ShortcutBinding } from "./types.js";
-import { CommandRegistry } from "./command-registry.js";
+import { KeyboardShortcut, ShortcutBinding, CommandExecutor } from "./types.js";
 
 /**
  * Manages keyboard shortcuts and maps them to commands
  */
 export class ShortcutManager {
     private bindings: ShortcutBinding[] = [];
-    private commandRegistry: CommandRegistry;
-    private shosho: ShoSho; // ShoSho instance
+    private commandRegistry: CommandExecutor;
+    private shosho!: ShoSho; // ShoSho instance (initialized lazily in initializeShoSho)
     private disposers: Map<string, (() => void)[]> = new Map();
 
-    constructor(commandRegistry: CommandRegistry) {
+    constructor(commandRegistry: CommandExecutor) {
         this.commandRegistry = commandRegistry;
         // Don't initialize ShoSho yet - wait until activate() is called
         // This prevents issues in test environments where document might not be available
@@ -147,7 +146,7 @@ export class ShortcutManager {
      * Check if a shortcut is already in use by another command
      */
     isShortcutInUse(shortcut: KeyboardShortcut, excludeCommandId?: string): boolean {
-        return this.bindings.some(b => 
+        return this.bindings.some(b =>
             b.shortcut === shortcut && (!excludeCommandId || b.commandId !== excludeCommandId)
         );
     }
@@ -167,11 +166,11 @@ export class ShortcutManager {
     activate(target?: EventTarget): void {
         // Determine the actual target to use
         const eventTarget = target ?? (typeof document !== 'undefined' ? document : null);
-        
+
         if (!eventTarget) {
             throw new Error('ShortcutManager.activate() requires a target when document is not available');
         }
-        
+
         // Initialize ShoSho on first activation or when target changes
         if (!this.shosho) {
             this.initializeShoSho(eventTarget);

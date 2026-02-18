@@ -7,6 +7,7 @@
 import { Extension } from "../types.js";
 import { CommandPalette } from "../../components/command/command-palette.js";
 import { CommandExtension } from "../command-extension/command-extension.js";
+import { ShortcutExtension } from "../shortcut-extension/shortcut-extension.js";
 
 /**
  * API provided by the command palette extension
@@ -24,20 +25,22 @@ export class CommandPaletteExtension implements Extension {
         name: 'Command Palette Extension',
         description: 'Provides command palette for searching and executing commands',
     };
-    static readonly dependencies = [CommandExtension];
+    static readonly dependencies = [CommandExtension, ShortcutExtension];
 
     private commandExtension: CommandExtension;
+    private shortcutExtension: ShortcutExtension;
     private commandPalette: CommandPalette | null = null;
 
     constructor(dependencies: Map<string, Extension>) {
         this.commandExtension = dependencies.get(CommandExtension.metadata.id) as CommandExtension;
+        this.shortcutExtension = dependencies.get(ShortcutExtension.metadata.id) as ShortcutExtension;
     }
 
     async activate(): Promise<void> {
         // Create command palette with access to command registry and shortcut manager
         this.commandPalette = new CommandPalette(
             this.commandExtension.getCommandRegistry(),
-            this.commandExtension.getShortcutManager()
+            this.shortcutExtension.getShortcutManager()
         );
 
         // Append to body
@@ -50,7 +53,6 @@ export class CommandPaletteExtension implements Extension {
             description: 'Open the command palette to search and execute commands',
             handler: () => this.togglePalette(),
         });
-
     }
 
     getCommandPalette(): CommandPalette | null {

@@ -127,7 +127,7 @@ export class UndoExtension implements Extension {
         }, { id: 'redo', commandId: 'core/edit/redo' });
 
         this.menuExtension.registerMenuItem('View/Undo History', () => {
-             this.commandExtension.executeCommand('core/view/toggle-undo-history');
+             this.commandExtension.execute('core/view/toggle-undo-history');
         }, {
              type: 'checkbox',
              checked: false, // Initial state, should be updated from persistence if possible

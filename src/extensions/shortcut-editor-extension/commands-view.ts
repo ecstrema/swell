@@ -1,13 +1,13 @@
 /**
  * Commands View Component (Shortcut Editor)
- * 
+ *
  * Displays all registered commands with their descriptions and shortcuts in a table format.
  * Allows users to edit shortcuts by clicking on them, similar to VSCode's shortcut editor.
  * Includes a search bar to filter commands.
  */
 
 import { Command, KeyboardShortcut } from "../../shortcuts/types.js";
-import { CommandRegistry } from "../../shortcuts/command-registry.js";
+import { CommandExtension } from "../command-extension/command-extension.js";
 import { ShortcutManager } from "../../shortcuts/shortcut-manager.js";
 import { css } from "../../utils/css-utils.js";
 import commandsViewCss from "./commands-view.css?inline";
@@ -16,7 +16,7 @@ import { ShortcutDisplay } from "../../components/shortcut-display/shortcut-disp
 import ShoSho from 'shosho';
 
 export class CommandsView extends HTMLElement {
-    private commandRegistry: CommandRegistry | null = null;
+    private commandRegistry: CommandExtension | null = null;
     private shortcutManager: ShortcutManager | null = null;
     private searchInput: HTMLInputElement | null = null;
     private tableBody: HTMLTableSectionElement | null = null;
@@ -48,7 +48,7 @@ export class CommandsView extends HTMLElement {
     /**
      * Set the command registry
      */
-    setCommandRegistry(registry: CommandRegistry): void {
+    setCommandRegistry(registry: CommandExtension): void {
         this.commandRegistry = registry;
         this.loadCommands();
     }
@@ -187,7 +187,7 @@ export class CommandsView extends HTMLElement {
         // Shortcut column
         const shortcutCell = document.createElement('td');
         shortcutCell.className = 'commands-view__td commands-view__td--shortcut';
-        
+
         if (this.shortcutManager) {
             const shortcuts = this.shortcutManager.getShortcutsForCommand(command.id);
             if (shortcuts.length > 0) {
@@ -263,10 +263,10 @@ export class CommandsView extends HTMLElement {
         this.recordingDispose = ShoSho.record((shortcut: KeyboardShortcut) => {
             // Trim the shortcut to get a clean value
             const trimmed = shortcut.trim();
-            
+
             if (trimmed) {
                 recordingMessage.textContent = `Recorded: ${ShoSho.format(trimmed)}`;
-                
+
                 // Add or update the save button after recording
                 if (!saveButton) {
                     saveButton = document.createElement('button');
@@ -306,7 +306,7 @@ export class CommandsView extends HTMLElement {
         // Restore the original shortcut display
         const cellInfo = this.cellData.get(this.editingCell);
         const commandId = cellInfo?.commandId;
-        
+
         if (commandId) {
             const command = this.allCommands.find(c => c.id === commandId);
             if (command) {
@@ -354,7 +354,7 @@ export class CommandsView extends HTMLElement {
         if (conflictCommandId && conflictCommandId !== commandId) {
             const conflictCommand = this.commandRegistry?.get(conflictCommandId);
             const conflictLabel = conflictCommand?.label || conflictCommandId;
-            
+
             // Show conflict warning
             if (this.editingCell) {
                 const recordingMessage = this.editingCell.querySelector('.commands-view__recording-message');

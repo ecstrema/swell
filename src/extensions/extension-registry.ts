@@ -8,19 +8,8 @@
 import {
     Extension,
     ExtensionId,
-    PageRegistration,
-    ThemeRegistration,
-    CommandExecutedCallback,
-    SettingChangedCallback,
-    ThemeChangedCallback,
-    PageDisplayedCallback,
     ExtensionConstructor
 } from "./types.js";
-import { Command, ShortcutBinding } from "../shortcuts/types.js";
-import { CommandRegistry } from "../shortcuts/command-registry.js";
-import { ShortcutManager } from "../shortcuts/shortcut-manager.js";
-import { SettingMetadata, settingsRegister } from "../extensions/settings-extension/settings-extension.js";
-import { MenuItemConfig, SubmenuConfig } from "../menu-api/menu-api.js";
 
 /**
  * Central registry for all extensions
@@ -28,18 +17,6 @@ import { MenuItemConfig, SubmenuConfig } from "../menu-api/menu-api.js";
 export class ExtensionRegistry {
     private extensions: Map<ExtensionId, Extension> = new Map();
     private extensionAPIs: Map<ExtensionId, any> = new Map();
-    private pages: Map<string, PageRegistration> = new Map();
-    private themes: Map<string, ThemeRegistration> = new Map();
-    private menuItems: (MenuItemConfig | SubmenuConfig)[] = [];
-
-    // Callbacks
-    private commandExecutedCallbacks: CommandExecutedCallback[] = [];
-    private settingChangedCallbacks: SettingChangedCallback[] = [];
-    private themeChangedCallbacks: ThemeChangedCallback[] = [];
-    private pageDisplayedCallbacks: PageDisplayedCallback[] = [];
-
-    constructor() {
-    }
 
     /**
      * Register an extension class and recursively its dependencies
@@ -48,6 +25,7 @@ export class ExtensionRegistry {
         const id = ExtensionClass.metadata.id;
 
         if (this.extensions.has(id)) {
+            // Already registered
             return;
         }
 
@@ -110,96 +88,5 @@ export class ExtensionRegistry {
      */
     getExtensions(): Extension[] {
         return Array.from(this.extensions.values());
-    }
-
-    /**
-     * Get all registered pages
-     */
-    getPages(): PageRegistration[] {
-        return Array.from(this.pages.values());
-    }
-
-    /**
-     * Get a page by ID
-     */
-    getPage(pageId: string): PageRegistration | undefined {
-        return this.pages.get(pageId);
-    }
-
-    /**
-     * Get all registered themes
-     */
-    getThemes(): ThemeRegistration[] {
-        return Array.from(this.themes.values());
-    }
-
-    /**
-     * Get a theme by ID
-     */
-    getTheme(themeId: string): ThemeRegistration | undefined {
-        return this.themes.get(themeId);
-    }
-
-    /**
-     * Get all registered menu items
-     */
-    getMenuItems(): (MenuItemConfig | SubmenuConfig)[] {
-        return [...this.menuItems];
-    }
-
-    /**
-     * Notify that a command was executed
-     */
-    notifyCommandExecuted(commandId: string): void {
-        this.commandExecutedCallbacks.forEach(cb => cb(commandId));
-    }
-
-    /**
-     * Notify that a setting was changed
-     */
-    notifySettingChanged(path: string, value: any): void {
-        this.settingChangedCallbacks.forEach(cb => cb(path, value));
-    }
-
-    /**
-     * Notify that a theme was changed
-     */
-    notifyThemeChanged(themeId: string): void {
-        this.themeChangedCallbacks.forEach(cb => cb(themeId));
-    }
-
-    /**
-     * Notify that a page was displayed
-     */
-    notifyPageDisplayed(pageId: string): void {
-        this.pageDisplayedCallbacks.forEach(cb => cb(pageId));
-    }
-
-    /**
-     * Register a callback for command executions
-     */
-    onCommandExecuted(callback: CommandExecutedCallback): void {
-        this.commandExecutedCallbacks.push(callback);
-    }
-
-    /**
-     * Register a callback for setting changes
-     */
-    onSettingChanged(callback: SettingChangedCallback): void {
-        this.settingChangedCallbacks.push(callback);
-    }
-
-    /**
-     * Register a callback for theme changes
-     */
-    onThemeChanged(callback: ThemeChangedCallback): void {
-        this.themeChangedCallbacks.push(callback);
-    }
-
-    /**
-     * Register a callback for page displays
-     */
-    onPageDisplayed(callback: PageDisplayedCallback): void {
-        this.pageDisplayedCallbacks.push(callback);
     }
 }

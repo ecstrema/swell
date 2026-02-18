@@ -14,6 +14,7 @@ import { WaveformFileExtension } from "./waveform-file-extension/index.js";
 import { AboutExtension } from "./about-extension/index.js";
 import { UndoExtension } from "./undo-extension/index.js";
 import { CoreUIExtension } from "./core-ui-extension/index.js";
+import { ShortcutExtension } from "./shortcut-extension/index.js";
 import { CommandPaletteExtension } from "./command-palette-extension/command-palette-extension.js";
 
 /**
@@ -23,6 +24,7 @@ export function getAllExtensions(): ExtensionConstructor[] {
     return [
         MenuExtension,
         DockExtension,
+        ShortcutExtension,
         CommandPaletteExtension,
         SettingsExtension,
         ShortcutEditorExtension,

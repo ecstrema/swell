@@ -81,7 +81,7 @@ export class SettingsExtension implements Extension {
     private registerSettingsMenu(): void {
         this.menuExtension.registerMenuItem('File/-', undefined, { type: 'separator' });
         this.menuExtension.registerMenuItem('File/Settings...', () => {
-             this.commandExtension.executeCommand('core/settings/open');
+             this.commandExtension.execute('core/settings/open');
         }, {
              id: 'settings',
         });

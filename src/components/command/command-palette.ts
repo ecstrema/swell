@@ -1,5 +1,5 @@
 import { Command, SelectOption } from "../../shortcuts/types.js";
-import { CommandRegistry } from "../../shortcuts/command-registry.js";
+import { CommandExtension } from "../../extensions/command-extension/command-extension.js";
 import { ShortcutManager } from "../../shortcuts/shortcut-manager.js";
 import { css } from "../../utils/css-utils.js";
 import { scrollbarSheet } from "../../styles/shared-sheets.js";
@@ -13,14 +13,14 @@ import { ShortcutDisplay } from "../shortcut-display/shortcut-display.js";
  * Can also be used as a modal selector with showSelection()
  */
 export class CommandPalette extends HTMLElement {
-    private commandRegistry: CommandRegistry;
+    private commandExtension: CommandExtension;
     private shortcutManager: ShortcutManager | null;
     private isOpen: boolean = false;
     private searchInput: HTMLInputElement | null = null;
     private resultsContainer: HTMLDivElement | null = null;
     private selectedIndex: number = 0;
     private filteredCommands: Command[] = [];
-    
+
     // Selection mode state
     private isSelectionMode: boolean = false;
     private selectionOptions: SelectOption[] = [];
@@ -28,9 +28,9 @@ export class CommandPalette extends HTMLElement {
     private selectionResolve: ((value: any) => void) | null = null;
     private selectionReject: ((reason?: any) => void) | null = null;
 
-    constructor(commandRegistry: CommandRegistry, shortcutManager?: ShortcutManager) {
+    constructor(commandExtension: CommandExtension, shortcutManager?: ShortcutManager) {
         super();
-        this.commandRegistry = commandRegistry;
+        this.commandExtension = commandExtension;
         this.shortcutManager = shortcutManager || null;
 
         this.attachShadow({ mode: 'open' });
@@ -59,23 +59,12 @@ export class CommandPalette extends HTMLElement {
     }
 
     private setupEventListeners() {
-        // Search input
-        this.searchInput?.addEventListener('input', () => {
-            this.handleSearch();
-        });
+        this.searchInput?.addEventListener('input', () => this.handleSearch());
+        this.searchInput?.addEventListener('keydown', (e) => this.handleKeyDown(e));
 
-        // Keyboard navigation
-        this.searchInput?.addEventListener('keydown', (e) => {
-            this.handleKeyDown(e);
-        });
-
-        // Close on overlay click (but not palette clicks)
         const overlay = this.shadowRoot!.querySelector('.overlay');
         overlay?.addEventListener('click', (e) => {
-            // Only close if the click was directly on the overlay, not on the palette
-            if (e.target === overlay) {
-                this.close();
-            }
+            if (e.target === overlay) this.close();
         });
     }
 
@@ -84,14 +73,12 @@ export class CommandPalette extends HTMLElement {
         this.classList.add('open');
         this.selectedIndex = 0;
 
-        // Reset and focus
         if (this.searchInput) {
             this.searchInput.value = '';
             this.searchInput.placeholder = 'Type a command...';
             this.searchInput.focus();
         }
 
-        // Show all commands initially
         this.handleSearch();
     }
 
@@ -102,8 +89,7 @@ export class CommandPalette extends HTMLElement {
         if (this.searchInput) {
             this.searchInput.value = '';
         }
-        
-        // Clean up selection mode
+
         if (this.isSelectionMode) {
             this.isSelectionMode = false;
             this.selectionOptions = [];
@@ -124,10 +110,6 @@ export class CommandPalette extends HTMLElement {
         }
     }
 
-    /**
-     * Show a list of options for the user to select from
-     * Returns a promise that resolves with the selected option's value
-     */
     showSelection<T = any>(options: SelectOption<T>[], placeholder?: string): Promise<T> {
         return new Promise<T>((resolve, reject) => {
             this.isSelectionMode = true;
@@ -136,51 +118,46 @@ export class CommandPalette extends HTMLElement {
             this.selectionResolve = resolve;
             this.selectionReject = reject;
             this.selectedIndex = 0;
-            
+
             this.isOpen = true;
             this.classList.add('open');
-            
+
             if (this.searchInput) {
                 this.searchInput.value = '';
                 this.searchInput.placeholder = placeholder || 'Type to filter...';
                 this.searchInput.focus();
             }
-            
+
             this.renderSelection();
         });
     }
 
     private handleSearch() {
         const query = this.searchInput?.value.toLowerCase() || '';
-        
+
         if (this.isSelectionMode) {
-            // Filter selection options
             if (query === '') {
                 this.filteredOptions = this.selectionOptions;
             } else {
                 this.filteredOptions = this.selectionOptions.filter(opt => {
-                    const labelMatch = opt.label.toLowerCase().includes(query);
-                    const idMatch = opt.id.toLowerCase().includes(query);
-                    const descriptionMatch = opt.description?.toLowerCase().includes(query) || false;
-                    return labelMatch || idMatch || descriptionMatch;
+                    return opt.label.toLowerCase().includes(query)
+                        || opt.id.toLowerCase().includes(query)
+                        || (opt.description?.toLowerCase().includes(query) ?? false);
                 });
             }
             this.selectedIndex = 0;
             this.renderSelection();
         } else {
-            // Filter commands
-            const allCommands = this.commandRegistry.getAll();
-            // Exclude the command palette toggle command since it's redundant when the palette is already open
-            const commandsToShow = allCommands.filter(cmd => cmd.id !== 'core/command-palette/toggle');
-            
+            const commandsToShow = this.commandExtension.getAll()
+                .filter(cmd => cmd.id !== 'core/command-palette/toggle');
+
             if (query === '') {
                 this.filteredCommands = commandsToShow;
             } else {
                 this.filteredCommands = commandsToShow.filter(cmd => {
-                    const labelMatch = cmd.label.toLowerCase().includes(query);
-                    const idMatch = cmd.id.toLowerCase().includes(query);
-                    const descriptionMatch = cmd.description?.toLowerCase().includes(query) || false;
-                    return labelMatch || idMatch || descriptionMatch;
+                    return cmd.label.toLowerCase().includes(query)
+                        || cmd.id.toLowerCase().includes(query)
+                        || (cmd.description?.toLowerCase().includes(query) ?? false);
                 });
             }
             this.selectedIndex = 0;
@@ -194,22 +171,19 @@ export class CommandPalette extends HTMLElement {
                 e.preventDefault();
                 this.close();
                 break;
-
             case 'ArrowDown':
                 e.preventDefault();
-                const maxIndex = this.isSelectionMode 
-                    ? this.filteredOptions.length - 1 
+                const maxIndex = this.isSelectionMode
+                    ? this.filteredOptions.length - 1
                     : this.filteredCommands.length - 1;
                 this.selectedIndex = Math.min(this.selectedIndex + 1, maxIndex);
                 this.isSelectionMode ? this.renderSelection() : this.render();
                 break;
-
             case 'ArrowUp':
                 e.preventDefault();
                 this.selectedIndex = Math.max(this.selectedIndex - 1, 0);
                 this.isSelectionMode ? this.renderSelection() : this.render();
                 break;
-
             case 'Enter':
                 e.preventDefault();
                 this.isSelectionMode ? this.selectOption() : this.executeSelected();
@@ -220,7 +194,7 @@ export class CommandPalette extends HTMLElement {
     private executeSelected() {
         const selectedCommand = this.filteredCommands[this.selectedIndex];
         if (selectedCommand) {
-            this.commandRegistry.execute(selectedCommand.id);
+            this.commandExtension.execute(selectedCommand.id);
             this.close();
         }
     }
@@ -230,15 +204,13 @@ export class CommandPalette extends HTMLElement {
         if (selectedOption && this.selectionResolve) {
             const value = selectedOption.value;
             const resolve = this.selectionResolve;
-            
-            // Reset state before resolving
+
             this.isSelectionMode = false;
             this.selectionOptions = [];
             this.filteredOptions = [];
             this.selectionResolve = null;
             this.selectionReject = null;
-            
-            // Close and resolve
+
             this.isOpen = false;
             this.classList.remove('open');
             resolve(value);
@@ -249,9 +221,7 @@ export class CommandPalette extends HTMLElement {
         if (!this.resultsContainer) return;
 
         if (this.filteredCommands.length === 0) {
-            this.resultsContainer.innerHTML = `
-                <div class="empty-state">No commands found</div>
-            `;
+            this.resultsContainer.innerHTML = `<div class="empty-state">No commands found</div>`;
             return;
         }
 
@@ -260,23 +230,17 @@ export class CommandPalette extends HTMLElement {
         this.filteredCommands.forEach((command, index) => {
             const item = document.createElement('div');
             item.className = 'result-item';
-            if (index === this.selectedIndex) {
-                item.classList.add('selected');
-            }
+            if (index === this.selectedIndex) item.classList.add('selected');
 
-            // If command has a description, use a container
             if (command.description) {
                 const labelContainer = document.createElement('div');
                 labelContainer.className = 'label-container';
-
                 const label = document.createElement('div');
                 label.className = 'label';
                 label.textContent = command.label;
-
                 const description = document.createElement('div');
                 description.className = 'description';
                 description.textContent = command.description;
-
                 labelContainer.appendChild(label);
                 labelContainer.appendChild(description);
                 item.appendChild(labelContainer);
@@ -287,7 +251,6 @@ export class CommandPalette extends HTMLElement {
                 item.appendChild(label);
             }
 
-            // Add shortcut if available
             if (this.shortcutManager) {
                 const shortcuts = this.shortcutManager.getShortcutsForCommand(command.id);
                 if (shortcuts.length > 0) {
@@ -297,23 +260,12 @@ export class CommandPalette extends HTMLElement {
                 }
             }
 
-            // Click handler
-            item.addEventListener('click', () => {
-                this.selectedIndex = index;
-                this.executeSelected();
-            });
-
-            // Mouse over handler
-            item.addEventListener('mouseenter', () => {
-                this.selectedIndex = index;
-                this.render();
-            });
+            item.addEventListener('click', () => { this.selectedIndex = index; this.executeSelected(); });
+            item.addEventListener('mouseenter', () => { this.selectedIndex = index; this.render(); });
 
             this.resultsContainer!.appendChild(item);
         });
 
-        // Scroll selected item into view
-        // Note: Check for scrollIntoView is needed for jsdom compatibility in tests
         const selectedElement = this.resultsContainer.querySelector('.result-item.selected');
         if (selectedElement && typeof selectedElement.scrollIntoView === 'function') {
             selectedElement.scrollIntoView({ block: 'nearest' });
@@ -324,9 +276,7 @@ export class CommandPalette extends HTMLElement {
         if (!this.resultsContainer) return;
 
         if (this.filteredOptions.length === 0) {
-            this.resultsContainer.innerHTML = `
-                <div class="empty-state">No options found</div>
-            `;
+            this.resultsContainer.innerHTML = `<div class="empty-state">No options found</div>`;
             return;
         }
 
@@ -335,23 +285,17 @@ export class CommandPalette extends HTMLElement {
         this.filteredOptions.forEach((option, index) => {
             const item = document.createElement('div');
             item.className = 'result-item';
-            if (index === this.selectedIndex) {
-                item.classList.add('selected');
-            }
+            if (index === this.selectedIndex) item.classList.add('selected');
 
-            // If option has a description, use a container
             if (option.description) {
                 const labelContainer = document.createElement('div');
                 labelContainer.className = 'label-container';
-
                 const label = document.createElement('div');
                 label.className = 'label';
                 label.textContent = option.label;
-
                 const description = document.createElement('div');
                 description.className = 'description';
                 description.textContent = option.description;
-
                 labelContainer.appendChild(label);
                 labelContainer.appendChild(description);
                 item.appendChild(labelContainer);
@@ -362,22 +306,12 @@ export class CommandPalette extends HTMLElement {
                 item.appendChild(label);
             }
 
-            // Click handler
-            item.addEventListener('click', () => {
-                this.selectedIndex = index;
-                this.selectOption();
-            });
-
-            // Mouse over handler
-            item.addEventListener('mouseenter', () => {
-                this.selectedIndex = index;
-                this.renderSelection();
-            });
+            item.addEventListener('click', () => { this.selectedIndex = index; this.selectOption(); });
+            item.addEventListener('mouseenter', () => { this.selectedIndex = index; this.renderSelection(); });
 
             this.resultsContainer!.appendChild(item);
         });
 
-        // Scroll selected item into view
         const selectedElement = this.resultsContainer.querySelector('.result-item.selected');
         if (selectedElement && typeof selectedElement.scrollIntoView === 'function') {
             selectedElement.scrollIntoView({ block: 'nearest' });

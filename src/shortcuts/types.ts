@@ -28,6 +28,15 @@ export interface SelectOption<T = any> {
 }
 
 /**
+ * Minimal interface required by ShortcutManager to execute commands.
+ * Keeping this here avoids a circular dependency between the shortcuts
+ * module and the command-extension module.
+ */
+export interface CommandExecutor {
+    execute(commandId: string): Promise<boolean>;
+}
+
+/**
  * Maps shortcut definitions to command IDs
  */
 export interface ShortcutBinding {

@@ -601,9 +601,17 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
                             for (const child of Array.from(root.children) as HTMLElement[]) {
                                 const n = (child as any).node;
                                 if (n && n.id === id) return child;
-                                if (child.shadowRoot) {
-                                    const found = findHostByNodeId(child.shadowRoot, id);
+
+                                // Search inside shadowRoot of child (custom elements)
+                                if ((child as any).shadowRoot) {
+                                    const found = findHostByNodeId((child as any).shadowRoot, id);
                                     if (found) return found;
+                                }
+
+                                // Also search normal DOM descendants
+                                if (child.children && child.children.length > 0) {
+                                    const found2 = findHostByNodeId(child as Element, id);
+                                    if (found2) return found2;
                                 }
                             }
                             return null;

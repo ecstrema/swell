@@ -387,6 +387,18 @@ export class DockManager extends HTMLElement {
       };
       targetParent.children[targetIndex] = newBox;
     }
+
+    // Collapse any trivial single-child boxes introduced by the move to avoid deep
+    // chains of alternating row/column boxes (they should be flattened).
+    if (this._layout && this._layout.root.type === 'box') {
+      this.simplifyBoxes(this._layout.root);
+      const rootBox = this._layout.root as DockBox;
+      if (rootBox.children.length === 1) {
+        const onlyChild = rootBox.children[0];
+        onlyChild.weight = 1;
+        this._layout.root = onlyChild;
+      }
+    }
   }
 
   private splitStack(
@@ -421,36 +433,47 @@ export class DockManager extends HTMLElement {
         weight: 1,
         children: isAfter ? [oldRoot, newStack] : [newStack, oldRoot],
       };
-      return;
+      // fall through to simplify below
+    } else {
+      const dir: "row" | "column" =
+        direction === "left" || direction === "right" ? "row" : "column";
+      const isAfter = direction === "right" || direction === "bottom";
+
+      const newStack: DockStack = {
+        id: "stack-" + Math.random().toString(36).substring(2, 11),
+        type: "stack",
+        weight: targetStack.weight / 2,
+        children: [pane],
+        activeId: pane.id,
+      };
+      targetStack.weight /= 2;
+
+      if (parent.direction === dir) {
+        const index = parent.children.indexOf(targetStack);
+        parent.children.splice(isAfter ? index + 1 : index, 0, newStack);
+      } else {
+        // Need to wrap targetStack in a new Box
+        const index = parent.children.indexOf(targetStack);
+        const newBox: DockBox = {
+          id: "box-" + Math.random().toString(36).substring(2, 11),
+          type: "box",
+          direction: dir,
+          weight: targetStack.weight * 2,
+          children: isAfter ? [targetStack, newStack] : [newStack, targetStack],
+        };
+        parent.children[index] = newBox;
+      }
     }
 
-    const dir: "row" | "column" =
-      direction === "left" || direction === "right" ? "row" : "column";
-    const isAfter = direction === "right" || direction === "bottom";
-
-    const newStack: DockStack = {
-      id: "stack-" + Math.random().toString(36).substring(2, 11),
-      type: "stack",
-      weight: targetStack.weight / 2,
-      children: [pane],
-      activeId: pane.id,
-    };
-    targetStack.weight /= 2;
-
-    if (parent.direction === dir) {
-      const index = parent.children.indexOf(targetStack);
-      parent.children.splice(isAfter ? index + 1 : index, 0, newStack);
-    } else {
-      // Need to wrap targetStack in a new Box
-      const index = parent.children.indexOf(targetStack);
-      const newBox: DockBox = {
-        id: "box-" + Math.random().toString(36).substring(2, 11),
-        type: "box",
-        direction: dir,
-        weight: targetStack.weight * 2,
-        children: isAfter ? [targetStack, newStack] : [newStack, targetStack],
-      };
-      parent.children[index] = newBox;
+    // Flatten any trivial single-child boxes that may have been introduced by splitting.
+    if (this._layout && this._layout.root.type === 'box') {
+      this.simplifyBoxes(this._layout.root);
+      const rootBox = this._layout.root as DockBox;
+      if (rootBox.children.length === 1) {
+        const onlyChild = rootBox.children[0];
+        onlyChild.weight = 1;
+        this._layout.root = onlyChild;
+      }
     }
   }
 

@@ -86,12 +86,11 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
 
             const result = dockManager.cleanupEmptyStacks();
 
-            // Should return false because there's only one stack
+            // Should return false because there's only one stack (no empty stacks to clean)
             expect(result).toBe(false);
-            // Layout should remain unchanged
-            expect(layout.root.type).toBe('box');
-            expect(layout.root.children[0].type).toBe('stack');
-            expect(layout.root.children[0].children.length).toBe(0);
+            // Layout simplifies to just the stack (which is empty for placeholder)
+            expect(layout.root.type).toBe('stack');
+            expect((layout.root as DockStack).children.length).toBe(0);
         });
 
         it('should simplify nested boxes with single child', () => {
@@ -316,8 +315,8 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
             }));
 
             // Stack should remain with pane-2 as active
-            // No simplification happens since there are no empty stacks
-            const stack = (layout.root as DockBox).children[0] as DockStack;
+            // Layout simplifies from box-with-single-stack to just the stack
+            const stack = layout.root as DockStack;
             expect(stack.type).toBe('stack');
             expect(stack.children.length).toBe(1);
             expect(stack.activeId).toBe('pane-2');
@@ -398,12 +397,14 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
 
             dockManager.layout = layout;
 
-            // This should NOT simplify - a single stack in a box is valid
-            // (the box is needed for the root layout structure)
+            // cleanupEmptyStacks now also simplifies nested boxes
             const result = dockManager.cleanupEmptyStacks();
 
+            // No empty stacks, so no cleanup reported
             expect(result).toBe(false);
-            expect(layout.root.type).toBe('box');
+            // But the box is simplified away, leaving just the stack
+            expect(layout.root.type).toBe('stack');
+            expect(layout.root.id).toBe('only-stack');
         });
 
         it('should not collapse root box when it has multiple children', () => {
@@ -477,8 +478,9 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
                 composed: true
             }));
 
-            // Layout should remain unchanged
-            const stack = (layout.root as DockBox).children[0] as DockStack;
+            // Layout should remain unchanged (but simplified to just the stack)
+            const stack = layout.root as DockStack;
+            expect(stack.type).toBe('stack');
             expect(stack.children.length).toBe(1);
             expect(stack.activeId).toBe('pane-1');
         });
@@ -524,6 +526,100 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
             // Root stack should remain but be empty (placeholder should show)
             expect(layout.root.type).toBe('stack');
             expect((layout.root as DockStack).children.length).toBe(0);
+        });
+
+        it('should render active pane for every non-empty stack after complex splits (no empty areas)', () => {
+            // Recreate the user's final layout state (deeply nested after splits/resizes)
+            const layout: DockLayout = {
+                root: {
+                    type: 'box',
+                    id: 'root',
+                    direction: 'row',
+                    weight: 100,
+                    children: [
+                        {
+                            type: 'stack',
+                            id: 'main-stack',
+                            weight: 40,
+                            activeId: 'settings',
+                            children: [
+                                { id: 'settings', title: 'Settings', contentId: 'settings', closable: true }
+                            ]
+                        },
+                        {
+                            id: 'box-dua0iezvi',
+                            type: 'box',
+                            direction: 'column',
+                            weight: 40,
+                            children: [
+                                {
+                                    id: 'box-gwsqnhmpw',
+                                    type: 'box',
+                                    direction: 'row',
+                                    weight: 1.25,
+                                    children: [
+                                        {
+                                            id: 'stack-lu6sq29xy',
+                                            type: 'stack',
+                                            weight: 0.625,
+                                            children: [
+                                                { id: 'commands-view', title: 'Keyboard Shortcuts', contentId: 'commands-view', closable: true }
+                                            ],
+                                            activeId: 'commands-view'
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            };
+
+            // Register content builders used by the layout
+            dockManager.registerContent('settings', 'Settings', (id) => {
+                const el = document.createElement('div');
+                el.textContent = 'settings:' + id;
+                return el;
+            });
+            dockManager.registerContent('commands-view', 'Keyboard Shortcuts', (id) => {
+                const el = document.createElement('div');
+                el.textContent = 'commands:' + id;
+                return el;
+            });
+
+            dockManager.layout = layout;
+
+            // Walk the model and assert every non-empty stack has valid activeId
+            function walk(node: any) {
+                if (node.type === 'stack') {
+                    if (node.children.length > 0) {
+                        expect(node.activeId).toBeTruthy();
+                        expect(node.children.some((c: any) => c.id === node.activeId)).toBe(true);
+
+                        // Find the rendered host element that has a matching `.node.id`.
+                        function findHostByNodeId(root: ShadowRoot | Element, id: string): HTMLElement | null {
+                            for (const child of Array.from(root.children) as HTMLElement[]) {
+                                const n = (child as any).node;
+                                if (n && n.id === id) return child;
+                                if (child.shadowRoot) {
+                                    const found = findHostByNodeId(child.shadowRoot, id);
+                                    if (found) return found;
+                                }
+                            }
+                            return null;
+                        }
+
+                        const el = findHostByNodeId(dockManager.shadowRoot!, node.id);
+                        expect(el).toBeTruthy();
+                        const activeContent = (el as HTMLElement).shadowRoot!.querySelector('.pane-content.active');
+                        expect(activeContent).toBeTruthy();
+                    }
+                } else if (node.type === 'box') {
+                    for (const c of node.children) walk(c);
+                }
+            }
+
+            walk(layout.root as any);
         });
     });
 });

@@ -113,24 +113,3 @@ export class SettingsRegister {
 
 // Global settings register instance
 export const settingsRegister = new SettingsRegister();
-
-// Register default settings
-settingsRegister.register({
-    path: 'Interface/Tree Indent',
-    description: 'Indentation in pixels for tree hierarchy levels',
-    type: 'number',
-    defaultValue: 20,
-    min: 0,
-    max: 60,
-    step: 1
-});
-
-settingsRegister.register({
-    path: 'Waveform/Alternating Row Pattern',
-    description: 'Number of rows in alternating background pattern (e.g., 3 means 3 on, 3 off)',
-    type: 'number',
-    defaultValue: 3,
-    min: 1,
-    max: 10,
-    step: 1
-});

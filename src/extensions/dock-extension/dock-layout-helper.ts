@@ -1,5 +1,5 @@
-import { DockManager } from "../extensions/dock-extension/dock-manager.js";
-import { DockLayout, DockStack, DockNode } from "../extensions/dock-extension/types.js";
+import { DockManager } from "./dock-manager.js";
+import { DockLayout, DockStack, DockNode } from "./types.js";
 
 // Layout constants
 const SIDEBAR_DEFAULT_WEIGHT = 20;
@@ -22,10 +22,11 @@ export class DockLayoutHelper {
         if (!layout) return null;
 
         const root = layout.root;
-        if (root.type === 'box') {
-            for (const child of root.children) {
-                if (child.type === 'stack' && child.id === 'main-stack') {
-                    return child;
+        // root is a container if it has a direction
+        if ((root as any).direction !== undefined) {
+            for (const child of root.children as any[]) {
+                if ((child as any).direction === undefined && child.id === 'main-stack') {
+                    return child as DockStack;
                 }
             }
         }
@@ -36,26 +37,22 @@ export class DockLayoutHelper {
      * Find the biggest stack in the layout (by weight)
      */
     findBiggestStack(node: DockNode): DockStack | null {
-        if (node.type === 'stack') {
-            return node;
+        // Leaf stack (no direction) — return it
+        if ((node as any).direction === undefined) {
+            return node as DockStack;
         }
 
-        if (node.type === 'box') {
-            let biggestStack: DockStack | null = null;
-            let biggestWeight = -Infinity;
-
-            for (const child of node.children) {
-                const stack = this.findBiggestStack(child);
-                if (stack && stack.weight > biggestWeight) {
-                    biggestWeight = stack.weight;
-                    biggestStack = stack;
-                }
+        // Container stack — recurse into children
+        let biggestStack: DockStack | null = null;
+        let biggestWeight = -Infinity;
+        for (const child of (node.children as DockStack[])) {
+            const stack = this.findBiggestStack(child);
+            if (stack && stack.weight > biggestWeight) {
+                biggestWeight = stack.weight;
+                biggestStack = stack;
             }
-
-            return biggestStack;
         }
-
-        return null;
+        return biggestStack;
     }
 
     /**
@@ -103,14 +100,14 @@ export class DockLayoutHelper {
      */
     updateSidebarVisibility(hasFiles: boolean): void {
         const layout = this.dockManager.layout;
-        if (!layout || layout.root.type !== 'box') return;
+        if (!layout || (layout.root as any).direction === undefined) return;
 
-        const rootBox = layout.root;
-        const sidebarIndex = rootBox.children.findIndex(
-            child => child.type === 'stack' && child.id === 'sidebar-stack'
+        const rootBox = layout.root as DockStack;
+        const sidebarIndex = (rootBox.children as DockStack[]).findIndex(
+            (child: any) => (child as any).direction === undefined && child.id === 'sidebar-stack'
         );
-        const mainStackIndex = rootBox.children.findIndex(
-            child => child.type === 'stack' && child.id === 'main-stack'
+        const mainStackIndex = (rootBox.children as DockStack[]).findIndex(
+            (child: any) => (child as any).direction === undefined && child.id === 'main-stack'
         );
 
         if (hasFiles) {
@@ -159,12 +156,10 @@ export class DockLayoutHelper {
      */
     toggleSidebarVisibility(): boolean {
         const layout = this.dockManager.layout;
-        if (!layout || layout.root.type !== 'box') return false;
+        if (!layout || (layout.root as any).direction === undefined) return false;
 
-        const rootBox = layout.root;
-        const sidebarIndex = rootBox.children.findIndex(
-            child => child.type === 'stack' && child.id === 'sidebar-stack'
-        );
+        const rootBox = layout.root as DockStack;
+        const sidebarIndex = (rootBox.children as DockStack[]).findIndex((child: any) => (child as any).direction === undefined && child.id === 'sidebar-stack');
 
         if (sidebarIndex === -1) {
             // Sidebar is hidden, show it
@@ -182,12 +177,12 @@ export class DockLayoutHelper {
                     }
                 ]
             };
-            rootBox.children.unshift(sidebarStack);
+            (rootBox.children as DockStack[]).unshift(sidebarStack);
             this.dockManager.render();
             return true;
         } else {
             // Sidebar is visible, hide it
-            rootBox.children.splice(sidebarIndex, 1);
+            (rootBox.children as DockStack[]).splice(sidebarIndex, 1);
             this.dockManager.render();
             return false;
         }
@@ -198,11 +193,11 @@ export class DockLayoutHelper {
      */
     isSidebarVisible(): boolean {
         const layout = this.dockManager.layout;
-        if (!layout || layout.root.type !== 'box') return false;
+        if (!layout || (layout.root as any).direction === undefined) return false;
 
-        const rootBox = layout.root;
-        return rootBox.children.some(
-            child => child.type === 'stack' && child.id === 'sidebar-stack'
+        const rootBox = layout.root as DockStack;
+        return (rootBox.children as DockStack[]).some(
+            (child: any) => (child as any).direction === undefined && child.id === 'sidebar-stack'
         );
     }
 
@@ -211,12 +206,12 @@ export class DockLayoutHelper {
      */
     private findSidebarStack(): DockStack | null {
         const layout = this.dockManager.layout;
-        if (!layout || layout.root.type !== 'box') return null;
+        if (!layout || (layout.root as any).direction === undefined) return null;
 
-        const rootBox = layout.root;
-        for (const child of rootBox.children) {
-            if (child.type === 'stack' && child.id === 'sidebar-stack') {
-                return child;
+        const rootBox = layout.root as DockStack;
+        for (const child of rootBox.children as DockStack[]) {
+            if ((child as any).direction === undefined && child.id === 'sidebar-stack') {
+                return child as DockStack;
             }
         }
         return null;

@@ -7,8 +7,8 @@
 
 import { Extension } from "../types.js";
 import { DockManager } from "./dock-manager.js";
-import { DockLayoutHelper } from "../../components/dock-layout-helper.js";
-import { DockLayout, DockBox, DockStack } from "./types.js";
+import { DockLayoutHelper } from "./dock-layout-helper.js";
+import { DockLayout, DockStack } from "./types.js";
 
 // Ensure custom elements are registered
 import "./dock-manager.js";
@@ -116,7 +116,7 @@ export class DockExtension implements Extension {
 
         this.dockManager.layout = {
             root: {
-                type: 'box',
+                type: 'stack',
                 id: 'root',
                 direction: 'row',
                 weight: 100,

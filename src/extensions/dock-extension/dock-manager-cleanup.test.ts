@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { DockManager } from './dock-manager.js';
-import { DockLayout, DockBox, DockStack } from './types.js';
+import { DockLayout, DockStack } from './types.js';
 
 describe('DockManager - Layout Cleanup and Simplification', () => {
     let dockManager: DockManager;
@@ -363,8 +363,10 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
             }));
 
             // Both stacks should remain
-            const root = layout.root as DockBox;
-            expect(root.type).toBe('box');
+            const root = layout.root as DockStack;
+            // Root is now a container `stack` (direction present)
+            expect(root.type).toBe('stack');
+            expect((root as any).direction).toBeDefined();
             expect(root.children.length).toBe(2);
 
             const stack1 = root.children[0] as DockStack;
@@ -443,7 +445,7 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
 
             expect(result).toBe(false); // No cleanup needed
             expect(layout.root.type).toBe('box');
-            expect((layout.root as DockBox).children.length).toBe(2);
+            expect(((layout.root as DockStack).children as DockStack[]).length).toBe(2);
         });
     });
 
@@ -591,7 +593,9 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
 
             // Walk the model and assert every non-empty stack has valid activeId
             function walk(node: any) {
-                if (node.type === 'stack') {
+                // Container stacks have a `direction` property; leaf stacks (panes) do not.
+                if ((node as any).direction === undefined) {
+                    // Leaf stack
                     if (node.children.length > 0) {
                         expect(node.activeId).toBeTruthy();
                         expect(node.children.some((c: any) => c.id === node.activeId)).toBe(true);
@@ -622,7 +626,8 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
                         const activeContent = (el as HTMLElement).shadowRoot!.querySelector('.pane-content.active');
                         expect(activeContent).toBeTruthy();
                     }
-                } else if (node.type === 'box') {
+                } else {
+                    // Container stack - recurse
                     for (const c of node.children) walk(c);
                 }
             }

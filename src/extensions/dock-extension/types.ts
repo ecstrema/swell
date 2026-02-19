@@ -5,16 +5,15 @@ export interface DockNodeBase {
     weight: number; // Relative size (flex-grow)
 }
 
-export interface DockBox extends DockNodeBase {
-    type: 'box';
-    direction: DockDirection;
-    children: DockNode[];
-}
-
 export interface DockStack extends DockNodeBase {
-    type: 'stack';
-    children: DockPane[];
-    activeId: string | null;
+    // Keep `type` permissive for backward compatibility: serialized layouts may
+    // still use the legacy 'box' token. Runtime distinguishes container vs leaf
+    // stacks using the optional `direction` property.
+    type: 'stack' | 'box';
+    direction?: DockDirection; // presence => container node
+    // For containers `children` is DockStack[]; for leaves it's DockPane[]
+    children: DockPane[] | DockStack[];
+    activeId?: string | null; // meaningful only for leaf stacks
 }
 
 export interface DockPane {
@@ -24,7 +23,7 @@ export interface DockPane {
     closable?: boolean;
 }
 
-export type DockNode = DockBox | DockStack;
+export type DockNode = DockStack;
 
 export interface DockLayout {
     root: DockNode;

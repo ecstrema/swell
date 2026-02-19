@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { DockManager } from './dock-manager.js';
-import { DockLayout, DockBox, DockStack } from './types.js';
+import { DockLayout, DockStack, DockPane } from './types.js';
 
 describe('DockManager - Box Simplification', () => {
     let dockManager: DockManager;
@@ -200,16 +200,16 @@ describe('DockManager - Box Simplification', () => {
             dockManager.layout = layout;
 
             // Simulate moving pane-1 from source-stack to target-stack
-            const sourceStack = ((layout.root as DockBox).children[0] as DockBox).children[0] as DockStack;
-            const targetStack = (layout.root as DockBox).children[1] as DockStack;
-            const pane = sourceStack.children[0];
+            const sourceStack = ((layout.root as DockStack).children[0] as DockStack).children[0] as DockStack;
+            const targetStack = (layout.root as DockStack).children[1] as DockStack;
+            const pane = (sourceStack.children as DockPane[])[0];
 
             // Remove from source
-            sourceStack.children = [];
+            sourceStack.children = [] as any;
             sourceStack.activeId = null;
 
             // Add to target
-            targetStack.children.push(pane);
+            (targetStack.children as DockPane[]).push(pane as DockPane);
             targetStack.activeId = pane.id;
 
             // Now cleanup
@@ -223,7 +223,7 @@ describe('DockManager - Box Simplification', () => {
         it('repeated alternating splits should not create deep single-child box chains', () => {
             const layout: DockLayout = {
                 root: {
-                    type: 'box',
+                    type: 'stack',
                     id: 'root-box',
                     direction: 'row',
                     weight: 1,
@@ -256,7 +256,7 @@ describe('DockManager - Box Simplification', () => {
             dockManager.layout = layout;
 
             // Repeatedly split the target stack with alternating directions — mimic user drops
-            const targetStack = (layout.root as DockBox).children[1] as DockStack;
+            const targetStack = (layout.root as DockStack).children[1] as DockStack;
             const mgr: any = dockManager as any;
 
             // perform several alternating splits; splitStack is private so use cast
@@ -267,8 +267,9 @@ describe('DockManager - Box Simplification', () => {
 
             // After splits, assert there are no box nodes with a single child anywhere in the tree
             function assertNoSingleChildBoxes(node: any) {
-                if (node.type === 'box') {
-                    expect(node.children.length).toBeGreaterThan(1);
+                // container stacks have a `direction` property
+                if ((node as any).direction !== undefined) {
+                    expect((node.children as any[]).length).toBeGreaterThan(1);
                     for (const c of node.children) assertNoSingleChildBoxes(c);
                 }
             }
@@ -409,14 +410,14 @@ describe('DockManager - Box Simplification', () => {
             dockManager.simplifyLayout();
 
             // Inner box should be simplified away, but outer box should remain with 2 children
-            const root = layout.root as DockBox;
+            const root = layout.root as DockStack;
             expect(root.type).toBe('box');
             expect(root.id).toBe('outer-box');
-            expect(root.children.length).toBe(2);
-            expect(root.children[0].type).toBe('stack');
-            expect(root.children[0].id).toBe('stack-1');
-            expect(root.children[1].type).toBe('stack');
-            expect(root.children[1].id).toBe('stack-2');
+            expect((root.children as DockStack[]).length).toBe(2);
+            expect((root.children as DockStack[])[0].type).toBe('stack');
+            expect((root.children as DockStack[])[0].id).toBe('stack-1');
+            expect((root.children as DockStack[])[1].type).toBe('stack');
+            expect((root.children as DockStack[])[1].id).toBe('stack-2');
         });
     });
 });

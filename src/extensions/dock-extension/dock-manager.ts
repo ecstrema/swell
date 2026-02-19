@@ -1,4 +1,4 @@
-import { DockBox, DockLayout, DockNode, DockPane, DockStack } from "./types.js";
+import { DockLayout, DockNode, DockPane, DockStack } from "./types.js";
 import { css } from "../../utils/css-utils.js";
 import { scrollbarSheet } from "../../styles/shared-sheets.js";
 import dockManagerCss from "./dock-manager.css?inline";
@@ -129,9 +129,19 @@ export class DockManager extends HTMLElement {
     this.renderNode(this._layout.root, rootContainer);
   }
 
+  // Type guards for the new single-node model (container stacks vs leaf stacks)
+  private isContainer(node: DockNode): node is DockStack & { direction: 'row' | 'column'; children: DockStack[] } {
+    return (node as any).direction !== undefined;
+  }
+
+  private isLeaf(node: DockNode): node is DockStack & { children: DockPane[] } {
+    return (node as any).direction === undefined;
+  }
+
   public renderNode(node: DockNode, container: Element) {
     let element: HTMLElement;
-    if (node.type === "box") {
+    if (this.isContainer(node)) {
+      // Reuse the existing dock-box component for container stacks
       element = document.createElement("dock-box") as any;
       (element as any).manager = this;
       (element as any).node = node;
@@ -302,11 +312,14 @@ export class DockManager extends HTMLElement {
     targetStack: DockStack,
     zone: string,
   ) {
+    // Ensure source/target are leaf stacks (contain panes)
+    if (!this.isLeaf(sourceStack) || !this.isLeaf(targetStack)) return;
+
     // 1. Remove from source
     sourceStack.children = sourceStack.children.filter((p) => p.id !== pane.id);
     if (sourceStack.activeId === pane.id) {
       sourceStack.activeId =
-        sourceStack.children.length > 0 ? sourceStack.children[0].id : null;
+        sourceStack.children.length > 0 ? (sourceStack.children[0] as DockPane).id : null;
     }
 
     // 2. Add to target
@@ -331,70 +344,72 @@ export class DockManager extends HTMLElement {
     // Can't drop center when dragging a whole stack
     if (zone === "center") return;
 
-    const parent = this.findParent(this._layout!.root, sourceStack.id) as DockBox;
-    if (!parent) return; // Can't move root
+    const parent = this.findParent(this._layout!.root, sourceStack.id) as DockStack | null;
+    if (!parent || (parent as any).direction === undefined) return; // Can't move root or non-container
 
-    // Remove the source stack from its parent
-    const sourceIndex = parent.children.indexOf(sourceStack);
+    // Remove the source stack from its parent (parent is a container stack)
+    const parentChildren = parent.children as DockStack[];
+    const sourceIndex = parentChildren.indexOf(sourceStack);
     if (sourceIndex === -1) return;
-    parent.children.splice(sourceIndex, 1);
+    parentChildren.splice(sourceIndex, 1);
 
     // If parent now has only one child, collapse it
-    if (parent.children.length === 1) {
-      const grandParent = this.findParent(this._layout!.root, parent.id) as DockBox;
-      if (grandParent) {
-        const parentIndex = grandParent.children.indexOf(parent);
-        const remainingChild = parent.children[0];
+    if (parentChildren.length === 1) {
+      const grandParent = this.findParent(this._layout!.root, parent.id) as DockStack | null;
+      if (grandParent && (grandParent as any).direction !== undefined) {
+        const grandChildren = grandParent.children as DockStack[];
+        const parentIndex = grandChildren.indexOf(parent);
+        const remainingChild = parentChildren[0];
         remainingChild.weight = parent.weight;
-        grandParent.children[parentIndex] = remainingChild;
+        grandChildren[parentIndex] = remainingChild;
       }
     }
 
     // Insert the source stack next to the target stack
-    const targetParent = this.findParent(this._layout!.root, targetStack.id) as DockBox;
+    const targetParent = this.findParent(this._layout!.root, targetStack.id) as DockStack | null;
     const dir: "row" | "column" =
       zone === "left" || zone === "right" ? "row" : "column";
     const isAfter = zone === "right" || zone === "bottom";
 
     if (!targetParent) {
-      // Target is root - wrap both in a new box
+      // Target is root - wrap both in a new container-stack
       const oldRoot = this._layout!.root;
       sourceStack.weight = 1;
       this._layout!.root = {
-        id: "box-" + Math.random().toString(36).substring(2, 11),
-        type: "box",
+        id: "stack-" + Math.random().toString(36).substring(2, 11),
+        type: "stack",
         direction: dir,
         weight: 1,
         children: isAfter ? [oldRoot, sourceStack] : [sourceStack, oldRoot],
-      };
-    } else if (targetParent.direction === dir) {
-      // Same direction - just insert
-      const targetIndex = targetParent.children.indexOf(targetStack);
+      } as any;
+    } else if ((targetParent as any).direction === dir) {
+      // Same direction - just insert into the container
+      const targetIndex = (targetParent.children as DockStack[]).indexOf(targetStack);
       sourceStack.weight = targetStack.weight / 2;
       targetStack.weight /= 2;
-      targetParent.children.splice(isAfter ? targetIndex + 1 : targetIndex, 0, sourceStack);
+      (targetParent.children as DockStack[]).splice(isAfter ? targetIndex + 1 : targetIndex, 0, sourceStack);
     } else {
-      // Different direction - need to wrap target and source in a new box
-      const targetIndex = targetParent.children.indexOf(targetStack);
+      // Different direction - need to wrap target and source in a new container-stack
+      const targetIndex = (targetParent.children as DockStack[]).indexOf(targetStack);
       sourceStack.weight = targetStack.weight / 2;
       targetStack.weight /= 2;
-      const newBox: DockBox = {
-        id: "box-" + Math.random().toString(36).substring(2, 11),
-        type: "box",
+      const newContainer: DockStack = {
+        id: "stack-" + Math.random().toString(36).substring(2, 11),
+        type: "stack",
         direction: dir,
         weight: targetStack.weight * 2,
         children: isAfter ? [targetStack, sourceStack] : [sourceStack, targetStack],
-      };
-      targetParent.children[targetIndex] = newBox;
+      } as any;
+      (targetParent.children as DockStack[])[targetIndex] = newContainer;
     }
 
-    // Collapse any trivial single-child boxes introduced by the move to avoid deep
-    // chains of alternating row/column boxes (they should be flattened).
-    if (this._layout && this._layout.root.type === 'box') {
+    // Collapse any trivial single-child container stacks introduced by the move to avoid
+    // chains of alternating row/column containers — flatten them.
+    if (this._layout && this.isContainer(this._layout.root)) {
       this.simplifyBoxes(this._layout.root);
-      const rootBox = this._layout.root as DockBox;
-      if (rootBox.children.length === 1) {
-        const onlyChild = rootBox.children[0];
+      const rootContainer = this._layout.root as DockStack;
+      if ((rootContainer.children as DockStack[]).length === 1) {
+        const onlyChild = (rootContainer.children as DockStack[])[0];
         onlyChild.weight = 1;
         this._layout.root = onlyChild;
       }
@@ -409,77 +424,67 @@ export class DockManager extends HTMLElement {
     const parent = this.findParent(
       this._layout!.root,
       targetStack.id,
-    ) as DockBox;
+    );
+
+    const dir: "row" | "column" =
+      direction === "left" || direction === "right" ? "row" : "column";
+    const isAfter = direction === "right" || direction === "bottom";
+
+    const newStack: DockStack = {
+      id: "stack-" + Math.random().toString(36).substring(2, 11),
+      type: "stack",
+      weight: targetStack.weight / 2,
+      children: [pane],
+      activeId: pane.id,
+    };
 
     if (!parent) {
-      // Target is root!
+      // Target is root — wrap old root + newStack in a container-stack
       const oldRoot = this._layout!.root;
-      const dir: "row" | "column" =
-        direction === "left" || direction === "right" ? "row" : "column";
-      const isAfter = direction === "right" || direction === "bottom";
-
-      const newStack: DockStack = {
+      this._layout!.root = {
         id: "stack-" + Math.random().toString(36).substring(2, 11),
         type: "stack",
-        weight: 1,
-        children: [pane],
-        activeId: pane.id,
-      };
-
-      this._layout!.root = {
-        id: "box-root",
-        type: "box",
         direction: dir,
         weight: 1,
         children: isAfter ? [oldRoot, newStack] : [newStack, oldRoot],
-      };
+      } as any;
       // fall through to simplify below
     } else {
-      const dir: "row" | "column" =
-        direction === "left" || direction === "right" ? "row" : "column";
-      const isAfter = direction === "right" || direction === "bottom";
-
-      const newStack: DockStack = {
-        id: "stack-" + Math.random().toString(36).substring(2, 11),
-        type: "stack",
-        weight: targetStack.weight / 2,
-        children: [pane],
-        activeId: pane.id,
-      };
       targetStack.weight /= 2;
 
-      if (parent.direction === dir) {
-        const index = parent.children.indexOf(targetStack);
-        parent.children.splice(isAfter ? index + 1 : index, 0, newStack);
+      if ((parent as any).direction === dir) {
+        const index = (parent.children as DockStack[]).indexOf(targetStack);
+        (parent.children as DockStack[]).splice(isAfter ? index + 1 : index, 0, newStack);
       } else {
-        // Need to wrap targetStack in a new Box
-        const index = parent.children.indexOf(targetStack);
-        const newBox: DockBox = {
-          id: "box-" + Math.random().toString(36).substring(2, 11),
-          type: "box",
+        // Need to wrap targetStack in a new container-stack
+        const index = (parent.children as DockStack[]).indexOf(targetStack);
+        const newContainer: DockStack = {
+          id: "stack-" + Math.random().toString(36).substring(2, 11),
+          type: "stack",
           direction: dir,
           weight: targetStack.weight * 2,
           children: isAfter ? [targetStack, newStack] : [newStack, targetStack],
-        };
-        parent.children[index] = newBox;
+        } as any;
+        (parent.children as DockStack[])[index] = newContainer;
       }
     }
 
-    // Flatten any trivial single-child boxes that may have been introduced by splitting.
-    if (this._layout && this._layout.root.type === 'box') {
+    // Flatten any trivial single-child container stacks that may have been introduced by splitting.
+    if (this._layout && this.isContainer(this._layout.root)) {
       this.simplifyBoxes(this._layout.root);
-      const rootBox = this._layout.root as DockBox;
-      if (rootBox.children.length === 1) {
-        const onlyChild = rootBox.children[0];
+      const rootContainer = this._layout.root as DockStack;
+      if ((rootContainer.children as DockStack[]).length === 1) {
+        const onlyChild = (rootContainer.children as DockStack[])[0];
         onlyChild.weight = 1;
         this._layout.root = onlyChild;
       }
     }
   }
 
-  private findParent(node: DockNode, targetId: string): DockNode | null {
-    if (node.type === "box") {
-      for (const child of node.children) {
+  private findParent(node: DockNode, targetId: string): DockStack | null {
+    // Only container stacks can hold other stacks as children
+    if (this.isContainer(node)) {
+      for (const child of node.children as DockStack[]) {
         if (child.id === targetId) return node;
         const found = this.findParent(child, targetId);
         if (found) return found;
@@ -489,81 +494,77 @@ export class DockManager extends HTMLElement {
   }
 
   private cleanupEmptyNodes(node: DockNode): boolean {
-    if (node.type === "box") {
-      // First, recursively clean children (process nested boxes first)
-      node.children = node.children.filter((child) => {
-        if (child.type === "box") {
-          return !this.cleanupEmptyNodes(child);
+    if (!this.isContainer(node)) return false;
+
+    // First, recursively clean children (process nested containers first)
+    node.children = (node.children as DockStack[]).filter((child) => {
+      if (this.isContainer(child)) {
+        return !this.cleanupEmptyNodes(child);
+      }
+      return true;
+    }) as any;
+
+    // Then filter out empty stacks - but keep at least one if this is the root
+    // and all stacks are empty (to preserve placeholder)
+    const isRoot = node === this._layout!.root;
+    const totalStacks = this.countStacks(node);
+    const emptyStacks = this.countEmptyStacks(node);
+
+    // Remove empty stacks, but keep one if this is root and all are empty
+    node.children = (node.children as DockStack[]).filter((child) => {
+      if (this.isLeaf(child) && (child.children as DockPane[]).length === 0) {
+        // Keep only if this is root, all stacks in this container are empty, and only 1 stack
+        if (isRoot && emptyStacks === totalStacks && totalStacks === 1) {
+          return true;
         }
-        return true;
-      });
+        return false;
+      }
+      return true;
+    }) as any;
 
-      // Then filter out empty stacks - but keep at least one if this is the root
-      // and all stacks are empty (to preserve placeholder)
-      const isRoot = node === this._layout!.root;
-      const totalStacks = this.countStacks(node);
-      const emptyStacks = this.countEmptyStacks(node);
-
-      // Remove empty stacks, but keep one if this is root and all are empty
-      node.children = node.children.filter((child) => {
-        if (child.type === "stack" && child.children.length === 0) {
-          // Keep only if this is root, all stacks in this box are empty, and only 1 stack
-          if (isRoot && emptyStacks === totalStacks && totalStacks === 1) {
-            return true;
-          }
-          return false;
-        }
-        return true;
-      });
-
-      return node.children.length === 0;
-    }
-    return false;
+    return (node.children as DockStack[]).length === 0;
   }
 
   /**
-   * Simplify the layout tree by collapsing boxes with only one child
-   * This should be called after cleanupEmptyNodes
+   * Simplify the layout tree by collapsing single-child container stacks
    */
   private simplifyBoxes(node: DockNode): void {
-    if (node.type === "box") {
-      // First, recursively simplify all children (bottom-up approach)
-      for (let i = 0; i < node.children.length; i++) {
-        const child = node.children[i];
-        if (child.type === "box") {
-          this.simplifyBoxes(child);
+    if (!this.isContainer(node)) return;
 
-          // After simplifying the child, check if it has only one child
-          // If so, replace it with its grandchild
-          if (child.children.length === 1) {
-            const grandchild = child.children[0];
-            // Transfer the child's weight to the grandchild
-            grandchild.weight = child.weight;
-            // Replace the child with the grandchild
-            node.children[i] = grandchild;
-          }
+    // First, recursively simplify all container children (bottom-up)
+    const children = node.children as DockStack[];
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      if (this.isContainer(child)) {
+        this.simplifyBoxes(child);
+
+        // After simplifying the child, if it is a container with exactly one child,
+        // replace the child with its sole grandchild (flatten)
+        const cc = child.children as DockStack[];
+        if (cc.length === 1) {
+          const grandchild = cc[0];
+          grandchild.weight = child.weight;
+          (node.children as DockStack[])[i] = grandchild;
         }
       }
     }
   }
 
   private countStacks(node: DockNode): number {
-    if (node.type === "stack") {
-      return 1;
-    }
+    if (this.isLeaf(node)) return 1;
     let count = 0;
-    for (const child of node.children) {
+    for (const child of node.children as DockStack[]) {
       count += this.countStacks(child);
     }
     return count;
   }
 
   private countEmptyStacks(node: DockNode): number {
-    if (node.type === "stack") {
-      return node.children.length === 0 ? 1 : 0;
+    if (this.isLeaf(node)) {
+      return (node.children as DockPane[]).length === 0 ? 1 : 0;
     }
     let count = 0;
-    for (const child of node.children) {
+    for (const child of node.children as DockStack[]) {
       count += this.countEmptyStacks(child);
     }
     return count;
@@ -600,13 +601,13 @@ export class DockManager extends HTMLElement {
    * Recursively remove a pane from a dock node and its children
    */
   private removePaneFromNode(node: DockNode, paneId: string): void {
-    if (node.type === 'stack') {
-      node.children = node.children.filter(p => p.id !== paneId);
+    if (this.isLeaf(node)) {
+      node.children = (node.children as DockPane[]).filter(p => p.id !== paneId) as any;
       if (node.activeId === paneId) {
-        node.activeId = node.children.length > 0 ? node.children[0].id : null;
+        node.activeId = (node.children as DockPane[]).length > 0 ? (node.children as DockPane[])[0].id : null;
       }
-    } else if (node.type === 'box') {
-      for (const child of node.children) {
+    } else if (this.isContainer(node)) {
+      for (const child of node.children as DockStack[]) {
         this.removePaneFromNode(child, paneId);
       }
     }
@@ -625,15 +626,15 @@ export class DockManager extends HTMLElement {
       this.cleanupEmptyNodes(this._layout.root);
     }
 
-    // Always simplify boxes after potential cleanup, or when explicitly called
-    // This handles cases where nested boxes have single children
-    if (this._layout.root.type === "box") {
+    // Always simplify container-stacks after potential cleanup, or when explicitly called
+    // This handles cases where nested containers have single children
+    if (this.isContainer(this._layout.root)) {
       this.simplifyBoxes(this._layout.root);
-      // After simplifying, check if root box has only one child
+      // After simplifying, check if root container has only one child
       // If so, replace root with that child
-      const rootBox = this._layout.root as DockBox;
-      if (rootBox.children.length === 1) {
-        const onlyChild = rootBox.children[0];
+      const rootContainer = this._layout.root as DockStack;
+      if ((rootContainer.children as DockStack[]).length === 1) {
+        const onlyChild = (rootContainer.children as DockStack[])[0];
         onlyChild.weight = 1; // Ensure full weight
         this._layout.root = onlyChild;
       }
@@ -654,12 +655,12 @@ export class DockManager extends HTMLElement {
   public simplifyLayout(): void {
     if (!this._layout) return;
 
-    if (this._layout.root.type === "box") {
+    if (this.isContainer(this._layout.root)) {
       this.simplifyBoxes(this._layout.root);
-      // After simplifying, check if root box has only one child
-      const rootBox = this._layout.root as DockBox;
-      if (rootBox.children.length === 1) {
-        const onlyChild = rootBox.children[0];
+      // After simplifying, check if root container has only one child
+      const rootContainer = this._layout.root as DockStack;
+      if ((rootContainer.children as DockStack[]).length === 1) {
+        const onlyChild = (rootContainer.children as DockStack[])[0];
         onlyChild.weight = 1;
         this._layout.root = onlyChild;
       }

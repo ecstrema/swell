@@ -13,21 +13,17 @@ export const dockSchemas = scope({
         contentId: 'string',
         'closable?': 'boolean'
     },
-    DockBox: {
-        id: 'string',
-        type: "'box'",
-        weight: 'number',
-        direction: "'row'|'column'",
-        children: 'DockNode[]'
-    },
     DockStack: {
         id: 'string',
         type: "'stack'",
         weight: 'number',
-        children: 'DockPane[]',
-        activeId: 'string|null'
+        // optional direction means this stack is a container; children may be
+        // either panes (leaf) or other stacks (container)
+        'direction?': "'row'|'column'",
+        children: 'DockPane[]|DockStack[]',
+        'activeId?': 'string|null'
     },
-    DockNode: 'DockBox|DockStack',
+    DockNode: 'DockStack',
     DockLayout: {
         version: '0',
         root: 'DockNode'

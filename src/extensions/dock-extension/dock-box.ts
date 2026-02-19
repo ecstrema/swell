@@ -1,13 +1,15 @@
-import { DockBox, DockNode } from "./types.js";
+import { DockStack, DockNode } from "./types.js";
 import type { DockManager } from "./dock-manager.js";
 import { css } from "../../utils/css-utils.js";
 import dockBoxCss from "./dock-box.css?inline";
 
+// The DockBox component continues to render *container* stacks (those with a
+// `direction` property). Its `node` is a DockStack that acts as a container.
 export class DockBoxComponent extends HTMLElement {
-    private _node: DockBox | null = null;
+    private _node: DockStack | null = null;
     private _manager: DockManager | null = null;
 
-    set node(value: DockBox) {
+    set node(value: DockStack) {
         this._node = value;
         this.render();
     }

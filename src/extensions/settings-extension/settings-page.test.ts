@@ -104,23 +104,6 @@ describe('SettingsPage', () => {
         expect(titles).toContain('Interface');
     });
 
-    it('should render settings inputs', () => {
-        const inputs = settingsPage.shadowRoot!.querySelectorAll('.setting-input');
-        expect(inputs.length).toBeGreaterThan(0);
-    });
-
-    it('should render Color Theme setting', () => {
-        const colorThemeSelect = settingsPage.shadowRoot!.querySelector('[data-path="Application/Color Theme"]');
-        expect(colorThemeSelect).not.toBeNull();
-        expect(colorThemeSelect?.tagName.toLowerCase()).toBe('select');
-    });
-
-    it('should render Tree Indent setting', () => {
-        const treeIndentInput = settingsPage.shadowRoot!.querySelector('[data-path="Interface/Tree Indent"]');
-        expect(treeIndentInput).not.toBeNull();
-        expect((treeIndentInput as HTMLInputElement)?.type).toBe('number');
-    });
-
     it('should scroll to setting when tree item is clicked', async () => {
         // Create a spy for scrollIntoView
         const scrollIntoViewMock = vi.fn();

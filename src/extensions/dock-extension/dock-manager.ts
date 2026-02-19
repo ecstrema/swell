@@ -32,20 +32,19 @@ export class DockManager extends HTMLElement {
    * Notify listeners that the layout has changed
    */
   private notifyLayoutChange(): void {
-    if (this._onLayoutChange && this._layout && !this._suppressLayoutChangeNotification) {
-      // Print the current dock layout for debugging whenever it changes
-      // (format as JSON for readability).
-      try {
-        // Use console.debug to avoid being too noisy in production consoles; fall back to console.log
-        const printer = console.debug ? console.debug : console.log;
-        printer('Dock layout changed:\n' + JSON.stringify(this._layout, null, 2));
-      } catch (err) {
-        // If serialization fails for any reason, still notify listeners
-        console.log('Dock layout changed (serialization failed)', this._layout);
-      }
+    // Respect explicit suppression and ensure there's a layout to report
+    if (!this._layout || this._suppressLayoutChangeNotification) return;
 
-      this._onLayoutChange(this._layout);
+    // Always log the layout when it changes so runtime/state repros are easy to capture.
+    // Use console.log for maximum visibility (console.debug can be filtered in some UIs).
+    try {
+      console.log('Dock layout changed:\n' + JSON.stringify(this._layout, null, 2));
+    } catch (err) {
+      console.log('Dock layout changed (serialization failed)', this._layout);
     }
+
+    // Notify registered listener if present
+    if (this._onLayoutChange) this._onLayoutChange(this._layout);
   }
 
   set layout(value: DockLayout) {

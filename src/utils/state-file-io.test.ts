@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { saveStateToFile, loadStateFromFile } from './state-file-io';
-import type { FileState } from './file-state-storage';
+import type { FileState } from '../extensions/waveform-file-extension/file-state-storage.js';
 
 // Mock the backend module
 vi.mock('../backend/index.js', () => ({
@@ -19,12 +19,12 @@ describe('state-file-io', () => {
     describe('saveStateToFile', () => {
         it('should create app state with correct structure', async () => {
             const { saveStateFileDialog, writeTextFile } = await import('../backend/index.js');
-            
+
             // Mock dialog to return a path
             vi.mocked(saveStateFileDialog).mockResolvedValue('test.swellstate');
-            
+
             const state: FileState = {
-                version: 'V0.1',
+                version: 'V0',
                 items: [
                     { _type: 'timeline', name: 'Timeline 1' },
                     { _type: 'signal', ref: 1, name: 'clk' }
@@ -37,18 +37,18 @@ describe('state-file-io', () => {
             await saveStateToFile('test.vcd', state);
 
             expect(saveStateFileDialog).toHaveBeenCalledWith('test.swellstate');
-            expect(writeTextFile).toHaveBeenCalledWith('test.swellstate', expect.stringContaining('"version": "V0.1"'));
+            expect(writeTextFile).toHaveBeenCalledWith('test.swellstate', expect.stringContaining('"version": "V0"'));
             expect(writeTextFile).toHaveBeenCalledWith('test.swellstate', expect.stringContaining('"filename": "test.vcd"'));
         });
 
         it('should handle user cancellation', async () => {
             const { saveStateFileDialog, writeTextFile } = await import('../backend/index.js');
-            
+
             // Mock dialog to return null (user cancelled)
             vi.mocked(saveStateFileDialog).mockResolvedValue(null);
-            
+
             const state: FileState = {
-                version: 'V0.1',
+                version: 'V0',
                 items: [],
                 visibleStart: 0,
                 visibleEnd: 1000,
@@ -63,11 +63,11 @@ describe('state-file-io', () => {
 
         it('should derive default filename from waveform filename', async () => {
             const { saveStateFileDialog } = await import('../backend/index.js');
-            
+
             vi.mocked(saveStateFileDialog).mockResolvedValue('test.swellstate');
-            
+
             const state: FileState = {
-                version: 'V0.1',
+                version: 'V0',
                 items: [],
                 visibleStart: 0,
                 visibleEnd: 1000,
@@ -83,15 +83,15 @@ describe('state-file-io', () => {
     describe('loadStateFromFile', () => {
         it('should load and parse state file correctly', async () => {
             const { openStateFileDialog, readTextFile } = await import('../backend/index.js');
-            
+
             const mockFile = new File(['content'], 'test.swellstate');
             vi.mocked(openStateFileDialog).mockResolvedValue(mockFile);
-            
+
             const mockContent = JSON.stringify({
-                version: 'V0.1',
+                version: 'V0',
                 filename: 'test.vcd',
                 state: {
-                    version: 'V0.1',
+                    version: 'V0',
                     items: [
                         { _type: 'timeline', name: 'Timeline 1' },
                         { _type: 'signal', ref: 1, name: 'clk' }
@@ -101,7 +101,7 @@ describe('state-file-io', () => {
                     timestamp: Date.now()
                 }
             });
-            
+
             vi.mocked(readTextFile).mockResolvedValue(mockContent);
 
             const result = await loadStateFromFile();
@@ -113,7 +113,7 @@ describe('state-file-io', () => {
 
         it('should handle user cancellation', async () => {
             const { openStateFileDialog, readTextFile } = await import('../backend/index.js');
-            
+
             vi.mocked(openStateFileDialog).mockResolvedValue(null);
 
             const result = await loadStateFromFile();
@@ -127,23 +127,23 @@ describe('state-file-io', () => {
             const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
             const { openStateFileDialog, readTextFile } = await import('../backend/index.js');
-            
+
             const mockFile = new File(['content'], 'test.swellstate');
             vi.mocked(openStateFileDialog).mockResolvedValue(mockFile);
-            
+
             // Invalid format - missing required fields
             const mockContent = JSON.stringify({
-                version: 'V0.1'
+                version: 'V0'
                 // Missing filename and state
             });
-            
+
             vi.mocked(readTextFile).mockResolvedValue(mockContent);
 
             await expect(loadStateFromFile()).rejects.toThrow('Invalid state file format');
-            
+
             // Verify console.error was called
             expect(consoleErrorSpy).toHaveBeenCalled();
-            
+
             consoleErrorSpy.mockRestore();
         });
 
@@ -152,17 +152,17 @@ describe('state-file-io', () => {
             const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
             const { openStateFileDialog, readTextFile } = await import('../backend/index.js');
-            
+
             const mockFile = new File(['content'], 'test.swellstate');
             vi.mocked(openStateFileDialog).mockResolvedValue(mockFile);
-            
+
             vi.mocked(readTextFile).mockResolvedValue('invalid json{');
 
             await expect(loadStateFromFile()).rejects.toThrow();
-            
+
             // Verify console.error was called
             expect(consoleErrorSpy).toHaveBeenCalled();
-            
+
             consoleErrorSpy.mockRestore();
         });
     });

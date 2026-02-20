@@ -1,6 +1,7 @@
 import { css } from "../../utils/css-utils.js";
 import { UndoTree, UndoTreeNode } from "./undo-tree.js";
 import undoTreePanelCss from "./undo-tree-panel.css?inline";
+import { SettingsExtension } from "../settings-extension/settings-extension.js";
 
 /**
  * UndoTreePanel displays the undo tree as a visual tree structure
@@ -9,9 +10,11 @@ import undoTreePanelCss from "./undo-tree-panel.css?inline";
 export class UndoTreePanel extends HTMLElement {
     private undoTree: UndoTree | null = null;
     private contentContainer: HTMLElement;
+    private settingsExtension: SettingsExtension;
 
-    constructor() {
+    constructor(settingsExtension: SettingsExtension) {
         super();
+        this.settingsExtension = settingsExtension;
         this.attachShadow({ mode: 'open' });
         this.shadowRoot!.adoptedStyleSheets = [css(undoTreePanelCss)];
 
@@ -25,7 +28,7 @@ export class UndoTreePanel extends HTMLElement {
         `;
 
         this.contentContainer = this.shadowRoot!.querySelector('.tree-content')!;
-        
+
         // Initial render
         this.render();
     }
@@ -62,7 +65,7 @@ export class UndoTreePanel extends HTMLElement {
 
         const currentId = this.undoTree.getCurrentId();
         this.contentContainer.innerHTML = '';
-        
+
         // Render tree starting from root
         const treeElement = this.renderNode(rootId, currentId);
         if (treeElement) {
@@ -89,14 +92,14 @@ export class UndoTreePanel extends HTMLElement {
         const nodeLabel = document.createElement('span');
         nodeLabel.className = 'node-label';
         nodeLabel.textContent = node.operation.getDescription();
-        
+
         const nodeTime = document.createElement('span');
         nodeTime.className = 'node-time';
         nodeTime.textContent = this.formatTimestamp(node.timestamp);
 
         nodeContent.appendChild(nodeLabel);
         nodeContent.appendChild(nodeTime);
-        
+
         // Add click handler
         nodeContent.addEventListener('click', () => {
             this.handleNodeClick(nodeId);

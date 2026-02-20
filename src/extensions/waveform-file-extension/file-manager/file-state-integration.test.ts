@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import '../file-display/file-display.js';
 import { FileDisplay } from '../file-display/file-display.js';
-import { saveFileState, loadFileState, clearAllFileStates } from '../../utils/file-state-storage.js';
+import { saveFileState, loadFileState, clearAllFileStates } from '../file-state-storage.js';
 
 // Mock the backend module
 vi.mock('../../backend/index.js', () => ({
@@ -69,7 +69,7 @@ describe('File State Persistence Integration', () => {
     const savedState = await loadFileState('test.vcd');
     expect(savedState).not.toBeNull();
     expect(savedState?.items).toBeDefined();
-    
+
     // Check that signals are in the items array
     const signalItems = savedState?.items.filter(item => item._type === 'signal');
     expect(signalItems?.length).toBeGreaterThan(0);
@@ -138,10 +138,10 @@ describe('File State Persistence Integration', () => {
   it('should handle multiple files independently', async () => {
     // Clear any existing state
     await clearAllFileStates();
-    
+
     // Manually save states for two different files
     await saveFileState('file1.vcd', {
-      version: 'V0.1',
+      version: 'V0',
       items: [
         { _type: 'timeline', name: 'Timeline 1' },
         { _type: 'signal', ref: 1, name: 'clk' }
@@ -150,9 +150,9 @@ describe('File State Persistence Integration', () => {
       visibleEnd: 2000,
       timestamp: Date.now()
     });
-    
+
     await saveFileState('file2.vcd', {
-      version: 'V0.1',
+      version: 'V0',
       items: [
         { _type: 'timeline', name: 'Timeline 1' },
         { _type: 'signal', ref: 2, name: 'reset' }
@@ -161,7 +161,7 @@ describe('File State Persistence Integration', () => {
       visibleEnd: 6000,
       timestamp: Date.now()
     });
-    
+
     // Verify both states were saved independently
     const state1 = await loadFileState('file1.vcd');
     const state2 = await loadFileState('file2.vcd');
@@ -180,7 +180,7 @@ describe('File State Persistence Integration', () => {
       expect(state2.items).toHaveLength(2);
       expect(state2.items[1]._type).toBe('signal');
     }
-    
+
     // Now verify restoration works for both
     const element1 = document.createElement('file-display') as FileDisplay;
     element1.filename = 'file1.vcd';
@@ -200,7 +200,7 @@ describe('File State Persistence Integration', () => {
 
     expect(range1.start).toBe(1000);
     expect(range1.end).toBe(2000);
-    
+
     expect(range2.start).toBe(5000);
     expect(range2.end).toBe(6000);
 
@@ -246,7 +246,7 @@ describe('File State Persistence Integration', () => {
     // State should not be saved yet
     let savedState = await loadFileState('test.vcd');
     // The state might be null or might have old data depending on timing
-    
+
     // Wait for full debounce time plus a bit more
     await new Promise(resolve => setTimeout(resolve, 400));
 

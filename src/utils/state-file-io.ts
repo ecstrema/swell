@@ -1,14 +1,14 @@
 // State file I/O utilities for saving and loading .swellstate files
 // These functions handle the serialization and I/O for explicit state file operations
 
-import { FileState } from './file-state-storage.js';
+import { FileState } from '../extensions/waveform-file-extension/file-state-storage.js';
 import { saveStateFileDialog, openStateFileDialog, writeTextFile, readTextFile, isTauri } from '../backend/index.js';
 
 /**
  * Current state file format version
  * Used for versioning the .swellstate file format
  */
-export const CURRENT_STATE_VERSION = 'V0.1';
+export const CURRENT_STATE_VERSION = 'V0';
 
 /**
  * Interface for the complete application state that can be saved to a file
@@ -28,24 +28,24 @@ export async function saveStateToFile(filename: string, state: FileState): Promi
     // Create a default name based on the waveform filename
     const baseName = filename.replace(/\.[^/.]+$/, ''); // Remove extension
     const defaultName = `${baseName}.swellstate`;
-    
+
     // Open save dialog
     const savePath = await saveStateFileDialog(defaultName);
     if (!savePath) {
         console.log('Save cancelled by user');
         return;
     }
-    
+
     // Create the app state object
     const appState: AppState = {
         version: CURRENT_STATE_VERSION,
         filename: filename,
         state: state
     };
-    
+
     // Serialize to JSON
     const content = JSON.stringify(appState, null, 2);
-    
+
     // Write to file
     await writeTextFile(savePath, content);
     console.log(`State saved to: ${savePath}`);
@@ -62,24 +62,24 @@ export async function loadStateFromFile(): Promise<{ filename: string; state: Fi
         console.log('Load cancelled by user');
         return null;
     }
-    
+
     try {
         // Read file content
         const content = await readTextFile(fileOrPath);
-        
+
         // Parse JSON
         const appState: AppState = JSON.parse(content);
-        
+
         // Validate version
         if (appState.version !== CURRENT_STATE_VERSION) {
             console.warn(`Unknown state file version: ${appState.version} (expected ${CURRENT_STATE_VERSION})`);
         }
-        
+
         // Validate required fields
         if (!appState.filename || !appState.state) {
             throw new Error('Invalid state file format: missing required fields');
         }
-        
+
         console.log(`State loaded from file for: ${appState.filename}`);
         return {
             filename: appState.filename,

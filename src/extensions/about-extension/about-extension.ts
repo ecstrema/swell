@@ -46,7 +46,7 @@ export class AboutExtension implements Extension {
 
         // Register a setting for the about page
         this.settingsExtension.registerSetting({
-            path: 'About/Show Version Info',
+            id: 'About/Show Version Info',
             description: 'Show detailed version information in the about page',
             type: 'boolean',
             defaultValue: true,

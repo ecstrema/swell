@@ -52,7 +52,7 @@ export class UndoExtension implements Extension {
 
     async activate(): Promise<void> {
         this.dockExtension.registerContent('undo-tree', 'Undo History', () => {
-            const undoTreePanel = new UndoTreePanel();
+            const undoTreePanel = new UndoTreePanel(this.settingsExtension);
             undoTreePanel.id = 'undo-tree-panel';
             undoTreePanel.setUndoTree(this.undoManager.getUndoTree());
             return undoTreePanel;

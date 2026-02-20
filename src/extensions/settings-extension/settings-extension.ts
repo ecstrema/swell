@@ -7,16 +7,15 @@
 
 import { Extension } from "../types.js";
 import { SettingsPage } from "./settings-page.js";
-import { settingsRegister, SettingMetadata } from "./settings-register.js";
+import { SettingMetadata, SettingValue, SettingChangeCallback, SettingsTree } from "./types.js";
 import { DockExtension } from "../dock-extension/dock-extension.js";
 import { CommandExtension } from "../command-extension/command-extension.js";
 import { MenuExtension } from "../menu-extension/menu-extension.js";
+import { Store } from "../../utils/persisted-store.js";
 
-// Re-export types and functions that external code needs
-export type { SettingMetadata, SettingValue, SettingChangeCallback } from "./settings-register.js";
-export { settingsRegister } from "./settings-register.js";
-import { getSetting as getSettingStorage, setSetting as setSettingStorage } from "./settings-storage.js";
-export { getSetting, setSetting } from "./settings-storage.js";
+// Re-export types for external consumption
+export type { SettingMetadata, SettingValue, SettingChangeCallback } from "./types.js";
+
 
 export class SettingsExtension implements Extension {
     static readonly metadata = {
@@ -30,6 +29,11 @@ export class SettingsExtension implements Extension {
     private commandExtension: CommandExtension;
     private menuExtension: MenuExtension;
 
+    // In-memory settings registry (moved from SettingsRegister)
+    private settings: Map<string, SettingMetadata> = new Map();
+    private values = new Store("settings.json");
+    private callbacks: Map<string, Set<SettingChangeCallback>> = new Map();
+
     constructor(dependencies: Map<string, Extension>) {
         this.dockExtension = dependencies.get(DockExtension.metadata.id) as DockExtension;
         this.commandExtension = dependencies.get(CommandExtension.metadata.id) as CommandExtension;
@@ -38,41 +42,87 @@ export class SettingsExtension implements Extension {
 
     async activate(): Promise<void> {
         // Register the settings page as dock content
-        this.dockExtension.registerContent('settings', 'Settings', () => new SettingsPage());
+        this.dockExtension.registerContent('settings', 'Settings', () => new SettingsPage(this));
 
         this.registerSettingsCommand();
         this.registerSettingsMenu();
     }
 
+    async getValue<T extends SettingValue = SettingValue>(id: string): Promise<T | undefined> {
+        const value = await this.values.get(id);
+        if (value !== undefined) return value as T;
+        const setting = this.settings.get(id);
+        return setting?.defaultValue as T | undefined;
+    }
+
+    async setValue(id: string, value: SettingValue): Promise<void> {
+        await this.values.set(id, value);
+        this.triggerCallbacks(id, value);
+    }
+
     /**
-     * Register a new setting
+     * Register a new setting (public API)
      */
     registerSetting(setting: SettingMetadata): void {
-        settingsRegister.register(setting);
+        this.settings.set(setting.id, setting);
+        // Initialize value to default if not already set
+        if (!this.values.has(setting.id) && setting.defaultValue !== undefined) {
+            this.values.set(setting.id, setting.defaultValue);
+        }
     }
 
     /**
-     * Get a setting value
+     * Registry-style APIs (previously in SettingsRegister)
      */
-    async getSetting(path: string): Promise<any> {
-        return getSettingStorage(path);
+    getMetadata(id: string): SettingMetadata | undefined {
+        return this.settings.get(id);
     }
 
-    /**
-     * Set a setting value
-     */
-    async setSetting(path: string, value: any): Promise<void> {
-        return setSettingStorage(path, value);
+    getAllMetadata(): SettingMetadata[] {
+        return Array.from(this.settings.values());
     }
 
-    /**
-     * Register a callback to be invoked when a setting changes
-     * @param path The setting path to watch
-     * @param callback The callback to invoke when the setting changes
-     * @returns A function to unregister the callback
-     */
-    onChange(path: string, callback: (value: any) => void): () => void {
-        return settingsRegister.onChange(path, callback);
+    settingExists(id: string): boolean {
+        return this.settings.has(id);
+    }
+
+    onSettingChange(settingId: string, callback: (value: any) => void): () => void {
+        if (!this.callbacks.has(settingId)) this.callbacks.set(settingId, new Set());
+        this.callbacks.get(settingId)!.add(callback as SettingChangeCallback);
+        return () => {
+            this.callbacks.get(settingId)?.delete(callback as SettingChangeCallback);
+        };
+    }
+
+    getSettingsTree(): SettingsTree {
+        const root: SettingsTree = { id: 'root', content: [] };
+
+        for (const setting of this.getAllMetadata()) {
+            const segments = setting.id.split('/').filter(Boolean);
+            let currentNode = root;
+
+            for (const segment of segments) {
+                // find or create the child node for this path segment
+                let child = currentNode.content.find(c => !('type' in c) && c.id === segment) as SettingsTree | undefined;
+                if (!child) {
+                    child = { id: segment, content: [] };
+                    currentNode.content.push(child);
+                }
+                currentNode = child;
+            }
+
+            // place the metadata at the leaf node
+            currentNode.content.push(setting);
+        }
+
+        return root;
+    }
+
+    private triggerCallbacks(settingId: string, value: SettingValue): void {
+        const callbacks = this.callbacks.get(settingId);
+        if (callbacks) {
+            for (const cb of callbacks) cb(value);
+        }
     }
 
     private registerSettingsCommand(): void {
@@ -82,7 +132,6 @@ export class SettingsExtension implements Extension {
             description: 'Open the application settings',
             handler: () => this.openSettings(),
         });
-
     }
 
     private registerSettingsMenu(): void {

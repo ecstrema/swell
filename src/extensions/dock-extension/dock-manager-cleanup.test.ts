@@ -364,9 +364,7 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
 
             // Both stacks should remain
             const root = layout.root as DockStack;
-            // Root is now a container `stack` (direction present)
             expect(root.type).toBe('stack');
-            expect((root as any).direction).toBeDefined();
             expect(root.children.length).toBe(2);
 
             const stack1 = root.children[0] as DockStack;

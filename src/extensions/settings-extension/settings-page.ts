@@ -1,7 +1,7 @@
 // Settings page component
 
-import { settingsRegister, SettingMetadata, SettingValue } from './settings-register.js';
-import { getSetting, setSetting } from './settings-storage.js';
+import type { SettingsExtension } from './settings-extension.js';
+import { SettingMetadata, SettingsTree, SettingValue } from './types.js';
 import { css } from '../../utils/css-utils.js';
 import { scrollbarSheet } from '../../styles/shared-sheets.js';
 import settingsCss from './settings-page.css?inline';
@@ -10,9 +10,11 @@ import { TreeView, TreeNode } from '../waveform-file-extension/trees/tree-view.j
 export class SettingsPage extends HTMLElement {
     private static readonly HIGHLIGHT_DURATION_MS = 1000;
     private treeView: TreeView | null = null;
+    private settingsExtension: SettingsExtension;
 
-    constructor() {
+    constructor(settingsExtension: SettingsExtension) {
         super();
+        this.settingsExtension = settingsExtension;
         this.attachShadow({ mode: 'open' });
     }
 
@@ -22,18 +24,10 @@ export class SettingsPage extends HTMLElement {
     }
 
     async loadSettings() {
-        const grouped = settingsRegister.getGrouped();
+        const allSettingsMetadata = this.settingsExtension.getAllMetadata();
 
-        for (const [category, settings] of grouped) {
-            for (const setting of settings) {
-                try {
-                    const value = await getSetting(setting.path);
-                    const actualValue = value !== undefined ? value : setting.defaultValue;
-                    this.updateInputValue(setting.path, actualValue);
-                } catch (e) {
-                    console.error(`Failed to load setting ${setting.path}:`, e);
-                }
-            }
+        for (const setting of allSettingsMetadata) {
+            const value = this.settingsExtension.getValue(setting.id);
         }
     }
 
@@ -58,24 +52,15 @@ export class SettingsPage extends HTMLElement {
                 convertedValue = value === true || value === 'true';
             }
 
-            await setSetting(path, convertedValue);
-
-            // Trigger change event for components that might need to react
-            this.dispatchEvent(new CustomEvent('setting-changed', {
-                bubbles: true,
-                composed: true,
-                detail: { path, value: convertedValue }
-            }));
+            this.settingsExtension.setValue(path, convertedValue);
         } catch (e) {
             console.error(`Failed to save setting ${path}:`, e);
             alert(`Failed to save setting: ${e}`);
         }
     }
 
-
-
     renderSetting(setting: SettingMetadata): string {
-        const { path, description, type } = setting;
+        const { id: path, description, type } = setting;
         const id = path.replace(/\//g, '-');
 
         switch (type) {
@@ -137,20 +122,29 @@ export class SettingsPage extends HTMLElement {
      * Generate tree data from settings categories and individual settings
      */
     generateTreeData(): TreeNode[] {
-        const grouped = settingsRegister.getGrouped();
         const treeData: TreeNode[] = [];
+        const settingsTreeData = this.settingsExtension.getSettingsTree();
 
-        for (const [category, settings] of grouped) {
-            const categoryNode: TreeNode = {
-                name: category,
-                id: `category-${category}`,
-                children: settings.map(setting => ({
-                    name: setting.path.split('/').pop() || setting.path,
-                    id: setting.path,
-                    children: undefined
-                }))
-            };
-            treeData.push(categoryNode);
+        const convertToTreeNodes = (node: SettingsTree): TreeNode => {
+            if (node.content.length === 0) {
+                return { id: node.id, name: node.id, children: [] };
+            }
+
+            const children = node.content.map(item => {
+                if ('type' in item) {
+                    // It's a setting metadata
+                    return { id: item.id, name: item.id.split('/').pop() || item.id, children: [] };
+                } else {
+                    // It's a category
+                    return convertToTreeNodes(item);
+                }
+            });
+
+            return { id: node.id, name: node.id, children };
+        };
+
+        for (const child of settingsTreeData.content) {
+            treeData.push(convertToTreeNodes(child as SettingsTree));
         }
 
         return treeData;
@@ -178,8 +172,6 @@ export class SettingsPage extends HTMLElement {
     }
 
     render() {
-        const grouped = settingsRegister.getGrouped();
-
         this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(settingsCss)];
 
         this.shadowRoot!.innerHTML = `
@@ -188,18 +180,35 @@ export class SettingsPage extends HTMLElement {
                     <div id="settings-tree"></div>
                 </div>
                 <div class="settings-content">
-                    ${Array.from(grouped.entries()).map(([category, settings]) => `
-                        <div class="settings-category" id="category-${category}">
-                            <div class="category-title">${category}</div>
-                            ${settings.map(setting => this.renderSetting(setting)).join('')}
-                        </div>
-                    `).join('')}
                 </div>
             </div>
         `;
 
+        // Load settings and generate content
+        const settingsTree = this.settingsExtension.getSettingsTree();
+        const contentContainer = this.shadowRoot!.querySelector('.settings-content');
+        if (contentContainer) {
+            const renderContent = (node: SettingsTree) => {
+                let html = '';
+                for (const item of node.content) {
+                    if ('type' in item) {
+                        // It's a setting metadata
+                        html += this.renderSetting(item);
+                    } else {
+                        // It's a category
+                        html += `<div class="settings-category">
+                            <div class="category-title">${item.id}</div>
+                            ${renderContent(item)}
+                        </div>`;
+                    }
+                }
+                return html;
+            };
+            contentContainer.innerHTML = renderContent(settingsTree);
+        }
+
         // Create and configure tree view
-        this.treeView = new TreeView();
+        this.treeView = new TreeView(this.settingsExtension);
         this.treeView.data = this.generateTreeData();
         this.treeView.config = {
             onLeafClick: (node: TreeNode) => {
@@ -210,7 +219,6 @@ export class SettingsPage extends HTMLElement {
                 }
             },
             showFilter: true,
-            showCheckboxes: false
         };
 
         // Add tree view to the sidebar
@@ -220,17 +228,17 @@ export class SettingsPage extends HTMLElement {
         }
 
         // Add change listeners to all inputs
-        const allSettings = settingsRegister.getAll();
+        const allSettings = this.settingsExtension.getAllMetadata();
         for (const setting of allSettings) {
-            const input = this.shadowRoot!.querySelector(`[data-path="${setting.path}"]`) as HTMLInputElement | HTMLSelectElement;
+            const input = this.shadowRoot!.querySelector(`[data-path="${setting.id}"]`) as HTMLInputElement | HTMLSelectElement;
             if (input) {
                 if (input.type === 'checkbox') {
                     input.addEventListener('change', () => {
-                        this.handleSettingChange(setting.path, (input as HTMLInputElement).checked, setting);
+                        this.handleSettingChange(setting.id, (input as HTMLInputElement).checked, setting);
                     });
                 } else {
                     input.addEventListener('change', () => {
-                        this.handleSettingChange(setting.path, input.value, setting);
+                        this.handleSettingChange(setting.id, input.value, setting);
                     });
                 }
             }

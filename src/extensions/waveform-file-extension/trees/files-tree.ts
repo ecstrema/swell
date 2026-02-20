@@ -3,6 +3,7 @@ import { css } from "../../../utils/css-utils.js";
 import filesTreeCss from "./files-tree.css?inline";
 import "./tree-view.js";
 import PlusBoxIcon from '~icons/mdi/plus-box?raw';
+import { SettingsExtension } from "../../settings-extension/settings-extension.js";
 
 export interface HierarchyVar {
     name: string;
@@ -32,15 +33,15 @@ export class FilesTree extends TreeView {
     private _filename: string | null = null;
     private _selectedSignalRefs: Set<number> = new Set();
 
-    constructor() {
-        super();
-        
+    constructor(settingsExtension: SettingsExtension) {
+        super(settingsExtension);
+
         // Add FilesTree-specific styling
         if (this.shadowRoot) {
             const existingSheets = Array.from(this.shadowRoot.adoptedStyleSheets);
             this.shadowRoot.adoptedStyleSheets = [...existingSheets, css(filesTreeCss)];
         }
-        
+
         // Configure the tree view for file hierarchy display
         this.updateConfig();
     }
@@ -105,11 +106,11 @@ export class FilesTree extends TreeView {
             branchIconButtons: (node: TreeNode) => {
                 // Add button to add all direct child signals (non-recursively)
                 const buttons: TreeIconButton[] = [];
-                
+
                 if (node.children && node.children.length > 0) {
                     // Check if there are any leaf children (signals)
                     const hasLeafChildren = node.children.some(child => !child.children || child.children.length === 0);
-                    
+
                     if (hasLeafChildren) {
                         buttons.push({
                             icon: PlusBoxIcon,
@@ -120,7 +121,7 @@ export class FilesTree extends TreeView {
                         });
                     }
                 }
-                
+
                 return buttons;
             }
         };
@@ -215,7 +216,7 @@ export class FilesTree extends TreeView {
             id: variable.ref
         };
     }
-    
+
     /**
      * Add all direct child signals (non-recursively) from a scope node
      */
@@ -223,20 +224,20 @@ export class FilesTree extends TreeView {
         if (!node.children) {
             return;
         }
-        
+
         // Collect all direct child signals (leaf nodes)
         const leafChildren = node.children.filter(child => !child.children || child.children.length === 0);
-        
+
         // Dispatch checkbox-toggle event for each leaf child
         leafChildren.forEach(leafNode => {
             // Only add if not already selected
             if (!this._selectedSignalRefs.has(leafNode.id as number)) {
                 this.dispatchEvent(new CustomEvent('checkbox-toggle', {
-                    detail: { 
-                        name: leafNode.name, 
-                        ref: leafNode.id, 
-                        filename: this._filename, 
-                        checked: true 
+                    detail: {
+                        name: leafNode.name,
+                        ref: leafNode.id,
+                        filename: this._filename,
+                        checked: true
                     },
                     bubbles: true,
                     composed: true
@@ -244,13 +245,13 @@ export class FilesTree extends TreeView {
             }
         });
     }
-    
+
     /**
      * Get all descendant signals (leaf nodes) recursively from a node
      */
     private getAllDescendantSignals(node: TreeNode): Array<{ref: number, name: string, path: string}> {
         const signals: Array<{ref: number, name: string, path: string}> = [];
-        
+
         if (!node.children || node.children.length === 0) {
             // This is a leaf node (signal)
             signals.push({ref: node.id as number, name: node.name, path: this.getNodePath(node)});
@@ -260,10 +261,10 @@ export class FilesTree extends TreeView {
                 signals.push(...this.getAllDescendantSignals(child));
             });
         }
-        
+
         return signals;
     }
-    
+
     /**
      * Get the full hierarchical path for a node
      * @param node - The node to get the path for
@@ -273,7 +274,7 @@ export class FilesTree extends TreeView {
         const path = this.findNodePath(this._data, node.id);
         return path !== null ? path.join('.') : node.name;
     }
-    
+
     /**
      * Recursively find the path to a node by its ID
      * @param nodes - The nodes to search
@@ -284,11 +285,11 @@ export class FilesTree extends TreeView {
     private findNodePath(nodes: TreeNode[], targetId: string | number, currentPath: string[] = []): string[] | null {
         for (const node of nodes) {
             const newPath = [...currentPath, node.name];
-            
+
             if (node.id === targetId) {
                 return newPath;
             }
-            
+
             if (node.children && node.children.length > 0) {
                 const result = this.findNodePath(node.children, targetId, newPath);
                 if (result !== null) {
@@ -296,11 +297,11 @@ export class FilesTree extends TreeView {
                 }
             }
         }
-        
+
         return null;
     }
 
-    
+
     /**
      * Get all descendant signal refs (leaf nodes) recursively from a node
      * @deprecated Use getAllDescendantSignals instead for better event details

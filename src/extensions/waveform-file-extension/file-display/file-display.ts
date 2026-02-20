@@ -1,19 +1,22 @@
-import { getSignalChanges, SignalChange, getHierarchy } from '../../../backend/index.js';
+import { getSignalChanges, SignalChange, getHierarchy } from '../../../backend';
+
 import { css } from '../../../utils/css-utils.js';
 import { setupCanvasForHighDPI } from '../../../utils/canvas-utils.js';
+
 import { scrollbarSheet } from '../../../styles/shared-sheets.js';
+
 import fileDisplayCss from './file-display.css?inline';
+import { saveFileState, loadFileState, FileState, Item, ItemSignal, ItemTimeline } from '../file-state-storage.js';
+
 import { SelectedSignalsTree } from '../trees/selected-signals-tree.js';
-import { Timeline } from '../../../components/timeline/timeline.js';
-import { Minimap } from '../../../components/minimap/minimap.js';
-import { saveFileState, loadFileState, FileState, Item, ItemSignal, ItemTimeline } from '../../../utils/file-state-storage.js';
-import { getSetting } from '../../settings-extension/settings-extension.js';
-import { UndoableOperation } from '../../extensions/undo-extension/undo-extension.js';
-import '../trees/selected-signals-tree.js';
-import '../../../components/timeline/timeline.js';
-import '../../../components/minimap/minimap.js';
+import { Timeline } from '../components/timeline/timeline.js';
+import { Minimap } from '../components/minimap/minimap.js';
 import '../../../components/panels/resizable-panel.js';
 import '../../../components/primitives/split-button.js';
+
+import { SettingsExtension } from '../../settings-extension/settings-extension.js';
+import { UndoableOperation } from '../../undo-extension/undo-extension.js';
+
 
 interface SelectedSignal {
   name: string;
@@ -67,7 +70,7 @@ export class FileDisplay extends HTMLElement {
   private executeUndoableOperation: ((operation: UndoableOperation) => void) | null = null;
   private boundHandleSignalCanvasWheel: (e: WheelEvent) => void;
 
-  constructor() {
+  constructor(settingsExtension: SettingsExtension) {
     super();
     this.attachShadow({ mode: 'open' });
     this.boundHandleSignalSelect = this.handleSignalSelect.bind(this);
@@ -83,19 +86,19 @@ export class FileDisplay extends HTMLElement {
     this.boundHandleSignalCanvasWheel = this.handleSignalCanvasWheel.bind(this);
 
     this.shadowRoot!.adoptedStyleSheets = [scrollbarSheet, css(fileDisplayCss)];
-    
+
     // Create the selected signals tree
-    this.selectedSignalsTree = new SelectedSignalsTree();
-    
+    this.selectedSignalsTree = new SelectedSignalsTree(settingsExtension);
+
     // Create the minimap
     this.minimap = new Minimap();
-    
+
     // Add a default timeline as the first signal
     this.addTimelineSignal();
-    
+
     // Load alternating row pattern setting
     this.loadAlternatingRowPattern();
-    
+
     this.render();
   }
 
@@ -107,7 +110,7 @@ export class FileDisplay extends HTMLElement {
     const oldFilename = this._filename;
     this._filename = val;
     this.render();
-    
+
     // Restore state when filename is set (if connected and not already restored)
     if (val && val !== oldFilename && this.isConnected && !this.stateRestored) {
       this.restoreFileState();
@@ -147,9 +150,9 @@ export class FileDisplay extends HTMLElement {
         };
       }
     });
-    
+
     return {
-      version: 'V0.1',
+      version: 'V0',
       items,
       visibleStart: this.visibleStart,
       visibleEnd: this.visibleEnd,
@@ -164,29 +167,29 @@ export class FileDisplay extends HTMLElement {
   async applyState(state: FileState): Promise<void> {
     try {
       // Check version compatibility
-      if (state.version !== 'V0.1') {
+      if (state.version !== 'V0') {
         throw new Error(`Unsupported state version: ${state.version}`);
       }
-      
+
       console.log(`Applying state to ${this._filename}:`, state);
-      
+
       // Restore visible range
       if (state.visibleStart !== 0 || state.visibleEnd !== 1000000) {
         this.visibleStart = state.visibleStart;
         this.visibleEnd = state.visibleEnd;
         this.timeRangeInitialized = true;
       }
-      
+
       // Load the hierarchy to validate signals still exist
       const hierarchy = await getHierarchy(this._filename);
       if (!hierarchy) {
         throw new Error('Could not load hierarchy to apply state');
       }
-      
+
       // Helper to find signals by ref in the hierarchy and compute their path
       const findSignalByRef = (node: HierarchyNode, targetRef: number, currentPath: string[] = []): { name: string; ref: number; path: string } | null => {
         const newPath = [...currentPath, node.name];
-        
+
         if (node.var_ref === targetRef) {
           return { name: node.name, ref: targetRef, path: newPath.join('.') };
         }
@@ -198,12 +201,12 @@ export class FileDisplay extends HTMLElement {
         }
         return null;
       };
-      
+
       // Clear current signals
       this.selectedSignals = [];
       this.timelineCounter = 0;
       this.minimapCounter = 0;
-      
+
       // Restore items from the flat list
       for (const item of state.items) {
         if (item._type === 'timeline') {
@@ -216,7 +219,7 @@ export class FileDisplay extends HTMLElement {
           if (found) {
             // Add the signal with computed path
             this.addSignal(item.name, item.ref, found.path);
-            
+
             // Restore showFullPath preference if it was saved
             if (item.showFullPath !== undefined) {
               const signal = this.selectedSignals.find(s => s.ref === item.ref);
@@ -229,12 +232,12 @@ export class FileDisplay extends HTMLElement {
           }
         }
       }
-      
+
       // Update minimap and all timeline/minimap signals with the restored range
       if (this.timeRangeInitialized) {
         this.minimap.totalRange = { start: this.visibleStart, end: this.visibleEnd };
         this.minimap.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
-        
+
         this.selectedSignals.forEach(signal => {
           if (signal.isTimeline && signal.timeline) {
             signal.timeline.totalRange = { start: this.visibleStart, end: this.visibleEnd };
@@ -246,9 +249,9 @@ export class FileDisplay extends HTMLElement {
           }
         });
       }
-      
+
       this.render();
-      
+
       // Save state automatically after applying
       this.scheduleStateSave();
     } catch (err) {
@@ -260,37 +263,37 @@ export class FileDisplay extends HTMLElement {
   connectedCallback() {
     // Listen for netlist events
     document.addEventListener('signal-select', this.boundHandleSignalSelect);
-    
+
     // Listen for checkbox toggle events
     document.addEventListener('checkbox-toggle', this.boundHandleCheckboxToggle);
-    
+
     // Listen for timeline range changes
     this.addEventListener('range-changed', this.boundHandleRangeChanged);
-    
+
     // Listen for minimap range changes
     this.minimap.addEventListener('range-changed', this.boundHandleMinimapRangeChanged);
-    
+
     // Listen for zoom commands
     this.addEventListener('zoom-command', this.boundHandleZoomCommand);
-    
+
     // Listen for signals reordered event from the tree
     this.selectedSignalsTree.addEventListener('signals-reordered', this.boundHandleSignalsReordered);
-    
+
     // Listen for signal path toggled event from the tree
     this.selectedSignalsTree.addEventListener('signal-path-toggled', this.boundHandleSignalPathToggled);
-    
+
     // Listen for theme changes
     window.addEventListener('theme-changed', this.boundHandleThemeChanged);
-    
+
     // Set up ResizeObserver to watch for container size changes
     // This handles dock resizing and other layout changes
     this.resizeObserver = new ResizeObserver(() => {
       this.handleContainerResize();
     });
-    
+
     // Observe the file display element itself for size changes
     this.resizeObserver.observe(this);
-    
+
     // Restore saved state for this file
     this.restoreFileState();
   }
@@ -304,16 +307,16 @@ export class FileDisplay extends HTMLElement {
     this.selectedSignalsTree.removeEventListener('signals-reordered', this.boundHandleSignalsReordered);
     this.selectedSignalsTree.removeEventListener('signal-path-toggled', this.boundHandleSignalPathToggled);
     window.removeEventListener('theme-changed', this.boundHandleThemeChanged);
-    
+
     // Clean up ResizeObserver
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
     }
-    
+
     // Save state before disconnecting
     this.saveCurrentState();
-    
+
     // Clear any pending save timeout
     if (this.saveStateTimeout !== null) {
       clearTimeout(this.saveStateTimeout);
@@ -325,7 +328,7 @@ export class FileDisplay extends HTMLElement {
     const customEvent = event as CustomEvent;
     const { start, end } = customEvent.detail;
     this.setVisibleRange(start, end);
-    
+
     // Synchronize all other timelines and minimaps in the same file
     // Skip the component that triggered the event to avoid circular updates
     this.selectedSignals.forEach(signal => {
@@ -336,12 +339,12 @@ export class FileDisplay extends HTMLElement {
         signal.minimap.visibleRange = { start, end };
       }
     });
-    
+
     // Also synchronize the bottom minimap if it's not the source
     if (this.minimap && this.minimap !== event.target) {
       this.minimap.visibleRange = { start, end };
     }
-    
+
     // Save state after range changes
     this.debouncedSaveState();
   }
@@ -349,7 +352,7 @@ export class FileDisplay extends HTMLElement {
   private handleZoomCommand(event: Event) {
     const customEvent = event as CustomEvent;
     const { action } = customEvent.detail;
-    
+
     // Apply zoom to all timeline signals
     this.selectedSignals.forEach(signal => {
       if (signal.isTimeline && signal.timeline) {
@@ -372,7 +375,7 @@ export class FileDisplay extends HTMLElement {
     const customEvent = event as CustomEvent;
     const { start, end } = customEvent.detail;
     this.setVisibleRange(start, end);
-    
+
     // Synchronize all timelines with minimap range
     this.selectedSignals.forEach(signal => {
       if (signal.isTimeline && signal.timeline) {
@@ -382,12 +385,12 @@ export class FileDisplay extends HTMLElement {
         signal.minimap.visibleRange = { start, end };
       }
     });
-    
+
     // Also synchronize the bottom minimap if it's not the source
     if (this.minimap && this.minimap !== event.target) {
       this.minimap.visibleRange = { start, end };
     }
-    
+
     // Save state after range changes
     this.debouncedSaveState();
   }
@@ -396,13 +399,13 @@ export class FileDisplay extends HTMLElement {
     this.timelineCounter++;
     const timeline = new Timeline();
     const name = `Timeline ${this.timelineCounter}`;
-    
+
     // Set up time range if already initialized
     if (this.timeRangeInitialized) {
       timeline.totalRange = { start: this.visibleStart, end: this.visibleEnd };
       timeline.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
     }
-    
+
     // Use negative refs for timelines to avoid conflicts with signal refs
     // Signal refs are always positive integers from the waveform file
     this.selectedSignals.push({
@@ -411,9 +414,9 @@ export class FileDisplay extends HTMLElement {
       isTimeline: true,
       timeline
     });
-    
+
     this.updateSelectedSignalsTree();
-    
+
     // Save state after adding timeline
     this.debouncedSaveState();
   }
@@ -422,13 +425,13 @@ export class FileDisplay extends HTMLElement {
     this.minimapCounter++;
     const minimap = new Minimap();
     const name = `Minimap ${this.minimapCounter}`;
-    
+
     // Set up time range if already initialized
     if (this.timeRangeInitialized) {
       minimap.totalRange = { start: this.visibleStart, end: this.visibleEnd };
       minimap.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
     }
-    
+
     // Use negative refs for minimaps to avoid conflicts with signal refs and timelines
     // Signal refs are always positive integers from the waveform file
     // Timeline refs are negative starting from -1
@@ -438,9 +441,9 @@ export class FileDisplay extends HTMLElement {
       isMinimap: true,
       minimap
     });
-    
+
     this.updateSelectedSignalsTree();
-    
+
     // Save state after adding minimap
     this.debouncedSaveState();
   }
@@ -458,17 +461,17 @@ export class FileDisplay extends HTMLElement {
   private handleSignalsReordered(event: Event) {
     const customEvent = event as CustomEvent;
     const { signals } = customEvent.detail;
-    
+
     // Map the reordered signal refs to existing SelectedSignal objects (with canvas/timeline)
     // The signals from the event only contain name and ref, not the DOM elements
     const reorderedSignals = signals.map((s: { name: string; ref: number }) => {
       const existingSignal = this.selectedSignals.find(sig => sig.ref === s.ref);
       return existingSignal || s; // Fallback to basic signal if not found (shouldn't happen)
     });
-    
+
     // Update the internal signals array to match the new order
     this.selectedSignals = reorderedSignals;
-    
+
     // Reorder DOM elements without recreating them
     // This avoids clearing innerHTML and preserves the existing elements
     if (this.signalsContainer) {
@@ -480,14 +483,14 @@ export class FileDisplay extends HTMLElement {
         }
       });
     }
-    
+
     // Repaint signal canvases with their new indices for correct alternating backgrounds
     this.selectedSignals.forEach((signal, index) => {
       if (signal.canvas) {
         this.paintSignal(signal.canvas, signal.ref, index);
       }
     });
-    
+
     // Save state after reordering
     this.debouncedSaveState();
   }
@@ -501,22 +504,22 @@ export class FileDisplay extends HTMLElement {
       }
     });
   }
-  
+
   /**
    * Handle wheel events on signal canvases
    * Implements zoom with Ctrl+wheel and horizontal pan with plain wheel
    */
   private handleSignalCanvasWheel(e: WheelEvent) {
     e.preventDefault();
-    
+
     const currentRange = this.visibleEnd - this.visibleStart;
-    
+
     // Check if Ctrl key is pressed (or Cmd on Mac)
     if (e.ctrlKey || e.metaKey) {
       // Ctrl+Wheel: Zoom in/out
       const zoomFactor = 1.2;
       let newRange: number;
-      
+
       if (e.deltaY < 0) {
         // Zoom in
         newRange = currentRange / zoomFactor;
@@ -524,53 +527,53 @@ export class FileDisplay extends HTMLElement {
         // Zoom out
         newRange = currentRange * zoomFactor;
       }
-      
+
       // Clamp to reasonable minimum (1 time unit - the waveform uses nanoseconds)
       if (newRange < 1) {
         newRange = 1;
       }
-      
+
       const center = (this.visibleStart + this.visibleEnd) / 2;
       let newStart = center - newRange / 2;
       let newEnd = center + newRange / 2;
-      
+
       // Clamp to valid bounds (don't go below 0)
       if (newStart < 0) {
         newStart = 0;
         newEnd = newStart + newRange;
       }
-      
+
       this.setVisibleRange(newStart, newEnd);
     } else {
       // Plain Wheel: Pan left/right (horizontal scroll)
       const panFactor = 0.1; // 10% of visible range
       const panDistance = currentRange * panFactor * Math.sign(e.deltaY);
-      
+
       let newStart = this.visibleStart + panDistance;
       let newEnd = this.visibleEnd + panDistance;
-      
+
       // Don't pan before 0
       if (newStart < 0) {
         newStart = 0;
         newEnd = newStart + currentRange;
       }
-      
+
       this.setVisibleRange(newStart, newEnd);
     }
   }
-  
+
   private handleSignalPathToggled(event: Event) {
     const customEvent = event as CustomEvent;
     const { ref, showFullPath } = customEvent.detail;
-    
+
     // Find and update the signal
     const signal = this.selectedSignals.find(s => s.ref === ref);
     if (signal) {
       signal.showFullPath = showFullPath;
-      
+
       // Update the tree display
       this.updateSelectedSignalsTree();
-      
+
       // Save state to persist the preference
       this.debouncedSaveState();
     }
@@ -579,6 +582,9 @@ export class FileDisplay extends HTMLElement {
   private handleSignalSelect(event: Event) {
     const customEvent = event as CustomEvent;
     const { name, ref, filename, path } = customEvent.detail;
+
+    // DEBUG: trace signal-select handling in integration tests
+    console.debug('handleSignalSelect:', { filename, thisFilename: this._filename, name, ref, path });
 
     // Only handle events for this file - signals are independent per file
     if (filename !== this._filename) {
@@ -681,27 +687,27 @@ export class FileDisplay extends HTMLElement {
     // Set a reasonable default width - will be updated after render
     canvas.width = 800;
     canvas.height = 32;
-    
+
     // Add wheel event listener for zoom and pan
     canvas.addEventListener('wheel', this.boundHandleSignalCanvasWheel);
 
-    this.selectedSignals.push({ 
-      name, 
-      ref, 
-      path, 
+    this.selectedSignals.push({
+      name,
+      ref,
+      path,
       showFullPath: false, // Default to showing just the name
-      canvas, 
-      isTimeline: false 
+      canvas,
+      isTimeline: false
     });
-    
+
     // Update the selected signals tree
     this.updateSelectedSignalsTree();
-    
+
     this.render();
 
     // Paint the signal after the canvas is properly sized in the DOM
     this.setupAndPaintCanvas(canvas, ref);
-    
+
     // Save state after adding signal
     this.debouncedSaveState();
   }
@@ -719,28 +725,28 @@ export class FileDisplay extends HTMLElement {
     const canvas = document.createElement('canvas');
     canvas.width = 800;
     canvas.height = 32;
-    
+
     // Add wheel event listener for zoom and pan
     canvas.addEventListener('wheel', this.boundHandleSignalCanvasWheel);
 
     // Insert at the specified index
-    this.selectedSignals.splice(index, 0, { 
-      name, 
-      ref, 
-      path, 
-      showFullPath: showFullPath ?? false, 
-      canvas, 
-      isTimeline: false 
+    this.selectedSignals.splice(index, 0, {
+      name,
+      ref,
+      path,
+      showFullPath: showFullPath ?? false,
+      canvas,
+      isTimeline: false
     });
-    
+
     // Update the selected signals tree
     this.updateSelectedSignalsTree();
-    
+
     this.render();
 
     // Paint the signal after the canvas is properly sized in the DOM
     this.setupAndPaintCanvas(canvas, ref);
-    
+
     // Save state after adding signal
     this.debouncedSaveState();
   }
@@ -748,7 +754,7 @@ export class FileDisplay extends HTMLElement {
   private removeSignal(ref: number) {
     // Find the signal to remove
     const signalIndex = this.selectedSignals.findIndex(s => s.ref === ref);
-    
+
     if (signalIndex === -1) {
       return;
     }
@@ -761,13 +767,13 @@ export class FileDisplay extends HTMLElement {
 
     // Remove the signal
     this.selectedSignals.splice(signalIndex, 1);
-    
+
     // Update the selected signals tree
     this.updateSelectedSignalsTree();
-    
+
     // Re-render to update the display
     this.render();
-    
+
     // Save state after removing signal
     this.debouncedSaveState();
   }
@@ -779,7 +785,7 @@ export class FileDisplay extends HTMLElement {
       path: s.path,
       showFullPath: s.showFullPath
     }));
-    
+
     // Dispatch event to notify that selected signals have changed
     this.dispatchEvent(new CustomEvent('selected-signals-changed', {
       detail: {
@@ -798,10 +804,10 @@ export class FileDisplay extends HTMLElement {
       const displayWidth = canvas.clientWidth || 800;
       const displayHeight = canvas.clientHeight || 32;
       setupCanvasForHighDPI(canvas, displayWidth, displayHeight);
-      
+
       // Find the index of this signal in the array
       const signalIndex = this.selectedSignals.findIndex(s => s.ref === ref);
-      
+
       // Now paint with the correct dimensions
       this.paintSignal(canvas, ref, signalIndex >= 0 ? signalIndex : 0);
     });
@@ -813,11 +819,11 @@ export class FileDisplay extends HTMLElement {
       if (signal.canvas) {
         const displayWidth = signal.canvas.clientWidth || 800;
         const displayHeight = signal.canvas.clientHeight || 32;
-        
+
         // Only update and repaint if dimensions have actually changed
         const currentStyleWidth = parseInt(signal.canvas.style.width) || 0;
         const currentStyleHeight = parseInt(signal.canvas.style.height) || 0;
-        
+
         if (currentStyleWidth !== displayWidth || currentStyleHeight !== displayHeight) {
           setupCanvasForHighDPI(signal.canvas, displayWidth, displayHeight);
           this.paintSignal(signal.canvas, signal.ref, index);
@@ -847,16 +853,16 @@ export class FileDisplay extends HTMLElement {
       // Use a large but reasonable upper bound to detect actual time range
       // 1e15 nanoseconds = ~11.5 days which is reasonable for waveform simulations
       const changes = await getSignalChanges(this._filename, signalRef, 0, 1e15);
-      
+
       if (changes.length > 0) {
         this.visibleStart = changes[0].time;
         this.visibleEnd = changes[changes.length - 1].time;
         this.timeRangeInitialized = true;
-        
+
         // Update minimap with total range
         this.minimap.totalRange = { start: this.visibleStart, end: this.visibleEnd };
         this.minimap.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
-        
+
         // Update all timeline signals with total and visible ranges
         this.selectedSignals.forEach(signal => {
           if (signal.isTimeline && signal.timeline) {
@@ -890,9 +896,9 @@ export class FileDisplay extends HTMLElement {
 
       // Fetch signal changes using the current visible range
       const changes = await getSignalChanges(
-        this._filename, 
-        signalRef, 
-        this.visibleStart, 
+        this._filename,
+        signalRef,
+        this.visibleStart,
         this.visibleEnd
       );
 
@@ -973,10 +979,10 @@ export class FileDisplay extends HTMLElement {
 
     this.visibleStart = start;
     this.visibleEnd = end;
-    
+
     // Update minimap visible range
     this.minimap.visibleRange = { start, end };
-    
+
     // Repaint all non-timeline signals with the new range, awaiting all operations
     await Promise.all(
       this.selectedSignals
@@ -1015,7 +1021,7 @@ export class FileDisplay extends HTMLElement {
     if (this.saveStateTimeout !== null) {
       clearTimeout(this.saveStateTimeout);
     }
-    
+
     // Set a new timeout to save after 500ms of inactivity
     this.saveStateTimeout = window.setTimeout(() => {
       this.saveCurrentState();
@@ -1028,7 +1034,7 @@ export class FileDisplay extends HTMLElement {
    */
   private saveCurrentState() {
     if (!this._filename) return;
-    
+
     // Convert selectedSignals array to Item[] format
     const items: Item[] = this.selectedSignals.map(signal => {
       if (signal.isTimeline) {
@@ -1044,15 +1050,15 @@ export class FileDisplay extends HTMLElement {
         };
       }
     });
-    
+
     const state: FileState = {
-      version: 'V0.1',
+      version: 'V0',
       items,
       visibleStart: this.visibleStart,
       visibleEnd: this.visibleEnd,
       timestamp: Date.now()
     };
-    
+
     saveFileState(this._filename, state).catch(err => {
       console.error('Failed to save file state:', err);
     });
@@ -1063,39 +1069,39 @@ export class FileDisplay extends HTMLElement {
    */
   private async restoreFileState() {
     if (!this._filename || this.stateRestored) return;
-    
+
     try {
       const state = await loadFileState(this._filename);
       if (!state) {
         // No saved state for this file
         return;
       }
-      
+
       // Check version compatibility
-      if (state.version !== 'V0.1') {
+      if (state.version !== 'V0') {
         console.warn(`Unsupported state version: ${state.version}`);
         return;
       }
-      
+
       console.log(`Restoring state for ${this._filename}:`, state);
-      
+
       // Mark as restored to prevent multiple restorations
       this.stateRestored = true;
-      
+
       // Restore visible range if it was initialized
       if (state.visibleStart !== 0 || state.visibleEnd !== 1000000) {
         this.visibleStart = state.visibleStart;
         this.visibleEnd = state.visibleEnd;
         this.timeRangeInitialized = true;
       }
-      
+
       // Load the hierarchy to validate signals still exist
       const hierarchy = await getHierarchy(this._filename);
       if (!hierarchy) {
         console.warn('Could not load hierarchy to restore signals');
         return;
       }
-      
+
       // Helper to find signals by ref in the hierarchy
       const findSignalByRef = (node: HierarchyNode, targetRef: number): { name: string; ref: number } | null => {
         if (node.var_ref === targetRef) {
@@ -1109,11 +1115,11 @@ export class FileDisplay extends HTMLElement {
         }
         return null;
       };
-      
+
       // Clear the default timeline that was added in constructor
       this.selectedSignals = [];
       this.timelineCounter = 0;
-      
+
       // Restore items from the flat list
       for (const item of state.items) {
         if (item._type === 'timeline') {
@@ -1129,12 +1135,12 @@ export class FileDisplay extends HTMLElement {
         }
         // Note: ItemGroup support can be added in future when needed
       }
-      
+
       // Update minimap and all timeline/minimap signals with the restored range
       if (this.timeRangeInitialized) {
         this.minimap.totalRange = { start: this.visibleStart, end: this.visibleEnd };
         this.minimap.visibleRange = { start: this.visibleStart, end: this.visibleEnd };
-        
+
         this.selectedSignals.forEach(signal => {
           if (signal.isTimeline && signal.timeline) {
             signal.timeline.totalRange = { start: this.visibleStart, end: this.visibleEnd };
@@ -1146,7 +1152,7 @@ export class FileDisplay extends HTMLElement {
           }
         });
       }
-      
+
       this.render();
     } catch (err) {
       console.error('Failed to restore file state:', err);
@@ -1181,14 +1187,14 @@ export class FileDisplay extends HTMLElement {
 
     // Get grid container
     const gridContainer = this.shadowRoot.querySelector('#grid-container');
-    
+
     if (gridContainer) {
       // Add all the signals (timelines, minimaps, and signal canvases) as individual rows
       this.selectedSignals.forEach(signal => {
         // Create row container
         const row = document.createElement('div');
         row.className = 'signal-row';
-        
+
         // Create label element
         const label = document.createElement('div');
         label.className = 'signal-label';
@@ -1196,7 +1202,7 @@ export class FileDisplay extends HTMLElement {
         // Store ref for potential future features (e.g., click to highlight, context menu)
         label.dataset.ref = signal.ref.toString();
         row.appendChild(label);
-        
+
         // Create canvas container and add corresponding canvas/timeline/minimap
         const canvasContainer = document.createElement('div');
         canvasContainer.className = 'signal-canvas-container';
@@ -1208,29 +1214,29 @@ export class FileDisplay extends HTMLElement {
           canvasContainer.appendChild(signal.canvas);
         }
         row.appendChild(canvasContainer);
-        
+
         gridContainer.appendChild(row);
       });
-      
+
       // Add the fixed minimap at the bottom
       if (this.selectedSignals.length > 0) {
         const row = document.createElement('div');
         row.className = 'signal-row';
-        
+
         const minimapLabel = document.createElement('div');
         minimapLabel.className = 'signal-label';
         minimapLabel.textContent = 'Overview';
         row.appendChild(minimapLabel);
-        
+
         const canvasContainer = document.createElement('div');
         canvasContainer.className = 'signal-canvas-container';
         canvasContainer.appendChild(this.minimap);
         row.appendChild(canvasContainer);
-        
+
         gridContainer.appendChild(row);
       }
     }
-    
+
     // Store reference to the grid container for signal access
     this.signalsContainer = gridContainer as HTMLDivElement;
   }

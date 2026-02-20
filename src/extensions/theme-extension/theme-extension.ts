@@ -7,8 +7,7 @@
 
 import { type } from 'arktype';
 import { Extension, ExtensionConstructor } from "../types.js";
-import { settingsRegister, SettingValue } from "../settings-extension/settings-register.js";
-import { setSetting, getSetting } from "../settings-extension/settings-storage.js";
+import { SettingsExtension } from "../settings-extension/settings-extension.js";
 import { SwellColorThemeSchema, applyThemeColors, clearThemeColors, SwellColorTheme } from "./theme-types.js";
 
 // Import default themes
@@ -34,14 +33,15 @@ export class ThemeExtension implements Extension {
         name: 'Theme Extension',
         description: 'Provides VSCode-compatible theme support',
     };
-    static readonly dependencies: ExtensionConstructor[] = [];
+    static readonly dependencies: ExtensionConstructor[] = [SettingsExtension];
 
+    private settingsExtension: SettingsExtension;
     private currentTheme: string = 'default-light';
     private prefersDarkQuery: MediaQueryList | null = null;
     private systemThemeChangeHandler: ((e: MediaQueryListEvent) => void) | null = null;
 
-    constructor(_dependencies: Map<string, Extension>) {
-        // No dependencies required
+    constructor(dependencies: Map<string, Extension>) {
+        this.settingsExtension = dependencies.get(SettingsExtension.metadata.id) as SettingsExtension;
     }
 
     async activate(): Promise<void> {
@@ -55,47 +55,47 @@ export class ThemeExtension implements Extension {
         await this.loadInitialTheme();
 
         // Listen for theme setting changes
-        settingsRegister.onChange(SETTING_CURRENT_THEME, (value) => {
+        this.settingsExtension?.onSettingChange(SETTING_CURRENT_THEME, (value) => {
             this.applyTheme(value as string);
         });
     }
 
     private registerSettings(): void {
         // Current theme setting - can be a specific theme or "system"
-        settingsRegister.register({
-            path: SETTING_CURRENT_THEME,
+        this.settingsExtension?.registerSetting({
+            id: SETTING_CURRENT_THEME,
             description: 'Current color theme. Use "system" to follow system preference.',
             type: 'enum',
             defaultValue: 'system',
             enumOptions: ['system', 'default-light', 'default-dark'],
             options: [
                 { value: 'system', label: 'System' },
-                { value: 'default-light', label: 'Light (Default)' },
-                { value: 'default-dark', label: 'Dark (Default)' }
+                { value: 'default-light', label: 'Default Light' },
+                { value: 'default-dark', label: 'Default Dark' }
             ]
         });
 
         // Default light theme (for system mode)
-        settingsRegister.register({
-            path: SETTING_DEFAULT_LIGHT_THEME,
+        this.settingsExtension?.registerSetting({
+            id: SETTING_DEFAULT_LIGHT_THEME,
             description: 'Theme to use when system preference is light',
             type: 'enum',
             defaultValue: 'default-light',
             enumOptions: ['default-light'],
             options: [
-                { value: 'default-light', label: 'Light (Default)' }
+                { value: 'default-light', label: 'Default Light' }
             ]
         });
 
         // Default dark theme (for system mode)
-        settingsRegister.register({
-            path: SETTING_DEFAULT_DARK_THEME,
+        this.settingsExtension?.registerSetting({
+            id: SETTING_DEFAULT_DARK_THEME,
             description: 'Theme to use when system preference is dark',
             type: 'enum',
             defaultValue: 'default-dark',
             enumOptions: ['default-dark'],
             options: [
-                { value: 'default-dark', label: 'Dark (Default)' }
+                { value: 'default-dark', label: 'Default Dark' }
             ]
         });
     }
@@ -114,7 +114,7 @@ export class ThemeExtension implements Extension {
 
     private async loadInitialTheme(): Promise<void> {
         try {
-            const savedTheme = await getSetting(SETTING_CURRENT_THEME);
+            const savedTheme = await this.settingsExtension.getValue(SETTING_CURRENT_THEME);
             this.currentTheme = (savedTheme as string) || 'system';
             await this.applyTheme(this.currentTheme);
         } catch (error) {
@@ -153,10 +153,10 @@ export class ThemeExtension implements Extension {
         // Get the configured default light/dark themes
         let defaultThemeId: string;
         if (isDark) {
-            const savedDark = await getSetting(SETTING_DEFAULT_DARK_THEME);
+            const savedDark = await this.settingsExtension.getValue(SETTING_DEFAULT_DARK_THEME);
             defaultThemeId = (savedDark as string) || 'default-dark';
         } else {
-            const savedLight = await getSetting(SETTING_DEFAULT_LIGHT_THEME);
+            const savedLight = await this.settingsExtension.getValue(SETTING_DEFAULT_LIGHT_THEME);
             defaultThemeId = (savedLight as string) || 'default-light';
         }
 

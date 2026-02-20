@@ -2,7 +2,8 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SettingsPage } from './settings-page';
-import { settingsRegister } from './settings-register';
+import { SettingsExtension } from './settings-extension';
+import { SettingMetadata } from './types.js';
 
 // Mock backend before importing
 vi.mock('../../backend/index.js', () => ({
@@ -42,10 +43,44 @@ Object.defineProperty(window, 'localStorage', {
 
 describe('SettingsPage', () => {
     let settingsPage: SettingsPage;
+    let settingsExt: SettingsExtension;
 
     beforeEach(() => {
         localStorageMock.clear();
-        settingsPage = new SettingsPage();
+        settingsExt = new SettingsExtension(new Map());
+
+        // register a few settings used by the UI tests
+        settingsExt.registerSetting({
+            id: 'Application/Color Theme',
+            description: 'Current color theme',
+            type: 'enum',
+            defaultValue: 'system',
+            enumOptions: ['system', 'default-light', 'default-dark'],
+            options: [
+                { value: 'system', label: 'System' },
+                { value: 'default-light', label: 'Default Light' },
+                { value: 'default-dark', label: 'Default Dark' }
+            ]
+        });
+
+        settingsExt.registerSetting({
+            id: 'Interface/Tree Indent',
+            description: 'Tree indent size',
+            type: 'number',
+            defaultValue: 12,
+            min: 4,
+            max: 48,
+            step: 1
+        });
+
+        settingsExt.registerSetting({
+            id: 'Interface/Undo History Visible',
+            description: 'Show undo history',
+            type: 'boolean',
+            defaultValue: true
+        });
+
+        settingsPage = new SettingsPage(settingsExt);
         document.body.appendChild(settingsPage);
     });
 
@@ -161,7 +196,7 @@ describe('SettingsPage', () => {
 
     it('should map setting paths correctly in tree data', () => {
         const treeData = settingsPage.generateTreeData();
-        const allSettings = settingsRegister.getAll();
+        const allSettings = settingsExt.getAllMetadata();
 
         // Flatten all setting IDs from tree
         const treeSettingIds = treeData.flatMap(category =>
@@ -169,8 +204,8 @@ describe('SettingsPage', () => {
         );
 
         // Check that all registered settings are in the tree
-        allSettings.forEach(setting => {
-            expect(treeSettingIds).toContain(setting.path);
+        allSettings.forEach((setting: SettingMetadata) => {
+            expect(treeSettingIds).toContain(setting.id);
         });
     });
 

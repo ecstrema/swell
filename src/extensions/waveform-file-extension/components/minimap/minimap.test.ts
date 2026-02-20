@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import './minimap.js';
 import { Minimap } from './minimap.js';
 
 describe('Minimap Component', () => {
@@ -126,7 +125,7 @@ describe('Minimap Component', () => {
         expect(customEvent.detail).toHaveProperty('start');
         expect(customEvent.detail).toHaveProperty('end');
         eventCount++;
-        
+
         // After mousemove event, we should have received at least one range-changed
         if (eventCount >= 1) {
           resolve();

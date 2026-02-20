@@ -1,13 +1,4 @@
-/**
- * Extension System Types
- *
- * Core types for the extension-based architecture.
- * Extensions can register commands, menus, pages, settings, and themes.
- */
 
-import { Command, ShortcutBinding } from "./shortcut-extension/types.js";
-import { SettingMetadata } from "./settings-extension/settings-extension.js";
-import { MenuItemConfig, SubmenuConfig } from "../menu-api/menu-api.js";
 
 /**
  * Unique identifier for an extension

@@ -49,9 +49,9 @@ export class AboutPane extends HTMLElement {
                     <div class="info-row">
                         <span class="info-label">GitHub:</span>
                         <span class="info-value">
-                            <a href="https://github.com/ecstrema/swell" 
-                               class="github-link" 
-                               target="_blank" 
+                            <a href="https://github.com/ecstrema/swell"
+                               class="github-link"
+                               target="_blank"
                                rel="noopener noreferrer">
                                 <span class="icon">${GithubIcon}</span>
                                 ecstrema/swell
@@ -59,18 +59,18 @@ export class AboutPane extends HTMLElement {
                         </span>
                     </div>
                 </div>
-                
+
                 <div class="dependencies-section">
                     <p class="appreciation">
                         This work wouldn't be possible without these amazing open source projects:
                     </p>
-                    
+
                     <details class="dependencies-details" open>
                         <summary>Libraries & Tools Used</summary>
                         <div class="dependencies-list">
                             <div class="dependency-item">
-                                <a href="https://github.com/ekiwi/wellen" 
-                                   target="_blank" 
+                                <a href="https://github.com/ekiwi/wellen"
+                                   target="_blank"
                                    rel="noopener noreferrer"
                                    class="dependency-link">
                                     <span class="icon">${GithubIcon}</span>
@@ -80,10 +80,10 @@ export class AboutPane extends HTMLElement {
                                     </span>
                                 </a>
                             </div>
-                            
+
                             <div class="dependency-item">
-                                <a href="https://github.com/ekiwi/shosho" 
-                                   target="_blank" 
+                                <a href="https://github.com/ekiwi/shosho"
+                                   target="_blank"
                                    rel="noopener noreferrer"
                                    class="dependency-link">
                                     <span class="icon">${GithubIcon}</span>
@@ -93,10 +93,10 @@ export class AboutPane extends HTMLElement {
                                     </span>
                                 </a>
                             </div>
-                            
+
                             <div class="dependency-item">
-                                <a href="https://github.com/tauri-apps/tauri" 
-                                   target="_blank" 
+                                <a href="https://github.com/tauri-apps/tauri"
+                                   target="_blank"
                                    rel="noopener noreferrer"
                                    class="dependency-link">
                                     <span class="icon">${GithubIcon}</span>
@@ -106,10 +106,10 @@ export class AboutPane extends HTMLElement {
                                     </span>
                                 </a>
                             </div>
-                            
+
                             <div class="dependency-item">
-                                <a href="https://github.com/oven-sh/bun" 
-                                   target="_blank" 
+                                <a href="https://github.com/oven-sh/bun"
+                                   target="_blank"
                                    rel="noopener noreferrer"
                                    class="dependency-link">
                                     <span class="icon">${GithubIcon}</span>
@@ -119,10 +119,10 @@ export class AboutPane extends HTMLElement {
                                     </span>
                                 </a>
                             </div>
-                            
+
                             <div class="dependency-item">
-                                <a href="https://github.com/rustwasm/wasm-pack" 
-                                   target="_blank" 
+                                <a href="https://github.com/rustwasm/wasm-pack"
+                                   target="_blank"
                                    rel="noopener noreferrer"
                                    class="dependency-link">
                                     <span class="icon">${GithubIcon}</span>
@@ -132,10 +132,10 @@ export class AboutPane extends HTMLElement {
                                     </span>
                                 </a>
                             </div>
-                            
+
                             <div class="dependency-item">
-                                <a href="https://github.com/vitejs/vite" 
-                                   target="_blank" 
+                                <a href="https://github.com/vitejs/vite"
+                                   target="_blank"
                                    rel="noopener noreferrer"
                                    class="dependency-link">
                                     <span class="icon">${GithubIcon}</span>
@@ -145,10 +145,10 @@ export class AboutPane extends HTMLElement {
                                     </span>
                                 </a>
                             </div>
-                            
+
                             <div class="dependency-item">
-                                <a href="https://github.com/rustwasm/wasm-bindgen" 
-                                   target="_blank" 
+                                <a href="https://github.com/rustwasm/wasm-bindgen"
+                                   target="_blank"
                                    rel="noopener noreferrer"
                                    class="dependency-link">
                                     <span class="icon">${GithubIcon}</span>
@@ -166,4 +166,7 @@ export class AboutPane extends HTMLElement {
     }
 }
 
-customElements.define('about-pane', AboutPane);
+
+if (!customElements.get('about-pane')) {
+    customElements.define('about-pane', AboutPane);
+}

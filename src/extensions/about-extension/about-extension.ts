@@ -7,7 +7,6 @@
 
 import { Extension } from "../types.js";
 import { AboutPane } from "./about-pane.js";
-import { SettingsExtension } from "../settings-extension/settings-extension.js";
 import { DockExtension } from "../dock-extension/dock-extension.js";
 import { CommandExtension } from "../command-extension/command-extension.js";
 import { MenuExtension } from "../menu-extension/menu-extension.js";
@@ -23,15 +22,13 @@ export class AboutExtension implements Extension {
         name: 'About Extension',
         description: 'Provides application information and about page',
     };
-    static readonly dependencies = [SettingsExtension, DockExtension, CommandExtension, MenuExtension];
+    static readonly dependencies = [DockExtension, CommandExtension, MenuExtension];
 
-    private settingsExtension: SettingsExtension;
     private dockExtension: DockExtension;
     private commandExtension: CommandExtension;
     private menuExtension: MenuExtension;
 
     constructor(dependencies: Map<string, Extension>) {
-        this.settingsExtension = dependencies.get(SettingsExtension.metadata.id) as SettingsExtension;
         this.dockExtension = dependencies.get(DockExtension.metadata.id) as DockExtension;
         this.commandExtension = dependencies.get(CommandExtension.metadata.id) as CommandExtension;
         this.menuExtension = dependencies.get(MenuExtension.metadata.id) as MenuExtension;
@@ -44,13 +41,6 @@ export class AboutExtension implements Extension {
             return aboutPane;
         });
 
-        // Register a setting for the about page
-        this.settingsExtension.registerSetting({
-            id: 'About/Show Version Info',
-            description: 'Show detailed version information in the about page',
-            type: 'boolean',
-            defaultValue: true,
-        });
 
         // Register command to show about
         this.commandExtension.registerCommand({

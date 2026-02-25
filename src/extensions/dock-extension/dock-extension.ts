@@ -8,32 +8,11 @@
 import { Extension } from "../types.js";
 import { DockManager } from "./dock-manager.js";
 import { DockLayoutHelper } from "./dock-layout-helper.js";
-import { DockLayout, DockStack } from "./types.js";
 
 // Ensure custom elements are registered
 import "./dock-manager.js";
 import "./dock-stack.js";
 import "./dock-box.js";
-
-/**
- * API provided by the dock extension
- */
-export interface DockAPI {
-    /**
-     * Get the dock manager instance
-     */
-    getDockManager(): DockManager | null;
-
-    /**
-     * Get the dock layout helper instance
-     */
-    getDockLayoutHelper(): DockLayoutHelper | null;
-
-    /**
-     * Initialize the dock system with the DOM element
-     */
-    initializeDockSystem(dockManager: DockManager): void;
-}
 
 export class DockExtension implements Extension {
     static readonly metadata = {
@@ -48,7 +27,7 @@ export class DockExtension implements Extension {
 
     constructor(dependencies: Map<string, Extension>) {}
 
-    async activate(): Promise<DockAPI> {
+    async activate() {
         // The dock manager DOM element is created by app-main
         // This extension will manage the helpers once initialized
         return this;

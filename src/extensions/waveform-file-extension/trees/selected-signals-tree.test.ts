@@ -1,12 +1,44 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import './selected-signals-tree.js';
 import { SelectedSignalsTree, SelectedSignal } from './selected-signals-tree.js';
+import { SettingsExtension } from '../../settings-extension/settings-extension.js';
+
+// Mock backend before importing
+vi.mock('../../../backend/index.js', () => ({
+    isTauri: false,
+    invoke: vi.fn()
+}));
+
+vi.mock('../../../../backend/pkg/backend', () => ({
+    default: vi.fn()
+}));
+
+// Mock localStorage for testing
+const localStorageMock = (() => {
+    let store: Record<string, string> = {};
+    return {
+        getItem: (key: string) => store[key] || null,
+        setItem: (key: string, value: string) => {
+            store[key] = value;
+        },
+        clear: () => {
+            store = {};
+        }
+    };
+})();
+
+Object.defineProperty(window, 'localStorage', {
+    value: localStorageMock
+});
 
 describe('SelectedSignalsTree Component', () => {
   let element: SelectedSignalsTree;
+  let settingsExtension: SettingsExtension;
 
   beforeEach(() => {
-    element = document.createElement('selected-signals-tree') as SelectedSignalsTree;
+    localStorageMock.clear();
+    settingsExtension = new SettingsExtension(new Map());
+    element = new SelectedSignalsTree(settingsExtension);
     document.body.appendChild(element);
   });
 
@@ -27,9 +59,9 @@ describe('SelectedSignalsTree Component', () => {
       { name: 'reset', ref: 2 },
       { name: 'data_out', ref: 3 }
     ];
-    
+
     element.signals = signals;
-    
+
     const shadowRoot = element.shadowRoot;
     expect(shadowRoot?.textContent).toContain('clk');
     expect(shadowRoot?.textContent).toContain('reset');
@@ -38,15 +70,15 @@ describe('SelectedSignalsTree Component', () => {
 
   it('should update when signals change', () => {
     element.signals = [{ name: 'signal1', ref: 1 }];
-    
+
     let shadowRoot = element.shadowRoot;
     expect(shadowRoot?.textContent).toContain('signal1');
-    
+
     element.signals = [
       { name: 'signal1', ref: 1 },
       { name: 'signal2', ref: 2 }
     ];
-    
+
     shadowRoot = element.shadowRoot;
     expect(shadowRoot?.textContent).toContain('signal1');
     expect(shadowRoot?.textContent).toContain('signal2');
@@ -56,9 +88,9 @@ describe('SelectedSignalsTree Component', () => {
     const signals: SelectedSignal[] = [
       { name: 'test_signal', ref: 42 }
     ];
-    
+
     element.signals = signals;
-    
+
     const shadowRoot = element.shadowRoot;
     const signalNode = shadowRoot?.querySelector('.signal-node');
     expect(signalNode).toBeTruthy();
@@ -78,37 +110,37 @@ describe('SelectedSignalsTree Component', () => {
       { name: 'data_out', ref: 3 },
       { name: 'data_in', ref: 4 }
     ];
-    
+
     element.signals = signals;
-    
+
     const shadowRoot = element.shadowRoot;
-    
+
     // Check filter input is visible
     const filterInputEl = shadowRoot?.querySelector('filter-input');
     const filterInputShadow = filterInputEl?.shadowRoot;
     const filterInput = filterInputShadow?.querySelector('.filter-input') as HTMLInputElement;
     expect(filterInputEl).toBeTruthy();
-    
+
     // Initially all signals visible
     expect(shadowRoot?.textContent).toContain('clk');
     expect(shadowRoot?.textContent).toContain('reset');
     expect(shadowRoot?.textContent).toContain('data_out');
     expect(shadowRoot?.textContent).toContain('data_in');
-    
+
     // Filter for "data"
     filterInput.value = 'data';
     filterInput.dispatchEvent(new Event('input', { bubbles: true }));
-    
+
     // Only data signals should be visible
     expect(shadowRoot?.textContent).not.toContain('clk');
     expect(shadowRoot?.textContent).not.toContain('reset');
     expect(shadowRoot?.textContent).toContain('data_out');
     expect(shadowRoot?.textContent).toContain('data_in');
-    
+
     // Filter for "clk"
     filterInput.value = 'clk';
     filterInput.dispatchEvent(new Event('input'));
-    
+
     // Only clk should be visible
     expect(shadowRoot?.textContent).toContain('clk');
     expect(shadowRoot?.textContent).not.toContain('reset');
@@ -120,12 +152,12 @@ describe('SelectedSignalsTree Component', () => {
       { name: 'signal1', ref: 1 },
       { name: 'signal2', ref: 2 }
     ];
-    
+
     element.signals = signals;
-    
+
     const shadowRoot = element.shadowRoot;
     const leafNodes = shadowRoot?.querySelectorAll('.leaf-node');
-    
+
     // Check that leaf nodes have draggable attribute
     expect(leafNodes?.length).toBe(2);
     leafNodes?.forEach(node => {
@@ -142,7 +174,7 @@ describe('SelectedSignalsTree Component', () => {
   it('should use right text alignment for selected signals', () => {
     // Check that the tree view config has right alignment
     expect(element.config.textAlign).toBe('right');
-    
+
     // Check that the CSS variables are set correctly
     expect(element.style.getPropertyValue('--tree-leaf-justify')).toBe('flex-end');
     expect(element.style.getPropertyValue('--tree-leaf-direction')).toBe('row-reverse');

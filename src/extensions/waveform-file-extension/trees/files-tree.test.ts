@@ -1,12 +1,44 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import './files-tree.js';
 import { FilesTree, HierarchyRoot } from './files-tree.js';
+import { SettingsExtension } from '../../settings-extension/settings-extension.js';
+
+// Mock backend before importing
+vi.mock('../../../backend/index.js', () => ({
+    isTauri: false,
+    invoke: vi.fn()
+}));
+
+vi.mock('../../../../backend/pkg/backend', () => ({
+    default: vi.fn()
+}));
+
+// Mock localStorage for testing
+const localStorageMock = (() => {
+    let store: Record<string, string> = {};
+    return {
+        getItem: (key: string) => store[key] || null,
+        setItem: (key: string, value: string) => {
+            store[key] = value;
+        },
+        clear: () => {
+            store = {};
+        }
+    };
+})();
+
+Object.defineProperty(window, 'localStorage', {
+    value: localStorageMock
+});
 
 describe('FilesTree Component', () => {
   let element: FilesTree;
+  let settingsExtension: SettingsExtension;
 
   beforeEach(() => {
-    element = document.createElement('files-tree') as FilesTree;
+    localStorageMock.clear();
+    settingsExtension = new SettingsExtension(new Map());
+    element = new FilesTree(settingsExtension);
     document.body.appendChild(element);
   });
 
@@ -40,9 +72,9 @@ describe('FilesTree Component', () => {
         }
       ]
     };
-    
+
     element.hierarchyData = hierarchy;
-    
+
     const shadowRoot = element.shadowRoot;
     expect(shadowRoot?.textContent).toContain('clk');
     expect(shadowRoot?.textContent).toContain('reset');
@@ -59,9 +91,9 @@ describe('FilesTree Component', () => {
       ],
       scopes: []
     };
-    
+
     element.hierarchyData = hierarchy;
-    
+
     const shadowRoot = element.shadowRoot;
     const checkbox = shadowRoot?.querySelector('.leaf-checkbox') as HTMLInputElement;
     expect(checkbox).toBeTruthy();
@@ -78,34 +110,34 @@ describe('FilesTree Component', () => {
       ],
       scopes: []
     };
-    
+
     element.hierarchyData = hierarchy;
-    
+
     // Initially no signals selected
     let checkboxes = element.shadowRoot?.querySelectorAll('.leaf-checkbox') as NodeListOf<HTMLInputElement>;
     expect(checkboxes.length).toBe(2);
     expect(checkboxes[0].checked).toBe(false);
     expect(checkboxes[1].checked).toBe(false);
-    
+
     // Select signal with ref 1
     element.selectedSignalRefs = [1];
-    
+
     // Check that the first checkbox is now checked
     checkboxes = element.shadowRoot?.querySelectorAll('.leaf-checkbox') as NodeListOf<HTMLInputElement>;
     expect(checkboxes[0].checked).toBe(true);
     expect(checkboxes[1].checked).toBe(false);
-    
+
     // Select both signals
     element.selectedSignalRefs = [1, 2];
-    
+
     // Check that both checkboxes are now checked
     checkboxes = element.shadowRoot?.querySelectorAll('.leaf-checkbox') as NodeListOf<HTMLInputElement>;
     expect(checkboxes[0].checked).toBe(true);
     expect(checkboxes[1].checked).toBe(true);
-    
+
     // Deselect all signals
     element.selectedSignalRefs = [];
-    
+
     // Check that no checkboxes are checked
     checkboxes = element.shadowRoot?.querySelectorAll('.leaf-checkbox') as NodeListOf<HTMLInputElement>;
     expect(checkboxes[0].checked).toBe(false);
@@ -121,10 +153,10 @@ describe('FilesTree Component', () => {
       ],
       scopes: []
     };
-    
+
     element.filename = 'test.vcd';
     element.hierarchyData = hierarchy;
-    
+
     // Create a promise that resolves when the event is dispatched
     const eventPromise = new Promise<void>((resolve) => {
       element.addEventListener('signal-select', (e: Event) => {
@@ -135,19 +167,19 @@ describe('FilesTree Component', () => {
         resolve();
       }, { once: true });
     });
-    
+
     const shadowRoot = element.shadowRoot;
     const leafNode = shadowRoot?.querySelector('.var-node') as HTMLElement;
     expect(leafNode).toBeTruthy();
-    
+
     leafNode.click();
-    
+
     await eventPromise;
   });
 
   it('should get selected signal refs', () => {
     element.selectedSignalRefs = [1, 2, 3];
-    
+
     const refs = element.selectedSignalRefs;
     expect(refs).toEqual([1, 2, 3]);
   });
@@ -162,11 +194,11 @@ describe('FilesTree Component', () => {
       ],
       scopes: []
     };
-    
+
     element.hierarchyData = hierarchy;
-    
+
     const shadowRoot = element.shadowRoot;
-    
+
     // Check filter input is visible by default
     const filterInputEl = shadowRoot?.querySelector('filter-input');
     expect(filterInputEl).toBeTruthy();
@@ -201,38 +233,38 @@ describe('FilesTree Component', () => {
         }
       ]
     };
-    
+
     element.hierarchyData = hierarchy;
-    
+
     const shadowRoot = element.shadowRoot;
-    
+
     // Check filter input is visible
     const filterInputEl = shadowRoot?.querySelector('filter-input');
     const filterInputShadow = filterInputEl?.shadowRoot;
     const filterInput = filterInputShadow?.querySelector('.filter-input') as HTMLInputElement;
     expect(filterInputEl).toBeTruthy();
-    
+
     // Initially all signals visible
     expect(shadowRoot?.textContent).toContain('clk');
     expect(shadowRoot?.textContent).toContain('reset');
     expect(shadowRoot?.textContent).toContain('data_out');
     expect(shadowRoot?.textContent).toContain('data_in');
-    
+
     // Filter for "data"
     filterInput.value = 'data';
     filterInput.dispatchEvent(new Event('input', { bubbles: true }));
-    
+
     // Only data signals should be visible
     expect(shadowRoot?.textContent).not.toContain('clk');
     expect(shadowRoot?.textContent).not.toContain('reset');
     expect(shadowRoot?.textContent).toContain('module1');
     expect(shadowRoot?.textContent).toContain('data_out');
     expect(shadowRoot?.textContent).toContain('data_in');
-    
+
     // Filter for "clk"
     filterInput.value = 'clk';
     filterInput.dispatchEvent(new Event('input', { bubbles: true }));
-    
+
     // Only clk should be visible
     expect(shadowRoot?.textContent).toContain('clk');
     expect(shadowRoot?.textContent).not.toContain('reset');
@@ -256,12 +288,12 @@ describe('FilesTree Component', () => {
         }
       ]
     };
-    
+
     element.hierarchyData = hierarchy;
-    
+
     const shadowRoot = element.shadowRoot;
     const button = shadowRoot?.querySelector('.tree-icon-button') as HTMLButtonElement;
-    
+
     expect(button).toBeTruthy();
     expect(button.title).toBe('Add all signals in this group');
   });
@@ -283,10 +315,10 @@ describe('FilesTree Component', () => {
         }
       ]
     };
-    
+
     element.filename = 'test.vcd';
     element.hierarchyData = hierarchy;
-    
+
     // Collect events
     const events: CustomEvent[] = [];
     const eventPromise = new Promise<void>((resolve) => {
@@ -299,14 +331,14 @@ describe('FilesTree Component', () => {
         }
       });
     });
-    
+
     const shadowRoot = element.shadowRoot;
     const button = shadowRoot?.querySelector('.tree-icon-button') as HTMLButtonElement;
-    
+
     button.click();
-    
+
     await eventPromise;
-    
+
     expect(events.length).toBe(2);
     expect(events[0].detail.name).toBe('signal1');
     expect(events[0].detail.ref).toBe(2);
@@ -341,21 +373,21 @@ describe('FilesTree Component', () => {
         }
       ]
     };
-    
+
     element.filename = 'test.vcd';
     element.hierarchyData = hierarchy;
-    
+
     // Collect events
     const events: CustomEvent[] = [];
     element.addEventListener('checkbox-toggle', (e: Event) => {
       events.push(e as CustomEvent);
     });
-    
+
     const shadowRoot = element.shadowRoot;
     const button = shadowRoot?.querySelector('.tree-icon-button') as HTMLButtonElement;
-    
+
     button.click();
-    
+
     // Should only have one event for signal1, not nested_signal
     expect(events.length).toBe(1);
     expect(events[0].detail.name).toBe('signal1');
@@ -380,14 +412,14 @@ describe('FilesTree Component', () => {
         }
       ]
     };
-    
+
     element.hierarchyData = hierarchy;
-    
+
     const shadowRoot = element.shadowRoot;
     // Should have checkboxes on both leaf and branch nodes
     const leafCheckbox = shadowRoot?.querySelector('.leaf-checkbox') as HTMLInputElement;
     const branchCheckbox = shadowRoot?.querySelector('.branch-checkbox') as HTMLInputElement;
-    
+
     expect(leafCheckbox).toBeTruthy();
     expect(branchCheckbox).toBeTruthy();
   });
@@ -409,17 +441,17 @@ describe('FilesTree Component', () => {
         }
       ]
     };
-    
+
     element.hierarchyData = hierarchy;
-    
+
     // Initially no signals selected
     let branchCheckbox = element.shadowRoot?.querySelector('.branch-checkbox') as HTMLInputElement;
     expect(branchCheckbox.checked).toBe(false);
     expect(branchCheckbox.indeterminate).toBe(false);
-    
+
     // Select all descendant signals
     element.selectedSignalRefs = [2, 3];
-    
+
     // Branch checkbox should now be fully checked
     branchCheckbox = element.shadowRoot?.querySelector('.branch-checkbox') as HTMLInputElement;
     expect(branchCheckbox.checked).toBe(true);
@@ -443,12 +475,12 @@ describe('FilesTree Component', () => {
         }
       ]
     };
-    
+
     element.hierarchyData = hierarchy;
-    
+
     // Select only one of two signals
     element.selectedSignalRefs = [2];
-    
+
     // Branch checkbox should be indeterminate
     const branchCheckbox = element.shadowRoot?.querySelector('.branch-checkbox') as HTMLInputElement;
     expect(branchCheckbox.checked).toBe(false);
@@ -481,16 +513,16 @@ describe('FilesTree Component', () => {
         }
       ]
     };
-    
+
     element.hierarchyData = hierarchy;
-    
+
     // Select one nested signal
     element.selectedSignalRefs = [4];
-    
+
     // Both parent and grandparent should be indeterminate
     const branchCheckboxes = element.shadowRoot?.querySelectorAll('.branch-checkbox') as NodeListOf<HTMLInputElement>;
     expect(branchCheckboxes.length).toBe(2);
-    
+
     // Both should be indeterminate since not all descendants are selected
     branchCheckboxes.forEach(checkbox => {
       expect(checkbox.checked).toBe(false);
@@ -524,10 +556,10 @@ describe('FilesTree Component', () => {
         }
       ]
     };
-    
+
     element.filename = 'test.vcd';
     element.hierarchyData = hierarchy;
-    
+
     // Collect events
     const events: CustomEvent[] = [];
     const eventPromise = new Promise<void>((resolve) => {
@@ -541,15 +573,15 @@ describe('FilesTree Component', () => {
         }
       });
     });
-    
+
     const shadowRoot = element.shadowRoot;
     const branchCheckbox = shadowRoot?.querySelector('.branch-checkbox') as HTMLInputElement;
-    
+
     // Click the branch checkbox to select all descendants
     branchCheckbox.click();
-    
+
     await eventPromise;
-    
+
     // Should have events for all 3 descendant signals
     expect(events.length).toBe(3);
     expect(events.map(e => e.detail.ref).sort()).toEqual([2, 3, 5]);
@@ -573,13 +605,13 @@ describe('FilesTree Component', () => {
         }
       ]
     };
-    
+
     element.filename = 'test.vcd';
     element.hierarchyData = hierarchy;
-    
+
     // Pre-select all signals
     element.selectedSignalRefs = [2, 3];
-    
+
     // Collect events
     const events: CustomEvent[] = [];
     const eventPromise = new Promise<void>((resolve) => {
@@ -592,18 +624,18 @@ describe('FilesTree Component', () => {
         }
       });
     });
-    
+
     const shadowRoot = element.shadowRoot;
     const branchCheckbox = shadowRoot?.querySelector('.branch-checkbox') as HTMLInputElement;
-    
+
     // Verify it's checked
     expect(branchCheckbox.checked).toBe(true);
-    
+
     // Click to uncheck all
     branchCheckbox.click();
-    
+
     await eventPromise;
-    
+
     // Should have unchecked events for both signals
     expect(events.length).toBe(2);
     expect(events.map(e => e.detail.ref).sort()).toEqual([2, 3]);

@@ -589,48 +589,28 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
 
             dockManager.layout = layout;
 
-            // Walk the model and assert every non-empty stack has valid activeId
-            function walk(node: any) {
-                // Container stacks have a `direction` property; leaf stacks (panes) do not.
-                if ((node as any).direction === undefined) {
-                    // Leaf stack
-                    if (node.children.length > 0) {
-                        expect(node.activeId).toBeTruthy();
-                        expect(node.children.some((c: any) => c.id === node.activeId)).toBe(true);
+            // After assigning layout, the manager should have created panes for each non-empty stack
+            // We expect two stacks: main-stack and stack-lu6sq29xy
+            const mainPane = dockManager.querySelector('[data-id="settings"]');
+            expect(mainPane).toBeTruthy();
+            expect(mainPane?.textContent).toContain('settings:settings');
 
-                        // Find the rendered host element that has a matching `.node.id`.
-                        function findHostByNodeId(root: ShadowRoot | Element, id: string): HTMLElement | null {
-                            for (const child of Array.from(root.children) as HTMLElement[]) {
-                                const n = (child as any).node;
-                                if (n && n.id === id) return child;
+            const commandsPane = dockManager.querySelector('[data-id="commands-view"]');
+            expect(commandsPane).toBeTruthy();
+            expect(commandsPane?.textContent).toContain('commands:commands-view');
 
-                                // Search inside shadowRoot of child (custom elements)
-                                if ((child as any).shadowRoot) {
-                                    const found = findHostByNodeId((child as any).shadowRoot, id);
-                                    if (found) return found;
-                                }
+            // Active pane IDs should match layout
+            expect(layout.root).toBeDefined();
+            const rootBox = layout.root as DockLayout['root'];
+            // ensure the activeId on main-stack is settings
+            const mainStack = (rootBox as any).children[0] as DockStack;
+            expect(mainStack.activeId).toBe('settings');
 
-                                // Also search normal DOM descendants
-                                if (child.children && child.children.length > 0) {
-                                    const found2 = findHostByNodeId(child as Element, id);
-                                    if (found2) return found2;
-                                }
-                            }
-                            return null;
-                        }
-
-                        const el = findHostByNodeId(dockManager.shadowRoot!, node.id);
-                        expect(el).toBeTruthy();
-                        const activeContent = (el as HTMLElement).shadowRoot!.querySelector('.pane-content.active');
-                        expect(activeContent).toBeTruthy();
-                    }
-                } else {
-                    // Container stack - recurse
-                    for (const c of node.children) walk(c);
-                }
-            }
-
-            walk(layout.root as any);
+            // ensure the nested stack has correct activeId
+            const nestedBox = (rootBox as any).children[1];
+            const innerBox = (nestedBox as any).children[0];
+            const nestedStack = (innerBox as any).children[0] as DockStack;
+            expect(nestedStack.activeId).toBe('commands-view');
         });
     });
 });

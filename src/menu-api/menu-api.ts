@@ -12,6 +12,8 @@ export interface MenuItemConfig {
     type?: MenuItemType;
     action?: () => void;
     checked?: boolean;
+    // optional disabled state - UI components may render this appropriately
+    disabled?: boolean;
 }
 
 // Submenu definition
@@ -53,21 +55,21 @@ export async function createMenuItem(config: MenuItemConfig): Promise<AbstractMe
     if (isTauri) {
         // Import Tauri menu APIs dynamically
         const { MenuItem } = await import('@tauri-apps/api/menu');
-        
+
         if (config.type === 'separator') {
             // Tauri doesn't have a separator in MenuItem, so we return a marker
             return {
                 type: 'separator'
             };
         }
-        
+
         // Create native menu item
         await MenuItem.new({
             id: config.id,
             text: config.text,
             action: config.action
         });
-        
+
         return {
             id: config.id,
             text: config.text,
@@ -91,7 +93,7 @@ export async function createMenuItem(config: MenuItemConfig): Promise<AbstractMe
 export async function createSubmenu(config: SubmenuConfig): Promise<AbstractSubmenu> {
     if (isTauri) {
         const { Submenu, MenuItem, PredefinedMenuItem } = await import('@tauri-apps/api/menu');
-        
+
         // Build native menu items
         const nativeItems: any[] = [];
         for (const item of config.items) {
@@ -118,13 +120,13 @@ export async function createSubmenu(config: SubmenuConfig): Promise<AbstractSubm
                 }
             }
         }
-        
+
         // Create the Tauri submenu with items
         await Submenu.new({
             text: config.text,
             items: nativeItems
         });
-        
+
         // Return abstract representation
         const abstractItems: (AbstractMenuItem | AbstractSubmenu)[] = [];
         for (const item of config.items) {
@@ -134,7 +136,7 @@ export async function createSubmenu(config: SubmenuConfig): Promise<AbstractSubm
                 abstractItems.push(await createMenuItem(item as MenuItemConfig));
             }
         }
-        
+
         return {
             text: config.text,
             items: abstractItems
@@ -149,7 +151,7 @@ export async function createSubmenu(config: SubmenuConfig): Promise<AbstractSubm
                 abstractItems.push(await createMenuItem(item as MenuItemConfig));
             }
         }
-        
+
         return {
             text: config.text,
             items: abstractItems
@@ -166,7 +168,7 @@ export async function createSubmenu(config: SubmenuConfig): Promise<AbstractSubm
 export async function createMenu(config: MenuConfig): Promise<AbstractMenu> {
     if (isTauri) {
         const { Menu, Submenu, MenuItem, PredefinedMenuItem } = await import('@tauri-apps/api/menu');
-        
+
         // Build native submenus
         const nativeSubmenus: any[] = [];
         for (const submenuConfig of config.items) {
@@ -211,26 +213,26 @@ export async function createMenu(config: MenuConfig): Promise<AbstractMenu> {
                     }
                 }
             }
-            
+
             nativeSubmenus.push(await Submenu.new({
                 text: submenuConfig.text,
                 items: nativeItems
             }));
         }
-        
+
         // Create and set the menu
         const menu = await Menu.new({
             items: nativeSubmenus
         });
-        
+
         await menu.setAsAppMenu();
-        
+
         // Return abstract representation
         const abstractSubmenus: AbstractSubmenu[] = [];
         for (const submenuConfig of config.items) {
             abstractSubmenus.push(await createSubmenu(submenuConfig));
         }
-        
+
         return {
             items: abstractSubmenus
         };
@@ -240,7 +242,7 @@ export async function createMenu(config: MenuConfig): Promise<AbstractMenu> {
         for (const submenuConfig of config.items) {
             abstractSubmenus.push(await createSubmenu(submenuConfig));
         }
-        
+
         return {
             items: abstractSubmenus
         };

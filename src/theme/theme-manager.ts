@@ -3,16 +3,15 @@
  * Handles theme switching and persistence
  */
 
-// Note: Both 'auto' and 'system' are supported for backward compatibility
-// 'auto' was the original value, 'system' is the new standard
-// Both behave identically - they follow the system theme preference
-type Theme = 'light' | 'dark' | 'auto' | 'system';
+// Theme values; 'system' follows OS preference
+// (no backward compatibility support needed in v0)
+type Theme = 'light' | 'dark' | 'system';
 
 const THEME_STORAGE_KEY = 'app-theme';
 
 export class ThemeManager {
   private static instance: ThemeManager;
-  private currentTheme: Theme = 'auto';
+  private currentTheme: Theme = 'system';
 
   private constructor() {
     this.loadTheme();
@@ -28,7 +27,7 @@ export class ThemeManager {
 
   private loadTheme(): void {
     const savedTheme = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-    if (savedTheme && ['light', 'dark', 'auto', 'system'].includes(savedTheme)) {
+    if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
       this.currentTheme = savedTheme;
     }
   }
@@ -39,10 +38,10 @@ export class ThemeManager {
 
   private applyTheme(): void {
     const root = document.documentElement;
-    
+
     // Remove existing theme classes
     root.classList.remove('theme-light', 'theme-dark');
-    
+
     // Apply new theme class if not auto/system
     if (this.currentTheme === 'light') {
       root.classList.add('theme-light');
@@ -50,7 +49,7 @@ export class ThemeManager {
       root.classList.add('theme-dark');
     }
     // If auto or system, no class is added and CSS media query takes over
-    
+
     // Dispatch theme change event for components to listen to
     window.dispatchEvent(new CustomEvent('theme-changed', {
       detail: { theme: this.currentTheme }
@@ -68,13 +67,13 @@ export class ThemeManager {
   }
 
   toggleTheme(): void {
-    // Cycle through: auto -> light -> dark -> auto
-    if (this.currentTheme === 'auto') {
+    // Cycle through: system -> light -> dark -> system
+    if (this.currentTheme === 'system') {
       this.setTheme('light');
     } else if (this.currentTheme === 'light') {
       this.setTheme('dark');
     } else {
-      this.setTheme('auto');
+      this.setTheme('system');
     }
   }
 }

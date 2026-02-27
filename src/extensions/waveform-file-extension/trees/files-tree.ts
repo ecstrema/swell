@@ -136,14 +136,6 @@ export class FilesTree extends TreeView {
         return this._hierarchyData;
     }
 
-    // Keep backward compatibility with the old 'data' property
-    set data(data: HierarchyRoot | null) {
-        this.hierarchyData = data;
-    }
-
-    get data() {
-        return this.hierarchyData;
-    }
 
     set filename(filename: string | null) {
         this._filename = filename;
@@ -302,13 +294,6 @@ export class FilesTree extends TreeView {
     }
 
 
-    /**
-     * Get all descendant signal refs (leaf nodes) recursively from a node
-     * @deprecated Use getAllDescendantSignals instead for better event details
-     */
-    private getAllDescendantSignalRefs(node: TreeNode): number[] {
-        return this.getAllDescendantSignals(node).map(s => s.ref);
-    }
 }
 
 if (!customElements.get('files-tree')) {

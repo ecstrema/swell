@@ -1,17 +1,15 @@
 import { css } from "../../utils/css-utils.js";
 import contextMenuCss from "./context-menu.css?inline";
 import { MenuItemConfig } from "../../menu-api/index.js";
-import { renderMenuItems, findAndExecuteAction, ContextMenuItem, convertContextMenuItems } from "../../extensions/menu-extension/menu-item-renderer.js";
+import { renderMenuItems, findAndExecuteAction, MenuItemConfig } from "../../extensions/menu-extension/menu-item-renderer.js";
 
-// Re-export for backward compatibility
-export type { ContextMenuItem };
 
 /**
  * Context Menu - A reusable right-click context menu component
  * Shows a list of menu items at the cursor position when opened
  */
 export class ContextMenu extends HTMLElement {
-    private _items: ContextMenuItem[] = [];
+    private _items: MenuItemConfig[] = [];
     private _menuItems: MenuItemConfig[] = [];
     private _disabledIds: Set<string> = new Set();
     private menuContainer: HTMLDivElement | null = null;
@@ -82,16 +80,15 @@ export class ContextMenu extends HTMLElement {
         this.menuContainer?.removeEventListener('click', this.boundMenuItemClickHandler);
     }
 
-    get items(): ContextMenuItem[] {
+    get items(): MenuItemConfig[] {
         return this._items;
     }
 
-    set items(value: ContextMenuItem[]) {
+    set items(value: MenuItemConfig[]) {
         this._items = value;
-        // Convert and cache menu items for efficient access
-        const converted = convertContextMenuItems(this._items);
-        this._menuItems = converted.menuItems;
-        this._disabledIds = converted.disabledIds;
+        // Cache menu items directly and compute disabled states
+        this._menuItems = this._items;
+        this._disabledIds = new Set(this._items.filter(item => item.disabled && item.id).map(i => i.id!));
         this.render();
     }
 

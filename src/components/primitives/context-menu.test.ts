@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ContextMenu, ContextMenuItem } from './context-menu.js';
+import { ContextMenu } from './context-menu.js';
+import type { MenuItemConfig } from '../../menu-api/index.js';
 
 describe('ContextMenu', () => {
     let menu: ContextMenu;
@@ -50,10 +51,10 @@ describe('ContextMenu', () => {
     });
 
     it('should render menu items', () => {
-        const items: ContextMenuItem[] = [
-            { id: 'item1', label: 'Item 1' },
-            { id: 'item2', label: 'Item 2' },
-            { id: 'item3', label: 'Item 3' }
+        const items: MenuItemConfig[] = [
+            { id: 'item1', text: 'Item 1' },
+            { id: 'item2', text: 'Item 2' },
+            { id: 'item3', text: 'Item 3' }
         ];
 
         menu.items = items;
@@ -66,8 +67,8 @@ describe('ContextMenu', () => {
 
     it('should call handler when menu item is clicked', () => {
         const handler = vi.fn();
-        const items: ContextMenuItem[] = [
-            { id: 'test-item', label: 'Test Item', handler }
+        const items: MenuItemConfig[] = [
+            { id: 'test-item', text: 'Test Item', action: handler }
         ];
 
         menu.items = items;
@@ -83,8 +84,8 @@ describe('ContextMenu', () => {
     });
 
     it('should close after clicking a menu item', () => {
-        const items: ContextMenuItem[] = [
-            { id: 'test-item', label: 'Test Item', handler: () => {} }
+        const items: MenuItemConfig[] = [
+            { id: 'test-item', text: 'Test Item', action: () => {} }
         ];
 
         menu.items = items;
@@ -99,8 +100,8 @@ describe('ContextMenu', () => {
 
     it('should not call handler for disabled items', () => {
         const handler = vi.fn();
-        const items: ContextMenuItem[] = [
-            { id: 'disabled-item', label: 'Disabled Item', disabled: true, handler }
+        const items: MenuItemConfig[] = [
+            { id: 'disabled-item', text: 'Disabled Item', type: 'normal', action: handler, checked: false }
         ];
 
         menu.items = items;
@@ -116,10 +117,10 @@ describe('ContextMenu', () => {
     });
 
     it('should render separators', () => {
-        const items: ContextMenuItem[] = [
-            { id: 'item1', label: 'Item 1' },
-            { id: 'sep1', label: '', separator: true },
-            { id: 'item2', label: 'Item 2' }
+        const items: MenuItemConfig[] = [
+            { id: 'item1', text: 'Item 1' },
+            { type: 'separator' },
+            { id: 'item2', text: 'Item 2' }
         ];
 
         menu.items = items;
@@ -147,12 +148,12 @@ describe('ContextMenu', () => {
     });
 
     it('should update items when items property is set', () => {
-        const items1: ContextMenuItem[] = [
-            { id: 'item1', label: 'Item 1' }
+        const items1: MenuItemConfig[] = [
+            { id: 'item1', text: 'Item 1' }
         ];
-        const items2: ContextMenuItem[] = [
-            { id: 'item2', label: 'Item 2' },
-            { id: 'item3', label: 'Item 3' }
+        const items2: MenuItemConfig[] = [
+            { id: 'item2', text: 'Item 2' },
+            { id: 'item3', text: 'Item 3' }
         ];
 
         menu.items = items1;

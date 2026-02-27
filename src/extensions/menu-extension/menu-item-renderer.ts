@@ -15,18 +15,6 @@ export interface MenuItemElement {
 }
 
 /**
- * ContextMenu-style item definition for backward compatibility
- * This allows ContextMenu to maintain its existing API
- */
-export interface ContextMenuItem {
-    id: string;
-    label: string;
-    disabled?: boolean;
-    separator?: boolean;
-    handler?: () => void;
-}
-
-/**
  * Renders a list of menu items to HTML elements
  * @param items Array of menu items or submenus to render
  * @param options Rendering options
@@ -155,36 +143,4 @@ export function findAndExecuteAction(
         }
     }
     return false;
-}
-
-/**
- * Converts ContextMenu-style items to MenuItemConfig format
- * This allows ContextMenu to use the unified menu API types
- * Note: MenuItemConfig doesn't have a disabled field, so we return
- * a map of disabled states for the caller to apply after rendering
- */
-export function convertContextMenuItems(
-    items: ContextMenuItem[]
-): { menuItems: MenuItemConfig[]; disabledIds: Set<string> } {
-    const menuItems: MenuItemConfig[] = [];
-    const disabledIds = new Set<string>();
-
-    items.forEach(item => {
-        if (item.separator) {
-            menuItems.push({
-                type: 'separator' as const
-            });
-        } else {
-            menuItems.push({
-                id: item.id,
-                text: item.label,
-                action: item.handler,
-            });
-            if (item.disabled) {
-                disabledIds.add(item.id);
-            }
-        }
-    });
-
-    return { menuItems, disabledIds };
 }

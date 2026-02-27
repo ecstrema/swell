@@ -1,9 +1,18 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, beforeAll } from 'vitest';
 import { ContextMenu } from './context-menu.js';
 import type { MenuItemConfig } from '../../menu-api/index.js';
 
 describe('ContextMenu', () => {
     let menu: ContextMenu;
+
+    // jest/jsdom does not provide requestAnimationFrame by default; the
+    // production code now handles missing rAF but tests also occasionally
+    // invoke open() directly, so make doubly sure there's a shim.
+    beforeAll(() => {
+        if (typeof globalThis.requestAnimationFrame === 'undefined') {
+            (globalThis as any).requestAnimationFrame = cb => setTimeout(cb, 0) as unknown as number;
+        }
+    });
 
     beforeEach(() => {
         menu = new ContextMenu();
@@ -101,7 +110,7 @@ describe('ContextMenu', () => {
     it('should not call handler for disabled items', () => {
         const handler = vi.fn();
         const items: MenuItemConfig[] = [
-            { id: 'disabled-item', text: 'Disabled Item', type: 'normal', action: handler, checked: false }
+            { id: 'disabled-item', text: 'Disabled Item', action: handler, disabled: true }
         ];
 
         menu.items = items;
@@ -134,7 +143,8 @@ describe('ContextMenu', () => {
         const x = 150;
         const y = 200;
 
-        menu.items = [{ id: 'item1', label: 'Item 1' }];
+        // use `text` (renderer reads text property)
+        menu.items = [{ id: 'item1', text: 'Item 1' }];
         menu.open(x, y);
 
         const shadowRoot = menu.shadowRoot;

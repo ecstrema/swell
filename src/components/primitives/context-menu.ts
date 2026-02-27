@@ -1,7 +1,7 @@
 import { css } from "../../utils/css-utils.js";
 import contextMenuCss from "./context-menu.css?inline";
 import { MenuItemConfig } from "../../menu-api/index.js";
-import { renderMenuItems, findAndExecuteAction, MenuItemConfig } from "../../extensions/menu-extension/menu-item-renderer.js";
+import { renderMenuItems, findAndExecuteAction } from "../../extensions/menu-extension/menu-item-renderer.js";
 
 
 /**
@@ -130,8 +130,11 @@ export class ContextMenu extends HTMLElement {
             this.menuContainer.style.left = `${x}px`;
             this.menuContainer.style.top = `${y}px`;
 
-            // Adjust position if menu would go off-screen
-            requestAnimationFrame(() => {
+            // Adjust position if menu would go off-screen.  We wrap the
+            // logic in a helper so it can run either with requestAnimationFrame
+            // (usual case) or a fallback in test environments where rAF is
+            // missing.
+            const adjustPosition = () => {
                 if (this.menuContainer) {
                     const rect = this.menuContainer.getBoundingClientRect();
                     const viewportWidth = window.innerWidth;
@@ -157,7 +160,14 @@ export class ContextMenu extends HTMLElement {
                     this.menuContainer.style.left = `${adjustedX}px`;
                     this.menuContainer.style.top = `${adjustedY}px`;
                 }
-            });
+            };
+
+            if (typeof requestAnimationFrame === 'function') {
+                requestAnimationFrame(adjustPosition);
+            } else {
+                // fallback for non-browser environments (tests)
+                setTimeout(adjustPosition, 0);
+            }
         }
     }
 

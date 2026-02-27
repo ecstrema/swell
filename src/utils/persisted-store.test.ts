@@ -4,8 +4,15 @@ import { Store } from './persisted-store';
 vi.mock('../backend/index.js', () => ({ isTauri: false }));
 
 describe('persisted-store (web / localStorage)', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
+        // wipe both localStorage (fallback) and the indexedDB database used by
+        // the store implementation
         localStorage.clear();
+        await new Promise<void>((res) => {
+            const req = indexedDB.deleteDatabase('persisted-store');
+            req.onsuccess = req.onblocked = () => res();
+            req.onerror = () => res();
+        });
         vi.clearAllMocks();
     });
 

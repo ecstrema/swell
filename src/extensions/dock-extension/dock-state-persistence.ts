@@ -1,10 +1,12 @@
 import { DockLayoutSchema, type DockLayoutData } from './dock-state-schema.js';
 import { DockLayout } from './types.js';
-import { isTauri } from '../../backend/index.js';
-import { invoke } from '@tauri-apps/api/core';
+// use the generic file storage abstraction so both web and native routes
+// land in the same place and we can write into the app directory on Tauri.
+import { writeAppJSON, readAppJSON, appFileExists } from '../../utils/app-file-storage.js';
 
-const DOCK_STATE_KEY = 'dock-layout-state';
 const DEBOUNCE_DELAY_MS = 500;
+// file we store the layout under (relative to the application directory)
+const DOCK_STATE_FILE = 'dock-state.json';
 
 /**
  * DockStatePersistence handles saving and loading dock layout state
@@ -44,7 +46,7 @@ export class DockStatePersistence {
 
             // Validate the layout with arktype schema
             const validation = DockLayoutSchema(stateToSave);
-            
+
             if (validation instanceof Error) {
                 console.error('Dock layout validation failed:', validation.message);
                 return;
@@ -53,15 +55,8 @@ export class DockStatePersistence {
             // Serialize to JSON
             const json = JSON.stringify(stateToSave, null, 2);
 
-            // Save based on platform
-            if (isTauri) {
-                // Tauri: save to app data directory
-                await invoke('save_dock_state', { state: json });
-            } else {
-                // Web: save to localStorage
-                localStorage.setItem(DOCK_STATE_KEY, json);
-            }
-
+            // write through file wrapper (native writes filesystem, web uses IndexedDB)
+            await writeAppJSON(DOCK_STATE_FILE, stateToSave);
             console.log('Dock state saved successfully');
         } catch (error) {
             console.error('Failed to save dock state:', error);
@@ -76,19 +71,13 @@ export class DockStatePersistence {
         try {
             let json: string | null = null;
 
-            // Load based on platform
-            if (isTauri) {
-                // Tauri: load from app data directory
-                try {
-                    json = await invoke('load_dock_state');
-                } catch (error) {
-                    // File might not exist yet, which is okay
-                    console.log('No saved dock state found (Tauri)');
-                    return null;
-                }
+            // Read using wrapper; returns null when the file/key does not exist
+            const obj = await readAppJSON<any>(DOCK_STATE_FILE);
+            if (obj) {
+                json = JSON.stringify(obj);
             } else {
-                // Web: load from localStorage
-                json = localStorage.getItem(DOCK_STATE_KEY);
+                console.log('No saved dock state found');
+                return null;
             }
 
             if (!json) {
@@ -101,7 +90,7 @@ export class DockStatePersistence {
 
             // Validate with arktype schema
             const validation = DockLayoutSchema(parsed);
-            
+
             if (validation instanceof Error) {
                 console.error('Dock layout validation failed during load:', validation.message);
                 return null;

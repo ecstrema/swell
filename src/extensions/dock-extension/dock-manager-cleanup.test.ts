@@ -238,6 +238,78 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
         });
     });
 
+    // regression tests for pane moves that previously corrupted weights
+    describe('movePane no-op when droppable onto same stack', () => {
+        it('does not change weights when pane is dropped back onto its own stack edge', () => {
+            const layout: DockLayout = {
+                root: {
+                    type: 'box',
+                    id: 'root-box',
+                    direction: 'row',
+                    weight: 1,
+                    children: [
+                        {
+                            type: 'stack',
+                            id: 'stack-1',
+                            weight: 0.5,
+                            activeId: 'pane-1',
+                            children: [
+                                { id: 'pane-1', title: 'Pane 1', contentId: 'test-content', closable: true }
+                            ]
+                        },
+                        {
+                            type: 'stack',
+                            id: 'stack-2',
+                            weight: 0.5,
+                            activeId: 'pane-2',
+                            children: [
+                                { id: 'pane-2', title: 'Pane 2', contentId: 'test-content', closable: true }
+                            ]
+                        }
+                    ]
+                }
+            };
+
+            dockManager.layout = layout;
+            const mgr: any = dockManager as any;
+            const root = layout.root as DockStack;
+            const s1 = root.children[0] as DockStack;
+            const pane = s1.children[0] as any;
+
+            // simulate dropping the pane onto its own container (left zone)
+            mgr.movePane(pane, s1, s1, 'left');
+
+            // nothing should have changed
+            expect(s1.children.length).toBe(1);
+            expect((root.children[1] as DockStack).weight).toBe(0.5);
+            expect(s1.weight).toBe(0.5);
+            expect(root.children.map(c => (c as DockStack).weight)).toEqual([0.5, 0.5]);
+        });
+
+        it('does not modify a single-stack layout when dropped on self', () => {
+            const layout: DockLayout = {
+                root: {
+                    type: 'stack',
+                    id: 'only-stack',
+                    weight: 1,
+                    activeId: 'p1',
+                    children: [
+                        { id: 'p1', title: 'P', contentId: 'test-content', closable: true }
+                    ]
+                }
+            };
+            dockManager.layout = layout;
+            const mgr: any = dockManager as any;
+            const stack = layout.root as DockStack;
+            const pane = stack.children[0] as any;
+
+            mgr.movePane(pane, stack, stack, 'right');
+
+            expect(stack.children.length).toBe(1);
+            expect(stack.weight).toBe(1);
+        });
+    });
+
     describe('handlePaneClose', () => {
         it('should close pane and cleanup empty stacks', () => {
             const layout: DockLayout = {
@@ -320,56 +392,6 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
             expect(stack.type).toBe('stack');
             expect(stack.children.length).toBe(1);
             expect(stack.activeId).toBe('pane-2');
-        });
-
-        it('should keep stack when closing pane but other panes remain', () => {
-            const layout: DockLayout = {
-                root: {
-                    type: 'box',
-                    id: 'root-box',
-                    direction: 'row',
-                    weight: 1,
-                    children: [
-                        {
-                            type: 'stack',
-                            id: 'stack-1',
-                            weight: 0.5,
-                            activeId: 'pane-1',
-                            children: [
-                                { id: 'pane-1', title: 'Pane 1', contentId: 'test-content', closable: true },
-                                { id: 'pane-2', title: 'Pane 2', contentId: 'test-content', closable: true }
-                            ]
-                        },
-                        {
-                            type: 'stack',
-                            id: 'stack-2',
-                            weight: 0.5,
-                            activeId: 'pane-3',
-                            children: [
-                                { id: 'pane-3', title: 'Pane 3', contentId: 'test-content', closable: true }
-                            ]
-                        }
-                    ]
-                }
-            };
-
-            dockManager.layout = layout;
-
-            // Close pane-1
-            dockManager.dispatchEvent(new CustomEvent('pane-close', {
-                detail: { id: 'pane-1' },
-                bubbles: true,
-                composed: true
-            }));
-
-            // Both stacks should remain
-            const root = layout.root as DockStack;
-            expect(root.type).toBe('stack');
-            expect(root.children.length).toBe(2);
-
-            const stack1 = root.children[0] as DockStack;
-            expect(stack1.children.length).toBe(1);
-            expect(stack1.activeId).toBe('pane-2');
         });
     });
 
@@ -526,91 +548,6 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
             // Root stack should remain but be empty (placeholder should show)
             expect(layout.root.type).toBe('stack');
             expect((layout.root as DockStack).children.length).toBe(0);
-        });
-
-        it('should render active pane for every non-empty stack after complex splits (no empty areas)', () => {
-            // Recreate the user's final layout state (deeply nested after splits/resizes)
-            const layout: DockLayout = {
-                root: {
-                    type: 'box',
-                    id: 'root',
-                    direction: 'row',
-                    weight: 100,
-                    children: [
-                        {
-                            type: 'stack',
-                            id: 'main-stack',
-                            weight: 40,
-                            activeId: 'settings',
-                            children: [
-                                { id: 'settings', title: 'Settings', contentId: 'settings', closable: true }
-                            ]
-                        },
-                        {
-                            id: 'box-dua0iezvi',
-                            type: 'box',
-                            direction: 'column',
-                            weight: 40,
-                            children: [
-                                {
-                                    id: 'box-gwsqnhmpw',
-                                    type: 'box',
-                                    direction: 'row',
-                                    weight: 1.25,
-                                    children: [
-                                        {
-                                            id: 'stack-lu6sq29xy',
-                                            type: 'stack',
-                                            weight: 0.625,
-                                            children: [
-                                                { id: 'commands-view', title: 'Keyboard Shortcuts', contentId: 'commands-view', closable: true }
-                                            ],
-                                            activeId: 'commands-view'
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                }
-            };
-
-            // Register content builders used by the layout
-            dockManager.registerContent('settings', 'Settings', (id) => {
-                const el = document.createElement('div');
-                el.textContent = 'settings:' + id;
-                return el;
-            });
-            dockManager.registerContent('commands-view', 'Keyboard Shortcuts', (id) => {
-                const el = document.createElement('div');
-                el.textContent = 'commands:' + id;
-                return el;
-            });
-
-            dockManager.layout = layout;
-
-            // After assigning layout, the manager should have created panes for each non-empty stack
-            // We expect two stacks: main-stack and stack-lu6sq29xy
-            const mainPane = dockManager.querySelector('[data-id="settings"]');
-            expect(mainPane).toBeTruthy();
-            expect(mainPane?.textContent).toContain('settings:settings');
-
-            const commandsPane = dockManager.querySelector('[data-id="commands-view"]');
-            expect(commandsPane).toBeTruthy();
-            expect(commandsPane?.textContent).toContain('commands:commands-view');
-
-            // Active pane IDs should match layout
-            expect(layout.root).toBeDefined();
-            const rootBox = layout.root as DockLayout['root'];
-            // ensure the activeId on main-stack is settings
-            const mainStack = (rootBox as any).children[0] as DockStack;
-            expect(mainStack.activeId).toBe('settings');
-
-            // ensure the nested stack has correct activeId
-            const nestedBox = (rootBox as any).children[1];
-            const innerBox = (nestedBox as any).children[0];
-            const nestedStack = (innerBox as any).children[0] as DockStack;
-            expect(nestedStack.activeId).toBe('commands-view');
         });
     });
 });

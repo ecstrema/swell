@@ -304,6 +304,16 @@ export class DockManager extends HTMLElement {
     targetStack: DockStack,
     zone: string,
   ) {
+    // ignore no-op drops onto the same stack – the drag handlers already
+    // take care of intra-stack reordering.  Running the normal logic when
+    // source===target ends up splitting the stack and then immediately
+    // cleaning up the empty half, which leaves sibling weights out of
+    // proportion (sum < 1).  This was the root cause of the "sum not 100"
+    // bug when a pane was dragged on top of itself.
+    if (sourceStack === targetStack) {
+      return;
+    }
+
     // Ensure source/target are leaf stacks (contain panes)
     if (!this.isLeaf(sourceStack) || !this.isLeaf(targetStack)) return;
 

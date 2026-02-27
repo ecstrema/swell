@@ -14,8 +14,7 @@ vi.mock('../../../extensions/settings-extension/settings-storage.js', () => ({
 
 describe('file-state-storage (moved to waveform extension)', () => {
     beforeEach(() => {
-        // Clear localStorage before each test
-        localStorage.clear();
+        // storage is now backed by IndexedDB; global setup code clears the DB
         vi.clearAllMocks();
     });
 

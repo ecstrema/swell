@@ -30,3 +30,13 @@ vi.mock('../backend/pkg/backend', () => ({
     get_hierarchy_wasm: vi.fn(),
     get_signal_changes_wasm: vi.fn()
 }));
+// Clear any IndexedDB databases that our storage code uses before each test.
+beforeEach(async () => {
+    for (const db of ['persisted-store', 'swell-app-files']) {
+        await new Promise<void>(res => {
+            const req = indexedDB.deleteDatabase(db);
+            req.onsuccess = req.onblocked = () => res();
+            req.onerror = () => res();
+        });
+    }
+});

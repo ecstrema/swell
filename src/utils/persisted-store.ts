@@ -1,13 +1,85 @@
 // Simple persisted key/value store abstraction
-// - Web: backed by localStorage (per-store JSON blob)
+// - Web: backed by IndexedDB (per-store JSON blob)
 // - Native (Tauri): backed by plugin-store (LazyStore/Store) when available
 
 import { UnlistenFn } from "@tauri-apps/api/event";
 import { isTauri } from "../backend/index.js";
-import { LazyStore } from "@tauri-apps/plugin-store";
+// Note: we previously used LazyStore from @tauri-apps/plugin-store when running
+// under Tauri, but the new requirement calls for a unified wrapper around the
+// fs API.  LocalStorageStore now handles both platforms directly.
 
-// @ts-ignore
-class LocalStorageStore implements LazyStore {
+// IndexedDB helpers used by the web-backed store
+const PERSIST_DB = 'persisted-store';
+const BLOB_STORE = 'blobs';
+
+function openPersistDb(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(PERSIST_DB, 1);
+        req.onupgradeneeded = () => {
+            const db = req.result;
+            if (!db.objectStoreNames.contains(BLOB_STORE)) {
+                db.createObjectStore(BLOB_STORE);
+            }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+function idbGetBlob(key: string): Promise<string | undefined> {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const db = await openPersistDb();
+            const tx = db.transaction(BLOB_STORE, 'readonly');
+            const store = tx.objectStore(BLOB_STORE);
+            const r = store.get(key);
+            r.onsuccess = () => resolve(r.result as string | undefined);
+            r.onerror = () => reject(r.error);
+        } catch (e) {
+            reject(e);
+        }
+    });
+}
+
+function idbSetBlob(key: string, value: string): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const db = await openPersistDb();
+            const tx = db.transaction(BLOB_STORE, 'readwrite');
+            const store = tx.objectStore(BLOB_STORE);
+            const r = store.put(value, key);
+            r.onsuccess = () => resolve();
+            r.onerror = () => reject(r.error);
+        } catch (e) {
+            reject(e);
+        }
+    });
+}
+
+function idbDeleteBlob(key: string): Promise<void> {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const db = await openPersistDb();
+            const tx = db.transaction(BLOB_STORE, 'readwrite');
+            const store = tx.objectStore(BLOB_STORE);
+            const r = store.delete(key);
+            r.onsuccess = () => resolve();
+            r.onerror = () => reject(r.error);
+        } catch (e) {
+            reject(e);
+        }
+    });
+}
+
+
+// simple key/value store implementation that runs in the browser using
+// IndexedDB and, when executed under Tauri, is replaced by the plugin-store
+// LazyStore (which itself writes a JSON file to the application directory).
+//
+// The IDB implementation mirrors the old localStorage behaviour but avoids
+// the size limitations and provides async APIs.
+
+class LocalStorageStore {
 
   private path: string;
   private data: Record<string, any> = {};
@@ -17,13 +89,7 @@ class LocalStorageStore implements LazyStore {
   constructor(filename: string) {
     this.path = filename;
 
-    addEventListener("storage", (e) => {
-      if (e.key === this.path) {
-        this.init();
-        this.emitChange();
-      }
-    });
-
+    // storage events are not available for IDB, so we don't listen here
     this.init();
   }
 
@@ -65,20 +131,36 @@ class LocalStorageStore implements LazyStore {
 
   async init(): Promise<void> {
     try {
-      const raw = localStorage.getItem(this.path);
-      if (raw) this.data = JSON.parse(raw);
-      else this.data = {};
+      if (isTauri) {
+        // read JSON file from application directory
+        const { readAppJSON } = await import('./app-file-storage.js');
+        const obj = await readAppJSON(this.path);
+        this.data = obj || {};
+      } else {
+        const raw = await idbGetBlob(this.path);
+        if (raw) this.data = JSON.parse(raw);
+        else this.data = {};
+      }
     } catch (e) {
-      console.error("persisted-store: failed to read localStorage:", e);
+      console.error("persisted-store: failed to read persisted store:", e);
       this.data = {};
     }
   }
 
   private persist() {
     try {
-      localStorage.setItem(this.path, JSON.stringify(this.data));
+      if (isTauri) {
+        // write entire blob to file
+        import('./app-file-storage.js').then(({ writeAppJSON }) => {
+          writeAppJSON(this.path, this.data as any).catch((e) => {
+            console.error('persisted-store: failed to write file:', e);
+          });
+        });
+      } else {
+        idbSetBlob(this.path, JSON.stringify(this.data));
+      }
     } catch (e) {
-      console.error("persisted-store: failed to write localStorage:", e);
+      console.error("persisted-store: failed to persist:", e);
     }
   }
 
@@ -114,7 +196,12 @@ class LocalStorageStore implements LazyStore {
   }
   async clear(): Promise<void> {
     this.data = {};
-    localStorage.removeItem(this.path);
+    if (isTauri) {
+      const { deleteAppFile } = await import('./app-file-storage.js');
+      await deleteAppFile(this.path);
+    } else {
+      await idbDeleteBlob(this.path);
+    }
     this.emitChange();
   }
   async length(): Promise<number> {
@@ -140,4 +227,4 @@ class LocalStorageStore implements LazyStore {
   }
 }
 
-export const Store = isTauri ? LazyStore : LocalStorageStore;
+export const Store = LocalStorageStore;

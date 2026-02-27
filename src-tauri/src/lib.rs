@@ -4,9 +4,9 @@ use backend::{
     get_signal_changes as backend_get_signal_changes, remove_file as backend_remove_file,
 };
 use backend::{HierarchyRoot, SignalChange};
-use tauri_plugin_store::StoreExt;
-use tauri_plugin_cli::CliExt;
 use std::sync::Mutex;
+use tauri_plugin_cli::CliExt;
+use tauri_plugin_store::StoreExt;
 
 const OPENED_FILES_KEY: &str = "opened_files";
 const DOCK_STATE_KEY: &str = "dock_state";
@@ -97,20 +97,23 @@ fn set_setting(path: String, value: String, app_handle: tauri::AppHandle) -> Res
     let store = app_handle.store(SETTINGS_STORE_NAME);
 
     // Get current settings or create new object
-    let mut settings = store.get("settings")
+    let mut settings = store
+        .get("settings")
         .and_then(|v| v.as_object().cloned())
         .unwrap_or_else(|| serde_json::Map::new());
 
     // Parse the value
-    let parsed_value: serde_json::Value = serde_json::from_str(&value)
-        .map_err(|e| format!("Failed to parse value: {}", e))?;
+    let parsed_value: serde_json::Value =
+        serde_json::from_str(&value).map_err(|e| format!("Failed to parse value: {}", e))?;
 
     // Set nested value
     set_nested_value(&mut settings, &path, parsed_value);
 
     // Save to store
     store.set("settings", serde_json::Value::Object(settings));
-    store.save().map_err(|e| format!("Failed to save settings: {}", e))?;
+    store
+        .save()
+        .map_err(|e| format!("Failed to save settings: {}", e))?;
 
     Ok(())
 }
@@ -129,37 +132,36 @@ fn get_startup_files() -> Vec<String> {
 
 #[tauri::command]
 fn write_text_file(path: String, content: String) -> Result<(), String> {
-    std::fs::write(&path, content)
-        .map_err(|e| format!("Failed to write file '{}': {}", path, e))
+    std::fs::write(&path, content).map_err(|e| format!("Failed to write file '{}': {}", path, e))
 }
 
 #[tauri::command]
 fn read_text_file(path: String) -> Result<String, String> {
-    std::fs::read_to_string(&path)
-        .map_err(|e| format!("Failed to read file '{}': {}", path, e))
+    std::fs::read_to_string(&path).map_err(|e| format!("Failed to read file '{}': {}", path, e))
 }
 
 #[tauri::command]
 fn save_dock_state(state: String, app_handle: tauri::AppHandle) -> Result<(), String> {
     let store = app_handle.store(STORE_NAME);
-    
+
     // Parse the JSON string to validate it
-    let parsed: serde_json::Value = serde_json::from_str(&state)
-        .map_err(|e| format!("Failed to parse dock state: {}", e))?;
-    
+    let parsed: serde_json::Value =
+        serde_json::from_str(&state).map_err(|e| format!("Failed to parse dock state: {}", e))?;
+
     store.set(DOCK_STATE_KEY, parsed);
-    store.save().map_err(|e| format!("Failed to save dock state: {}", e))?;
-    
+    store
+        .save()
+        .map_err(|e| format!("Failed to save dock state: {}", e))?;
+
     Ok(())
 }
 
 #[tauri::command]
 fn load_dock_state(app_handle: tauri::AppHandle) -> Result<String, String> {
     let store = app_handle.store(STORE_NAME);
-    
+
     if let Some(value) = store.get(DOCK_STATE_KEY) {
-        serde_json::to_string(&value)
-            .map_err(|e| format!("Failed to serialize dock state: {}", e))
+        serde_json::to_string(&value).map_err(|e| format!("Failed to serialize dock state: {}", e))
     } else {
         Err("No dock state found".to_string())
     }
@@ -176,7 +178,11 @@ fn get_nested_value(value: Option<&serde_json::Value>, path: &str) -> Option<ser
     Some(current.clone())
 }
 
-fn set_nested_value(obj: &mut serde_json::Map<String, serde_json::Value>, path: &str, value: serde_json::Value) {
+fn set_nested_value(
+    obj: &mut serde_json::Map<String, serde_json::Value>,
+    path: &str,
+    value: serde_json::Value,
+) {
     let parts: Vec<&str> = path.split('/').collect();
     let mut current = obj;
 
@@ -195,10 +201,11 @@ fn set_nested_value(obj: &mut serde_json::Map<String, serde_json::Value>, path: 
 pub fn run() {
     // Capture command-line arguments before Tauri consumes them
     let args: Vec<String> = std::env::args().collect();
-    
+
     // Filter out the executable path and any Tauri-specific arguments
     // Collect file paths (arguments that exist as files)
-    let file_paths: Vec<String> = args.iter()
+    let file_paths: Vec<String> = args
+        .iter()
         .skip(1) // Skip the executable path
         .filter(|arg| {
             // Skip Tauri internal arguments
@@ -210,18 +217,16 @@ pub fn run() {
         })
         .map(|s| s.to_string())
         .collect();
-    
+
     // Store the file paths for the frontend to retrieve
     if !file_paths.is_empty() {
         *STARTUP_FILES.lock().unwrap() = Some(file_paths);
     }
-    
+
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_cli::init())
-        .plugin(
-            tauri_plugin_store::Builder::new()
-                .build()
-        )
+        .plugin(tauri_plugin_store::Builder::new().build())
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
@@ -232,7 +237,7 @@ pub fn run() {
                 eprintln!("Run with --help for usage information");
                 std::process::exit(1);
             }
-            
+
             load_opened_files(&app.handle());
             Ok(())
         })

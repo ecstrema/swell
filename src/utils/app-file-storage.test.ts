@@ -46,7 +46,8 @@ describe('app-file-storage (tauri fs)', () => {
     });
 
     it('delegates to @tauri-apps/api/fs', async () => {
-        const { writeTextFile, readTextFile, removeFile, exists } = await import('@tauri-apps/api/fs');
+        // `@tauri-apps/api/fs` is mocked above; cast to any to keep TS happy
+        const { writeTextFile, readTextFile, removeFile, exists } = (await import('@tauri-apps/plugin-fs')) as any;
 
         await fsWrapper.writeAppFile('p.txt', 'hello');
         expect(writeTextFile).toHaveBeenCalledWith({ path: 'p.txt', contents: 'hello', dir: expect.anything() });

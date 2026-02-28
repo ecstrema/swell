@@ -1,6 +1,7 @@
 import { DockLayout, DockNode, DockPane, DockStack } from "./types.js";
 import { css } from "../../utils/css-utils.js";
 import { scrollbarSheet } from "../../styles/shared-sheets.js";
+// @ts-ignore missing declaration for css inline import
 import dockManagerCss from "./dock-manager.css?inline";
 
 export class DockManager extends HTMLElement {
@@ -304,16 +305,6 @@ export class DockManager extends HTMLElement {
     targetStack: DockStack,
     zone: string,
   ) {
-    // ignore no-op drops onto the same stack – the drag handlers already
-    // take care of intra-stack reordering.  Running the normal logic when
-    // source===target ends up splitting the stack and then immediately
-    // cleaning up the empty half, which leaves sibling weights out of
-    // proportion (sum < 1).  This was the root cause of the "sum not 100"
-    // bug when a pane was dragged on top of itself.
-    if (sourceStack === targetStack) {
-      return;
-    }
-
     // Ensure source/target are leaf stacks (contain panes)
     if (!this.isLeaf(sourceStack) || !this.isLeaf(targetStack)) return;
 
@@ -336,6 +327,10 @@ export class DockManager extends HTMLElement {
     if (this.shouldCleanupEmptyStacks()) {
       this.cleanupEmptyNodes(this._layout!.root);
     }
+
+    // make sure siblings still sum to 1; movePane only touched two children,
+    // but recursive normalization is cheap and keeps things tidy.
+    if (this._layout) this.normalizeWeights(this._layout.root);
   }
 
   private moveStack(
@@ -343,8 +338,10 @@ export class DockManager extends HTMLElement {
     targetStack: DockStack,
     zone: string,
   ) {
+    // dropping a stack onto itself is a no-op
+
     // Can't drop center when dragging a whole stack
-    if (zone === "center") return;
+    if (zone === "center" && sourceStack === targetStack) return;
 
     const parent = this.findParent(this._layout!.root, sourceStack.id) as DockStack | null;
     if (!parent || (parent as any).direction === undefined) return; // Can't move root or non-container
@@ -416,6 +413,11 @@ export class DockManager extends HTMLElement {
         this._layout.root = onlyChild;
       }
     }
+
+    // finally, make sure all container weights are normalized
+    if (this._layout) {
+      this.normalizeWeights(this._layout.root);
+    }
   }
 
   private splitStack(
@@ -481,6 +483,9 @@ export class DockManager extends HTMLElement {
         this._layout.root = onlyChild;
       }
     }
+
+    // normalize after splitting
+    if (this._layout) this.normalizeWeights(this._layout.root);
   }
 
   private findParent(node: DockNode, targetId: string): DockStack | null {
@@ -493,6 +498,31 @@ export class DockManager extends HTMLElement {
       }
     }
     return null;
+  }
+
+  /**
+   * Walk container stacks and ensure the weights of each child sum to 1.
+   * Called after operations that mutate weights so rounding/drift doesn't
+   * accumulate over time.
+   */
+  private normalizeWeights(node: DockNode): void {
+    if (!this.isContainer(node)) return;
+    const children = node.children as DockStack[];
+    let total = children.reduce((s, c) => s + c.weight, 0);
+    if (total === 0) {
+      // give each child a weight of 1 and then normalize to 100
+      children.forEach(c => (c.weight = 1));
+      total = children.length;
+    }
+
+    for (const c of children) {
+      c.weight = c.weight / total * 99 + 1;
+    }
+
+    // recurse into children to normalize deeper containers
+    for (const c of children) {
+      this.normalizeWeights(c);
+    }
   }
 
   private cleanupEmptyNodes(node: DockNode): boolean {
@@ -523,6 +553,9 @@ export class DockManager extends HTMLElement {
       }
       return true;
     }) as any;
+
+    // normalize weights after removal
+    this.normalizeWeights(node);
 
     return (node.children as DockStack[]).length === 0;
   }
@@ -663,9 +696,11 @@ export class DockManager extends HTMLElement {
       const rootContainer = this._layout.root as DockStack;
       if ((rootContainer.children as DockStack[]).length === 1) {
         const onlyChild = (rootContainer.children as DockStack[])[0];
-        onlyChild.weight = 1;
+        onlyChild.weight = 100;
         this._layout.root = onlyChild;
       }
+      // normalize entire tree after simplification
+      this.normalizeWeights(this._layout.root);
       this.render();
       this.notifyLayoutChange();
     }

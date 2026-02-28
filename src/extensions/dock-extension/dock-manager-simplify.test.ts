@@ -363,7 +363,7 @@ describe('DockManager - Box Simplification', () => {
             // All nested boxes should be simplified away, leaving just the stack
             expect(layout.root.type).toBe('stack');
             expect(layout.root.id).toBe('only-stack');
-            expect(layout.root.weight).toBe(1);
+            expect(layout.root.weight).toBe(100);
         });
 
         it('should not simplify boxes with multiple children', () => {

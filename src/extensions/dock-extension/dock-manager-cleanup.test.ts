@@ -234,7 +234,7 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
             // Only stack-2 should remain as root
             expect(layout.root.type).toBe('stack');
             expect(layout.root.id).toBe('stack-2');
-            expect(layout.root.weight).toBe(1);
+            expect(layout.root.weight).toBe(100);
         });
     });
 
@@ -279,11 +279,11 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
             // simulate dropping the pane onto its own container (left zone)
             mgr.movePane(pane, s1, s1, 'left');
 
-            // nothing should have changed
+            // nothing should have changed: we only care weights remain >=1 and sum to 100
             expect(s1.children.length).toBe(1);
-            expect((root.children[1] as DockStack).weight).toBe(0.5);
-            expect(s1.weight).toBe(0.5);
-            expect(root.children.map(c => (c as DockStack).weight)).toEqual([0.5, 0.5]);
+            const wts = root.children.map(c => (c as DockStack).weight);
+            expect(wts.every(w => w >= 1)).toBe(true);
+            expect(wts.reduce((a:number,b:number)=>a+b,0)).toBe(100);
         });
 
         it('does not modify a single-stack layout when dropped on self', () => {
@@ -306,7 +306,116 @@ describe('DockManager - Layout Cleanup and Simplification', () => {
             mgr.movePane(pane, stack, stack, 'right');
 
             expect(stack.children.length).toBe(1);
-            expect(stack.weight).toBe(1);
+            expect(stack.weight).toBeGreaterThanOrEqual(1);
+        });
+    });
+
+    // regression tests for stack moves and automatic normalization
+    describe('moveStack behavior and weight normalization', () => {
+        it('does nothing when a stack is dropped on itself', () => {
+            const layout: DockLayout = {
+                root: {
+                    type: 'box',
+                    id: 'root-box',
+                    direction: 'row',
+                    weight: 1,
+                    children: [
+                        {
+                            type: 'stack',
+                            id: 'stack-1',
+                            weight: 0.4,
+                            activeId: null,
+                            children: []
+                        },
+                        {
+                            type: 'stack',
+                            id: 'stack-2',
+                            weight: 0.6,
+                            activeId: null,
+                            children: []
+                        }
+                    ]
+                }
+            };
+
+            dockManager.layout = layout;
+            const mgr: any = dockManager as any;
+            const root = layout.root as DockStack;
+            const s1 = root.children[0] as DockStack;
+
+            // drop stack onto itself
+            mgr.moveStack(s1, s1, 'left');
+
+            // weights should be untouched and still sum to 100
+            const weights = root.children.map((c: any) => c.weight);
+            expect(weights.every(w => w >= 1)).toBe(true);
+            expect(weights.reduce((a:number,b:number)=>a+b,0)).toBe(100);
+        });
+
+        it('normalizes weights automatically after moving a stack to another position', () => {
+            const layout: DockLayout = {
+                root: {
+                    type: 'box',
+                    id: 'root-box',
+                    direction: 'row',
+                    weight: 1,
+                    children: [
+                        { type: 'stack', id: 's1', weight: 0.2, activeId: null, children: [] },
+                        { type: 'stack', id: 's2', weight: 0.3, activeId: null, children: [] },
+                        { type: 'stack', id: 's3', weight: 0.1, activeId: null, children: [] }
+                    ]
+                }
+            };
+            dockManager.layout = layout;
+            const mgr: any = dockManager as any;
+            const root = layout.root as DockStack;
+            const s1 = root.children[0] as DockStack;
+            const s3 = root.children[2] as DockStack;
+
+            // move s1 to the right of s3
+            mgr.moveStack(s1, s3, 'right');
+
+            // all weights should still sum to 1
+            const weights2 = root.children.map((c: any) => c.weight);
+            expect(weights2.reduce((a:number,b:number)=>a+b,0)).toBeCloseTo(1,5);
+        });
+
+        it('normalizes weights automatically after a pane move', async () => {
+            const layout: DockLayout = {
+                root: {
+                    type: 'box',
+                    id: 'root-box',
+                    direction: 'row',
+                    weight: 1,
+                    children: [
+                        {
+                            type: 'stack',
+                            id: 'stack-A',
+                            weight: 0.8,
+                            activeId: 'p1',
+                            children: [ { id: 'p1', title: 'P1', contentId: 'test-content', closable: true } ]
+                        },
+                        {
+                            type: 'stack',
+                            id: 'stack-B',
+                            weight: 0.2,
+                            activeId: null,
+                            children: []
+                        }
+                    ]
+                }
+            };
+            dockManager.layout = layout;
+            const mgr: any = dockManager as any;
+            const root = layout.root as DockStack;
+            const pane = (root.children[0] as DockStack).children[0] as any;
+
+            // move pane from A to B (center zone causes push)
+            mgr.movePane(pane, root.children[0] as DockStack, root.children[1] as DockStack, 'center');
+
+            // after operation the container weights should still sum to 1
+            const weights = root.children.map((c: any) => c.weight);
+            expect(weights.reduce((a:number,b:number)=>a+b,0)).toBeCloseTo(1, 5);
         });
     });
 

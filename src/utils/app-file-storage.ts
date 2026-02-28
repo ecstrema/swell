@@ -1,12 +1,12 @@
 import { isTauri } from "../backend/index.js";
 
 // Tauri fs imports are loaded dynamically so the module can be used in web builds
-let tauriFs: typeof import("@tauri-apps/api/fs") | null = null;
+let tauriFs: typeof import("@tauri-apps/plugin-fs") | null = null;
 
 async function ensureTauriFs() {
   if (!tauriFs) {
     // lazy-load to avoid bundling the entire API for web
-    tauriFs = await import("@tauri-apps/api/fs");
+    tauriFs = await import("@tauri-apps/plugin-fs");
   }
   return tauriFs;
 }
@@ -36,7 +36,8 @@ function idbGet(key: string): Promise<string | null> {
       const tx = db.transaction(STORE_NAME, "readonly");
       const store = tx.objectStore(STORE_NAME);
       const req = store.get(key);
-      req.onsuccess = () => resolve(req.result == null ? null : req.result as string);
+      req.onsuccess = () =>
+        resolve(req.result == null ? null : (req.result as string));
       req.onerror = () => reject(req.error);
     } catch (e) {
       reject(e);
@@ -74,10 +75,15 @@ function idbDelete(key: string): Promise<void> {
   });
 }
 
-export async function writeAppFile(path: string, contents: string): Promise<void> {
+export async function writeAppFile(
+  path: string,
+  contents: string,
+): Promise<void> {
   if (isTauri) {
     const fs = await ensureTauriFs();
-    await fs.writeTextFile({ path, contents, dir: fs.BaseDirectory.App });
+    await fs.writeTextFile(path, contents, {
+      baseDir: fs.BaseDirectory.AppData,
+    });
   } else {
     await idbPut(path, contents);
   }
@@ -87,7 +93,7 @@ export async function readAppFile(path: string): Promise<string | null> {
   if (isTauri) {
     const fs = await ensureTauriFs();
     try {
-      return await fs.readTextFile({ path, dir: fs.BaseDirectory.App });
+      return await fs.readTextFile(path, { baseDir: fs.BaseDirectory.AppData });
     } catch (e) {
       // missing file -> null
       return null;
@@ -101,7 +107,7 @@ export async function deleteAppFile(path: string): Promise<void> {
   if (isTauri) {
     const fs = await ensureTauriFs();
     try {
-      await fs.removeFile({ path, dir: fs.BaseDirectory.App });
+      await fs.remove(path, { baseDir: fs.BaseDirectory.AppData });
     } catch {
       // ignore
     }
@@ -113,7 +119,7 @@ export async function deleteAppFile(path: string): Promise<void> {
 export async function appFileExists(path: string): Promise<boolean> {
   if (isTauri) {
     const fs = await ensureTauriFs();
-    return await fs.exists(path, { dir: fs.BaseDirectory.App });
+    return await fs.exists(path, { baseDir: fs.BaseDirectory.AppData });
   } else {
     const val = await idbGet(path);
     return val !== null;
